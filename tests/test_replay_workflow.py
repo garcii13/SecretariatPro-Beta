@@ -72,7 +72,8 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         self.flow.cancel()
     async def until(self, phase):
         async def poll():
-            while self.runtime.state.get('broadcast_flow', {}).get('phase') != phase:
+            # Observe the published frame, not the worker-thread mutation that precedes it.
+            while not self.frames or self.frames[-1].get('broadcast_flow', {}).get('phase') != phase:
                 await asyncio.sleep(.005)
         await asyncio.wait_for(poll(), 2)
     async def test_goal_waits_for_real_return_then_bottom_then_scoreboard(self):
