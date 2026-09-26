@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="es">
+<head>
+<!-- Phase 58 compatibility markers: styles.css?v=phase55 app.js?v=phase55 app.js?v=phase36 -->
+<!-- Compatibility regression markers: app.js?v=phase36 styles.css?v=phase36 -->
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#041630">
+  <title>SecretariatPro Live</title>
+  <link rel="stylesheet" href="/app/styles.css?v=phase74-coach-tag3">
+  <link rel="manifest" href="/app/manifest.webmanifest">
+</head>
+<body>
+  <section class="subscription-gate" id="subscription-gate">
+    <div class="subscription-gate-card">
+      <img src="/app/sp_logo.png" alt="SecretariatPro">
+      <span class="card-kicker">Acceso a SecretariatPro</span>
+      <h1 id="subscription-gate-title">Inicia sesión para continuar</h1>
+      <p id="subscription-gate-message">La aplicación de realización requiere una membresía activa.</p>
+      <div class="subscription-gate-meta" id="subscription-gate-meta" hidden></div>
+      <div class="subscription-gate-actions">
+        <button class="button primary" id="subscription-login-button" type="button">Iniciar sesión</button>
+        <button class="button secondary" id="subscription-account-button" type="button" hidden>Mi cuenta</button>
+      </div>
+      <small>El permiso sin conexión se conserva durante un máximo de 4 días desde la última validación online.</small>
+    </div>
+  </section>
+<div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="SecretariatPro">
+        <img class="brand-logo" src="/app/sp_logo.png" alt="SP">
+      </a>
+
+      <nav class="main-nav" aria-label="Navegación principal">
+        <button class="nav-item is-active" data-view="live">Directo</button>
+        <button class="nav-item" data-view="production">Realización</button>
+        <button class="nav-item" data-view="team">Equipo</button>
+        <button class="nav-item" data-view="statistics">Estadísticas</button>
+        <button class="nav-item" data-view="ocr">OCR</button>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="match-context" id="match-context" type="button">
+          <span class="context-dot"></span>
+          <span class="context-copy">
+            <small>Partido actual</small>
+            <strong id="context-match-name">Seleccionar partido</strong>
+          </span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+        </button>
+        <button class="icon-button" id="settings-button" type="button" aria-label="Configuración">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.42 1.42-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2v-.48A1.7 1.7 0 0 0 12.38 18a1.7 1.7 0 0 0-1.88.34l-.06.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 9.42 15a1.7 1.7 0 0 0-1.56-1.03H7.4v-2h.46A1.7 1.7 0 0 0 9.42 11a1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.42-1.42.06.06A1.7 1.7 0 0 0 12.38 8a1.7 1.7 0 0 0 1.03-1.56V6h2v.44A1.7 1.7 0 0 0 16.44 8a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.42 1.42-.06.06A1.7 1.7 0 0 0 19.4 11a1.7 1.7 0 0 0 1.56 1.03h.44v2h-.44A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+        </button>
+        <button class="profile-button" id="profile-button" type="button" aria-label="Cuenta">
+          <img id="profile-avatar" alt="Foto de perfil" hidden>
+          <span id="profile-initials">?</span>
+          <i id="profile-status"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="view is-visible" id="view-live">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">Broadcast control</p>
+            <h1>Directo</h1>
+            <p>Control operativo del partido y de los gráficos en emisión.</p>
+          </div>
+          <div class="status-cluster">
+            <span class="status-pill" id="api-status"><i></i>Motor local</span>
+            <span class="status-pill" id="online-status"><i></i>Online</span>
+            <span class="status-pill" id="ocr-status"><i></i>OCR</span>
+            <span class="status-pill" id="obs-status"><i></i>OBS</span>
+          </div>
+        </div>
+
+        <button class="button secondary preflight-reopen" id="show-preflight" type="button" hidden>Mostrar comprobación previa</button>
+        <section class="card preflight-card" id="preflight-card" aria-label="Comprobación previa al directo">
+          <header class="card-header">
+            <div><span class="card-kicker">ANTES DE EMITIR</span><h2>Comprobación previa</h2></div>
+            <div class="preflight-actions">
+              <button class="button secondary compact-button" id="refresh-preflight" type="button">Comprobar ahora</button>
+              <button class="icon-button preflight-close" id="close-preflight" type="button" aria-label="Cerrar comprobación previa" title="Cerrar">×</button>
+            </div>
+          </header>
+          <p id="preflight-summary" class="preflight-summary">Pendiente de comprobación</p>
+          <div id="preflight-checks" class="preflight-checks" aria-live="polite"></div>
+        </section>
+
+        <div class="live-grid">
+          <section class="card preview-card">
+            <header class="card-header">
+              <div>
+                <span class="card-kicker">Monitor</span>
+                <h2>Vista de gráficos</h2>
+              </div>
+              <div class="on-air-badge"><i></i> PREVIEW</div>
+            </header>
+            <div class="preview-stage">
+              <div class="preview-placeholder">
+                <span>PROGRAMA</span>
+                <strong>Vista previa del overlay</strong>
+                <small>Conecta OBS WebSocket para mostrar directamente la escena Program.</small>
+              </div>
+              <img id="program-video" class="program-video" alt="Salida de programa de OBS">
+              <iframe id="overlay-preview" class="overlay-fit-frame" title="Vista previa del overlay" src="/overlay.html"></iframe>
+            </div>
+            <footer class="preview-footer">
+              <span id="active-overlay-copy">Sin paneles a pantalla completa</span>
+              <button class="text-button" data-copy-overlay-url type="button">Copiar enlace para emisión</button>
+              <button class="text-button" id="refresh-preview">Recargar preview</button>
+            </footer>
+          </section>
+
+          <aside class="live-side">
+            <section class="card score-card">
+              <header class="card-header compact">
+                <div><span class="card-kicker">Partido</span><h2>Marcador</h2></div>
+                <span class="clock" id="match-clock">00:00</span>
+              </header>
+              <div class="score-source-strip">
+                <div>
+                  <small>FUENTE DEL RESULTADO</small>
+                  <strong id="score-source-copy">OCR · bloqueado</strong>
+                  <span id="score-source-help">El resultado procede del marcador físico.</span>
+                </div>
+                <div class="segmented-control" aria-label="Fuente del resultado">
+                  <button type="button" class="is-active" data-score-mode="ocr">OCR</button>
+                  <button type="button" data-score-mode="manual">Manual</button>
+                </div>
+              </div>
+              <div class="teams-score">
+                <article class="team-score-panel" id="home-panel">
+                  <div class="team-identity">
+                    <img id="home-logo" alt="Logo local">
+                    <div><small>LOCAL</small><strong id="home-name">LOCAL</strong></div>
+                  </div>
+                  <div class="score-control">
+                    <button data-score-team="team1" data-score-delta="-1">−</button>
+                    <strong id="home-score">0</strong>
+                    <button data-score-team="team1" data-score-delta="1">+</button>
+                  </div>
+                </article>
+                <article class="team-score-panel" id="away-panel">
+                  <div class="team-identity">
+                    <img id="away-logo" alt="Logo visitante">
+                    <div><small>VISITANTE</small><strong id="away-name">VISITANTE</strong></div>
+                  </div>
+                  <div class="score-control">
+                    <button data-score-team="team2" data-score-delta="-1">−</button>
+                    <strong id="away-score">0</strong>
+                    <button data-score-team="team2" data-score-delta="1">+</button>
+                  </div>
+                </article>
+              </div>
+              <div class="goal-actions">
+                <button class="button primary ghost" data-register-goal="team1">Registrar gol local</button>
+                <button class="button primary ghost" data-register-goal="team2">Registrar gol visitante</button>
+              </div>
+              <div class="score-actions">
+                <button class="button secondary" data-overlay="scoreboard">Marcador</button>
+                <button class="button danger ghost" id="hide-all">Limpiar emisión</button>
+                <button class="button danger-soft finish-match-action" id="finish-match-button" type="button">Finalizar partido</button>
+              </div>
+            </section>
+
+          </aside>
+        </div>
+
+        <section class="card penalties-card">
+          <header class="card-header">
+            <div><span class="card-kicker">Control de partido</span><h2>Expulsiones</h2></div>
+            <span class="muted">El contador utiliza el reloj ascendente del OCR. Sólo pueden sancionarse jugadores de la convocatoria guardada.</span>
+          </header>
+          <div class="penalty-columns">
+            <article class="penalty-team" data-team="team1">
+              <div class="penalty-heading"><strong id="pp-home-name">Local</strong><span id="pp-home-time">2:00</span></div>
+              <div class="form-row">
+                <label>Jugador convocado<select id="pp-home-player"><option value="">Selecciona jugador</option></select></label>
+                <label>Sanción<select id="pp-home-type"><option>2</option><option>2+2</option><option>2+10</option></select></label>
+                <label>Cumple 2 min<select id="pp-home-serving"><option value="">Mismo jugador</option></select></label>
+              </div>
+              <div class="pp-sync-line" id="pp-home-sync"><i></i><span>Sin expulsión activa</span></div>
+              <div class="action-row">
+                <button class="button danger" data-pp-start="team1">Iniciar expulsión</button>
+                <button class="button secondary" data-pp-end="team1">Cancelar primera</button>
+                <button class="button secondary" data-empty-net="team1">EMPTY NET</button>
+              </div>
+            </article>
+            <article class="penalty-team" data-team="team2">
+              <div class="penalty-heading"><strong id="pp-away-name">Visitante</strong><span id="pp-away-time">2:00</span></div>
+              <div class="form-row">
+                <label>Jugador convocado<select id="pp-away-player"><option value="">Selecciona jugador</option></select></label>
+                <label>Sanción<select id="pp-away-type"><option>2</option><option>2+2</option><option>2+10</option></select></label>
+                <label>Cumple 2 min<select id="pp-away-serving"><option value="">Mismo jugador</option></select></label>
+              </div>
+              <div class="pp-sync-line" id="pp-away-sync"><i></i><span>Sin expulsión activa</span></div>
+              <div class="action-row">
+                <button class="button danger" data-pp-start="team2">Iniciar expulsión</button>
+                <button class="button secondary" data-pp-end="team2">Cancelar primera</button>
+                <button class="button secondary" data-empty-net="team2">EMPTY NET</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card shootout-card">
+          <header class="card-header">
+            <div><span class="card-kicker">Desempate</span><h2>Panel de penaltis</h2></div>
+            <div class="action-row">
+              <button class="button secondary" data-overlay="penalties">Mostrar / ocultar panel</button>
+              <button class="button secondary" id="reset-penalties">Reiniciar tanda</button>
+            </div>
+          </header>
+          <p class="muted shootout-help">Selecciona directamente pendiente, gol o fallo en cada lanzamiento.</p>
+          <div class="shootout-control">
+            <div class="shootout-team-row">
+              <div class="shootout-team-name" id="shootout-home-name">LOCAL</div>
+              <div class="shootout-attempts" id="shootout-home-attempts"></div>
+            </div>
+            <div class="shootout-team-row">
+              <div class="shootout-team-name" id="shootout-away-name">VISITANTE</div>
+              <div class="shootout-attempts" id="shootout-away-attempts"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card events-card">
+          <header class="card-header">
+            <div><span class="card-kicker">Acta en vivo</span><h2>Eventos registrados</h2></div>
+            <button class="button secondary compact-button" id="refresh-events">Actualizar</button>
+          </header>
+          <div class="events-list" id="events-list"><div class="empty-state">Carga un partido online para registrar goles y asistencias.</div></div>
+        </section>
+      </section>
+
+
+      <section class="view" id="view-production">
+        <div class="production-toolbar">
+          <div>
+            <p class="eyebrow">Broadcast switcher</p>
+            <h1>Realización</h1>
+          </div>
+          <div class="production-toolbar-actions">
+            <button class="text-button" id="production-reset-layout" type="button" title="Restablecer tamaños de los paneles">Restablecer paneles</button>
+            <div class="deck-master-state production-master-state"><i></i><span id="deck-status-copy">Emisión limpia</span></div>
+          </div>
+        </div>
+
+        <div class="production-fixed-shell">
+          <div class="production-top-row">
+            <section class="card production-monitor-card">
+              <header class="production-compact-header">
+                <div><span class="card-kicker">PROGRAMA OBS</span><strong>Vista del directo</strong></div>
+                <button class="text-button" id="production-refresh-monitor" type="button">Recargar</button>
+              </header>
+              <div class="production-monitor-stage">
+                <div class="production-monitor-placeholder" id="production-monitor-placeholder">
+                  <span>OBS</span><strong>Sin señal de programa</strong><small>Conecta OBS WebSocket para recibir directamente la escena Program.</small>
+                </div>
+                <img id="production-program-video" alt="Salida de programa de OBS">
+              </div>
+            </section>
+
+            <div class="production-resizer production-resizer-column" id="production-resize-top" data-production-resize="top" role="separator" aria-orientation="vertical" aria-label="Redimensionar monitor y estado del partido" title="Arrastra para cambiar el ancho de los paneles" tabindex="0"></div>
+
+            <aside class="card production-match-card">
+              <div class="production-score-main">
+                <article>
+                  <small id="production-home-name">LOCAL</small>
+                  <strong id="production-home-score">0</strong>
+                </article>
+                <div class="production-clock-main">
+                  <small>TIEMPO OCR</small>
+                  <strong id="production-clock">00:00</strong>
+                  <label class="production-period-control">PERIODO<select id="match-period-control"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+                </div>
+                <article>
+                  <small id="production-away-name">VISITANTE</small>
+                  <strong id="production-away-score">0</strong>
+                </article>
+              </div>
+
+              <div class="production-pp-summary">
+                <article id="production-pp-home">
+                  <div><small>PP LOCAL</small><strong id="production-pp-home-player-display">—</strong></div>
+                  <span id="production-pp-home-time">2:00</span>
+                </article>
+                <article id="production-pp-away">
+                  <div><small>PP VISITANTE</small><strong id="production-pp-away-player-display">—</strong></div>
+                  <span id="production-pp-away-time">2:00</span>
+                </article>
+              </div>
+
+              <div class="production-active-panel compact-production-active">
+                <small>GRÁFICOS ACTIVOS</small>
+                <strong id="production-active-copy">Ninguno</strong>
+              </div>
+            </aside>
+          </div>
+
+          <div class="production-resizer production-resizer-row" id="production-resize-rows" data-production-resize="rows" role="separator" aria-orientation="horizontal" aria-label="Redimensionar zonas superior e inferior" title="Arrastra para cambiar la altura de las zonas" tabindex="0"></div>
+
+          <div class="production-bottom-row" id="production-bottom-row">
+            <section class="card production-actions-card">
+              <header class="production-compact-header">
+                <div><span class="card-kicker">GRÁFICOS Y EVENTOS</span><strong>Accesos rápidos</strong></div>
+                <div class="production-header-buttons"><span class="status-pill replay-connected" id="replay-connection-indicator" hidden></span><button class="button secondary compact-button" id="open-replays" type="button">REPETICIONES <span id="replay-ready-count">0</span></button><button class="button secondary compact-button" id="open-graphics-queue" type="button">Cola de gráficos <span id="graphics-queue-count">0</span></button></div>
+              </header>
+              <div class="production-action-grid" role="group" aria-label="Panel de realización">
+                <div id="production-scene-buttons" class="production-scene-buttons" aria-live="polite"></div>
+                <button class="streamdeck-key production-action-key" data-overlay="scoreboard"><span>SC</span><b>Marcador</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="prematch"><span>PM</span><b>Prematch</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="intermission"><span>IN</span><b>Intermission</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="lineups" data-lineup-team="team1"><span>L1</span><b>Alineación local</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="lineups" data-lineup-team="team2"><span>L2</span><b>Alineación visitante</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="top_scorers"><span>TOP</span><b>Puntuadores</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="standings"><span>CL</span><b>Clasificación</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key production-profile-key" data-player-profile-team="team1"><span>P1</span><b>Jugador local</b><small data-profile-deck-state>FICHA</small></button>
+                <button class="streamdeck-key production-action-key production-profile-key" data-player-profile-team="team2"><span>P2</span><b>Jugador visitante</b><small data-profile-deck-state>FICHA</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="penalties"><span>PE</span><b>Penaltis</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key" data-overlay="bottom_bar"><span>BB</span><b>Bottom bar</b><small data-deck-state>LISTO</small></button>
+                <button class="streamdeck-key production-action-key production-goal-key" data-register-goal="team1"><span>G1</span><b>Gol local</b><small>ACTA</small></button>
+                <button class="streamdeck-key production-action-key production-goal-key" data-register-goal="team2"><span>G2</span><b>Gol visitante</b><small>ACTA</small></button>
+                <button class="streamdeck-key production-action-key production-highlight-key" id="secretariatdeck-highlight" type="button" hidden><span>MK</span><b>MARCAR</b><small>REPLAY</small></button>
+                <button class="streamdeck-key production-action-key production-penalty-key" data-pp-start="team1" data-pp-context="production"><span>2L</span><b>Expulsión local</b><small>PP</small></button>
+                <button class="streamdeck-key production-action-key production-penalty-key" data-pp-start="team2" data-pp-context="production"><span>2V</span><b>Expulsión visitante</b><small>PP</small></button>
+                <button class="streamdeck-key production-action-key" data-empty-net="team1"><span>EN1</span><b>Empty Net local</b><small>PORTERO</small></button>
+                <button class="streamdeck-key production-action-key" data-empty-net="team2"><span>EN2</span><b>Empty Net visitante</b><small>PORTERO</small></button>
+                <button class="streamdeck-key production-action-key production-clear-key" type="button" data-hide-all><span>CLR</span><b>Limpiar todo</b><small>MASTER</small></button>
+              </div>
+            </section>
+
+            <div class="production-resizer production-resizer-column production-bottom-resizer" id="production-resize-bottom" data-production-resize="bottom" role="separator" aria-orientation="vertical" aria-label="Redimensionar accesos y expulsiones activas" title="Arrastra para repartir el espacio" tabindex="0" hidden></div>
+
+            <section class="card production-quick-pp-card" id="production-quick-pp-card" hidden>
+              <header class="production-compact-header">
+                <div><span class="card-kicker">EXPULSIONES ACTIVAS</span><strong>Cancelar rápidamente</strong></div>
+              </header>
+              <div class="production-quick-pp-list production-pp-cancel-list">
+                <article class="production-quick-pp-team" id="production-quick-pp-home" hidden>
+                  <div class="production-quick-pp-title"><strong>LOCAL</strong><span id="production-pp-home-status">Sin PP</span></div>
+                  <button class="button secondary production-cancel-pp" data-pp-end="team1">Cancelar PP local</button>
+</article>
+                <article class="production-quick-pp-team" id="production-quick-pp-away" hidden>
+                  <div class="production-quick-pp-title"><strong>VISITANTE</strong><span id="production-pp-away-status">Sin PP</span></div>
+                  <button class="button secondary production-cancel-pp" data-pp-end="team2">Cancelar PP visitante</button>
+</article>
+              </div>
+            </section>
+
+            <section class="card production-workflow-card" id="production-workflow-card" hidden>
+              <header class="production-workflow-header">
+                <div>
+                  <span class="card-kicker" id="production-workflow-kicker">EVENTO</span>
+                  <h2 id="production-workflow-title">Selecciona jugador</h2>
+                  <p id="production-workflow-help">Toda la convocatoria disponible.</p>
+                </div>
+                <div class="production-workflow-controls">
+                  <button class="button secondary" id="production-workflow-back" type="button" hidden>Volver</button>
+                  <button class="button danger ghost" id="production-workflow-close" type="button">Cancelar</button>
+                </div>
+              </header>
+              <div class="production-workflow-summary" id="production-workflow-summary"></div>
+              <div class="production-workflow-grid" id="production-workflow-grid"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-team">
+        <div class="page-heading">
+          <div><p class="eyebrow">Preparación de partido</p><h1>Equipo</h1><p>Plantilla, convocatoria y alineación inicial en un único flujo.</p></div>
+          <button class="button primary" id="save-attendance">Guardar convocatoria</button>
+        </div>
+        <div class="team-workspace">
+          <section class="card roster-card" data-roster="team1">
+            <header class="card-header"><div><span class="card-kicker">LOCAL</span><h2 id="roster-home-title">Equipo local</h2></div><span class="count-badge" id="roster-home-count">0</span></header>
+            <div class="roster-list" id="roster-home-list"><div class="empty-state">Carga un partido para ver la plantilla.</div></div>
+          </section>
+          <section class="card lineup-editor">
+            <header class="card-header"><div><span class="card-kicker" id="formation-kicker">Quinteto inicial</span><h2 id="formation-title">Selección de titulares</h2></div></header>
+            <div class="starter-tabs"><button class="is-active" data-starter-team="team1">Local</button><button data-starter-team="team2">Visitante</button></div>
+            <div class="formation" id="formation-editor">
+              <label class="slot forward left"><span>DEL IZQ</span><select data-slot="forward_left"></select></label>
+              <label class="slot forward right"><span>DEL DER</span><select data-slot="forward_right"></select></label>
+              <label class="slot centre"><span>MED</span><select data-slot="centre"></select></label>
+              <label class="slot defender left"><span>DEF IZQ</span><select data-slot="defender_left"></select></label>
+              <label class="slot defender right"><span>DEF DER</span><select data-slot="defender_right"></select></label>
+              <label class="slot goalkeeper"><span>POR</span><select data-slot="goalkeeper"></select></label>
+            </div>
+          </section>
+          <section class="card roster-card" data-roster="team2">
+            <header class="card-header"><div><span class="card-kicker">VISITANTE</span><h2 id="roster-away-title">Equipo visitante</h2></div><span class="count-badge" id="roster-away-count">0</span></header>
+            <div class="roster-list" id="roster-away-list"><div class="empty-state">Carga un partido para ver la plantilla.</div></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-statistics">
+        <div class="page-heading">
+          <div><p class="eyebrow">Contenido editorial</p><h1>Estadísticas</h1><p>Prepara y envía datos a emisión sin abandonar el contexto del partido.</p></div>
+          <button class="button primary" id="refresh-statistics">Actualizar desde Supabase</button>
+        </div>
+        <div class="stats-layout">
+          <section class="card stats-control-card">
+            <div class="stats-icon">XI</div><div><h2>Alineaciones</h2><p>Alineación inicial, convocados y entrenador.</p></div>
+            <div class="split-actions"><button class="button secondary" data-show-lineup="team1">Local</button><button class="button secondary" data-show-lineup="team2">Visitante</button></div>
+          </section>
+          <section class="card stats-control-card">
+            <div class="stats-icon">01</div><div><h2>Máximos puntuadores</h2><p>Comparativa de goles, asistencias y puntos.</p></div>
+            <button class="button secondary" data-overlay="top_scorers">Mostrar / ocultar</button>
+          </section>
+          <section class="card stats-control-card">
+            <div class="stats-icon">#</div><div><h2>Clasificación</h2><p>Posición, puntos, goles y diferencia.</p></div>
+            <button class="button secondary" data-overlay="standings">Mostrar / ocultar</button>
+          </section>
+          <section class="card stats-control-card player-profile-control">
+            <div class="stats-icon">P</div>
+            <div class="player-profile-control-copy"><h2>Estadísticas de jugador</h2><p>Ficha individual con partidos, goles, asistencias y datos personales.</p></div>
+            <div class="player-profile-fields">
+              <label class="field"><span>Equipo</span><select id="player-profile-team"><option value="team1">Local</option><option value="team2">Visitante</option></select></label>
+              <label class="field"><span>Jugador</span><select id="player-profile-player"><option value="">Carga un partido</option></select></label>
+            </div>
+            <div class="player-profile-actions">
+              <button class="button secondary" id="refresh-player-profile">Actualizar ficha</button>
+              <button class="button primary" id="show-player-profile">Mostrar en emisión</button>
+              <button class="button secondary" id="hide-player-profile">Ocultar</button>
+            </div>
+            <div class="player-profile-preview" id="player-profile-preview">
+              <strong>Sin ficha seleccionada</strong><span>Selecciona un jugador para consultar sus estadísticas.</span>
+            </div>
+          </section>
+        </div>
+        <section class="card standings-card">
+          <header class="card-header"><div><span class="card-kicker">Vista previa</span><h2>Clasificación disponible</h2></div></header>
+          <div class="standings-table" id="standings-table"><div class="empty-state">Carga un partido online para obtener la clasificación.</div></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-ocr">
+        <div class="page-heading">
+          <div><p class="eyebrow">Captura de marcador</p><h1>OCR</h1><p>Selecciona la ventana, dibuja las regiones y controla el lector.</p></div>
+          <div class="split-actions">
+            <button class="button secondary" id="refresh-windows">Actualizar fuentes</button>
+            <button class="button primary" id="start-ocr">Iniciar OCR</button>
+            <button class="button secondary" id="stop-ocr">Detener</button>
+          </div>
+        </div>
+        <div class="ocr-layout">
+          <section class="card ocr-preview-card">
+            <header class="card-header"><div><span class="card-kicker">Fuente</span><h2>Vídeo del marcador</h2></div></header>
+            <div class="window-picker"><select id="ocr-window"><option value="">Actualizar fuentes</option></select></div>
+            <div class="ocr-source-settings">
+              <label class="field ocr-poll-field">Intervalo de lectura (ms)<input id="ocr-poll" type="number" min="80" max="10000"></label>
+              <button class="button primary" id="save-ocr">Guardar configuración</button>
+            </div>
+            <div class="ocr-editor-toolbar">
+              <div class="ocr-field-selector" role="group" aria-label="Región OCR activa">
+                <button type="button" class="is-active" data-ocr-field="team1_score">Local</button>
+                <button type="button" data-ocr-field="time">Tiempo</button>
+                <button type="button" data-ocr-field="team2_score">Visitante</button>
+              </div>
+              <div class="ocr-toolbar-actions">
+                <button class="button secondary compact-button" id="edit-ocr-perspective" type="button">Ajustar perspectiva</button>
+                <button class="button secondary compact-button" id="reset-ocr-perspective" type="button">Quitar perspectiva</button>
+                <button class="button secondary compact-button" id="capture-ocr-preview">Capturar preview</button>
+              </div>
+            </div>
+            <div class="ocr-perspective-help" id="ocr-perspective-help">La perspectiva está desactivada. Si la cámara ve el marcador ladeado, selecciona sus cuatro esquinas.</div>
+            <div class="ocr-canvas-wrap" id="ocr-canvas-wrap">
+              <div class="ocr-empty" id="ocr-empty"><span>OCR</span><strong id="ocr-current-window">Sin fuente seleccionada</strong><small>Selecciona una ventana o cámara, captura un preview y arrastra sobre cada valor del marcador.</small></div>
+              <img id="ocr-preview-image" alt="Preview de la ventana OCR">
+              <canvas id="ocr-region-canvas"></canvas>
+            </div>
+            <div class="ocr-runtime-status"><i id="ocr-runtime-dot"></i><strong id="ocr-runtime-copy">OCR detenido</strong><span id="ocr-runtime-detail">El reloj y el resultado se actualizarán al iniciar.</span></div>
+          </section>
+          <section class="card readings-card">
+            <header class="card-header"><div><span class="card-kicker">Última lectura</span><h2>Valores</h2></div></header>
+            <div class="reading-grid">
+              <div><small>LOCAL</small><strong id="ocr-home-reading">0</strong><span id="ocr-home-confidence">—</span></div>
+              <div><small>TIEMPO</small><strong id="ocr-time-reading">00:00</strong><span id="ocr-time-confidence">—</span></div>
+              <div><small>VISITANTE</small><strong id="ocr-away-reading">0</strong><span id="ocr-away-confidence">—</span></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view settings-view" id="view-settings">
+        <div class="page-heading settings-page-heading">
+          <div><p class="eyebrow">Preferencias</p><h1>Configuración</h1><p>Cuenta, privacidad, OBS, atajos, idioma y apariencia desde una única pantalla.</p></div>
+          <div class="settings-heading-actions">
+            <button class="button secondary" id="settings-back-button" type="button">Volver</button>
+            <span class="settings-account-pill" id="settings-account-scope">Configuración local</span>
+            <button class="button secondary" id="reset-appearance" type="button">Restablecer overlay</button>
+            <button class="button primary" id="save-settings" type="button">Guardar configuración</button>
+          </div>
+        </div>
+
+        <div class="settings-dashboard">
+          <section class="card settings-section settings-general-card">
+            <header class="card-header"><div><span class="card-kicker">General</span><h2>Idioma y tema</h2></div></header>
+            <div class="settings-section-body settings-two-columns">
+              <label class="field">Idioma
+                <select id="settings-language"><option value="es">Español</option><option value="en">English</option><option value="sv">Sueco</option><option value="cs">Checo</option><option value="fi">Finés</option><option value="de">Alemán</option></select>
+                <small class="field-help">Se aplica a la aplicación y a los textos del overlay.</small>
+              </label>
+              <label class="field">Tema de la aplicación
+                <select id="settings-app-theme"><option value="system">Sistema</option><option value="dark">Oscuro</option><option value="light">Claro</option></select>
+                <small class="field-help">Sistema sigue automáticamente el modo claro u oscuro del ordenador. El tema nunca afecta al overlay.</small>
+              </label>
+            </div>
+          </section>
+
+          <section class="card settings-section settings-privacy-card">
+            <header class="card-header"><div><span class="card-kicker">Privacidad</span><h2>Mejora colaborativa del OCR</h2></div><span class="account-save-badge">VOLUNTARIO</span></header>
+            <div class="settings-section-body settings-privacy-layout">
+              <label class="check-row privacy-sharing-toggle">
+                <input id="settings-ocr-sharing" type="checkbox">
+                <span>Compartir muestras OCR difíciles para ayudar a mejorar SecretariatPro</span>
+              </label>
+              <p class="settings-privacy-copy">Si está activado, sólo se envían pequeños recortes del marcador correspondientes a Local, Tiempo o Visitante cuando la lectura resulta difícil. No se envían vídeo completo, audio, nombres de equipos, jugadores, pabellón ni datos del partido.</p>
+              <div class="privacy-sharing-status" id="settings-ocr-sharing-status">La compartición está desactivada.</div>
+              <div class="privacy-sharing-status privacy-delivery-status" id="settings-ocr-delivery-status">Envío OCR: sin actividad.</div>
+            </div>
+          </section>
+
+          <section class="card settings-section settings-obs-card">
+            <header class="card-header"><div><span class="card-kicker">Integración</span><h2>OBS WebSocket</h2></div><span class="account-save-badge">POR CUENTA</span></header>
+            <div class="settings-section-body settings-obs-grid">
+              <div class="overlay-source-help">
+                <strong>Fuente de navegador para tus directos</strong>
+                <p>En OBS o en otro programa de emisión, añade una fuente de navegador de 1920 × 1080 y pega este enlace. Mantén SecretariatPro abierto en este ordenador.</p>
+                <code id="overlay-source-url">http://127.0.0.1:8765/overlay.html</code>
+                <button class="button secondary compact-button" data-copy-overlay-url type="button">Copiar enlace del overlay</button>
+              </div>
+              <label class="field">Host<input id="settings-obs-host"></label>
+              <label class="field">Puerto<input id="settings-obs-port" type="number"></label>
+              <label class="field">Contraseña<input id="settings-obs-password" type="password" placeholder="Sin cambios si queda vacía"></label>
+              <label class="field settings-projector-field" hidden>Captura alternativa de proyector OBS
+                <div class="projector-window-picker"><select id="settings-projector-window"><option value="">Buscar ventanas abiertas…</option></select><button class="button secondary compact-button" id="refresh-obs-windows" type="button">Actualizar</button></div>
+                <small class="field-help">Compatibilidad con versiones anteriores. El monitor actual recibe Program directamente por WebSocket.</small>
+              </label>
+              <label class="check-row"><input id="settings-obs-auto" type="checkbox"><span>Conectar automáticamente</span></label>
+              <label class="check-row"><input id="settings-replay-auto-goals" type="checkbox"><span>Guardar replay automáticamente al registrar un gol</span></label>
+              <label class="field">Post-roll del replay (segundos)<input id="settings-replay-post-roll" type="number" min="0" max="20" step="1" value="4"></label>
+              <div class="split-actions settings-obs-actions"><button class="button secondary" id="connect-obs">Conectar OBS</button><button class="button secondary" id="disconnect-obs">Desconectar</button></div>
+            </div>
+          </section>
+
+          <section class="card settings-section settings-tablet-card">
+            <header class="card-header"><div><span class="card-kicker">Acceso remoto</span><h2>Tablet / iPad</h2></div><span class="account-save-badge">MISMA RED</span></header>
+            <div class="settings-section-body settings-tablet-layout">
+              <div class="tablet-qr-frame"><img id="tablet-access-qr" alt="Código QR para abrir SecretariatPro en tablet o iPad"></div>
+              <div class="tablet-access-copy">
+                <h3>Abre SecretariatDeck desde la tablet</h3>
+                <p>Conecta el iPad o la tablet a la misma red Wi-Fi y escanea el QR. OBS seguirá conectado únicamente en este ordenador; no tendrás que configurarlo otra vez.</p>
+                <label class="field">Red local<select id="tablet-network"></select></label><p id="tablet-network-status" role="status"></p>
+                <code class="tablet-access-url" id="tablet-access-url">Calculando dirección…</code>
+                <div class="tablet-access-actions">
+                  <button class="button secondary" id="copy-tablet-url" type="button">Copiar dirección</button>
+                  <button class="button secondary" id="refresh-tablet-access" type="button">Actualizar QR</button>
+                </div>
+                <small class="field-help">El QR caduca en 5 minutos y solo empareja una tablet. Después la tablet conserva su propia sesión durante 12 horas.</small>
+                <div id="tablet-sessions" class="tablet-sessions" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card settings-section settings-shortcuts-card">
+            <header class="card-header"><div><span class="card-kicker">Control rápido</span><h2>Atajos de teclado</h2></div><small>Haz clic en un campo y pulsa la combinación</small></header>
+            <div class="settings-section-body">
+              <div class="shortcut-grid">
+                <label class="field"><span>Marcador</span><input id="shortcut-scoreboard" placeholder="Alt+F1" readonly></label>
+                <label class="field"><span>Prematch</span><input id="shortcut-prematch" placeholder="Alt+F2" readonly></label>
+                <label class="field"><span>Intermission</span><input id="shortcut-intermission" placeholder="Alt+F3" readonly></label>
+                <label class="field"><span>Alineación local</span><input id="shortcut-lineups-home" placeholder="Alt+F4" readonly></label>
+                <label class="field"><span>Alineación visitante</span><input id="shortcut-lineups-away" placeholder="Alt+F5" readonly></label>
+                <label class="field"><span>Máximos puntuadores</span><input id="shortcut-top-scorers" placeholder="Alt+F6" readonly></label>
+                <label class="field"><span>Clasificación</span><input id="shortcut-standings" placeholder="Alt+F7" readonly></label>
+                <label class="field"><span>Bottom bar</span><input id="shortcut-bottom-bar" placeholder="Alt+F8" readonly></label>
+                <label class="field"><span>Penaltis</span><input id="shortcut-penalties" placeholder="Alt+F9" readonly></label>
+                <label class="field"><span>Limpiar emisión</span><input id="shortcut-hide-all" placeholder="Alt+F10" readonly></label>
+              </div>
+              <p class="drawer-note">Esc cancela la captura. Supr o Retroceso elimina el atajo. Las combinaciones duplicadas se rechazan.</p>
+            </div>
+          </section>
+
+          <section class="card settings-section settings-appearance-card" id="settings-appearance-card">
+            <header class="card-header"><div><span class="card-kicker">Personalización</span><h2>Colores del overlay</h2></div><span class="account-save-badge">POR CUENTA</span></header>
+            <div class="settings-appearance-layout overlay-only-appearance">
+              <div class="appearance-controls">
+                <details open><summary>Marcador</summary><div class="color-field-grid">
+                  <label>Fondo<input type="color" data-appearance-path="scoreboard.background" id="appearance-scoreboard-background"></label>
+                  <label>Nombres<input type="color" data-appearance-path="scoreboard.name_box" id="appearance-scoreboard-name-box"></label>
+                  <label>Texto<input type="color" data-appearance-path="scoreboard.text" id="appearance-scoreboard-text"></label>
+                </div></details>
+                <details open><summary>Bottom bar</summary><div class="color-field-grid">
+                  <label>Cuerpo<input type="color" data-appearance-path="bottom_bar.body" id="appearance-bottom-body"></label>
+                  <label>Tiempo y resultado<input type="color" data-appearance-path="bottom_bar.middle" id="appearance-bottom-middle"></label>
+                  <label>Texto<input type="color" data-appearance-path="bottom_bar.text" id="appearance-bottom-text"></label>
+                  <label>Texto secundario<input type="color" data-appearance-path="bottom_bar.secondary_text" id="appearance-bottom-secondary-text"></label>
+                </div></details>
+                <details open><summary>Paneles del overlay</summary><div class="color-field-grid">
+                  <label>Fondo<input type="color" data-appearance-path="panels.background" id="appearance-panels-background"></label>
+                  <label>Superficie<input type="color" data-appearance-path="panels.surface" id="appearance-panels-surface"></label>
+                  <label>Acento<input type="color" data-appearance-path="panels.accent" id="appearance-panels-accent"></label>
+                  <label>Texto<input type="color" data-appearance-path="panels.text" id="appearance-panels-text"></label>
+                </div></details>
+              </div>
+              <div class="appearance-previews">
+                <article class="appearance-preview scoreboard-preview" id="settings-scoreboard-preview"><span>MARCADOR</span><div class="preview-scoreboard"><i></i><b>LOCAL</b><strong>3</strong><em>12:45</em><strong>2</strong><b>VISITANTE</b><i></i></div></article>
+                <article class="appearance-preview bottom-preview" id="settings-bottom-preview"><span>BOTTOM BAR</span><div class="preview-bottom-bar"><i></i><div class="preview-bottom-logo">LOGO</div><div class="preview-bottom-score"><small>12:45</small><b>3–2</b></div><div class="preview-bottom-copy"><strong>#17 GARCÍA</strong><small>#8 ASISTENCIA</small></div></div></article>
+                <article class="appearance-preview panel-preview" id="settings-panel-preview"><span>PANELES</span><div class="preview-panel"><header>INTERMISSION</header><main><b>LOCAL</b><strong>3–2</strong><b>VISITANTE</b></main></div></article>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="login-modal" hidden>
+    <section class="modal-card login-card account-card">
+      <button class="modal-close" data-close="login-modal">×</button>
+
+      <div id="signed-out-account">
+        <div class="modal-brand"><img class="brand-logo brand-logo--modal" src="/app/sp_logo.png" alt="SP"><div><strong>Acceso de realizador</strong><small>Control de emisión</small></div></div>
+        <form id="login-form">
+          <label class="field">Correo electrónico<input id="login-email" type="email" autocomplete="username" required></label>
+          <label class="field">Contraseña<input id="login-password" type="password" autocomplete="current-password" required></label>
+          <button class="button primary full" type="submit">Iniciar sesión</button>
+        </form>
+        <button class="forgot-password-button" id="forgot-password-button" type="button">Olvidé mi contraseña</button>
+        <p class="modal-note">Debes iniciar sesión con una membresía activa para utilizar SecretariatPro.</p>
+      </div>
+
+      <div id="account-panel" class="account-panel" hidden>
+        <header class="account-profile-header">
+          <div class="account-avatar-shell">
+            <img id="account-avatar-preview" alt="Foto de perfil" hidden>
+            <span id="account-avatar-initials">?</span>
+            <button class="account-avatar-edit" id="account-avatar-button" type="button" aria-label="Cambiar foto de perfil">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.2-2h7.6l1.2 2h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>
+            </button>
+            <input id="account-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          </div>
+          <div class="account-profile-copy">
+            <span class="card-kicker">Mi cuenta</span>
+            <h2 id="account-profile-title">Operador</h2>
+            <p id="account-profile-email">—</p>
+          </div>
+        </header>
+
+        <form id="account-profile-form" class="account-profile-form">
+          <label class="field">Nombre visible<input id="account-display-name" type="text" autocomplete="name" maxlength="80" required></label>
+          <label class="field">Correo electrónico<input id="account-email" type="email" readonly></label>
+          <label class="field">Espacio de trabajo<select id="account-workspace-select"></select></label>
+          <div class="account-workspace-summary" id="account-workspace-summary"></div>
+          <div class="account-password-state">
+            <div><span>Contraseña</span><strong>Protegida</strong></div>
+            <small>La contraseña actual nunca puede consultarse. Sólo puede sustituirse por una nueva.</small>
+          </div>
+          <div class="account-profile-actions">
+            <button class="button primary" type="submit">Guardar perfil</button>
+            <button class="button secondary" id="account-remove-avatar" type="button">Eliminar foto</button>
+          </div>
+        </form>
+
+        <section class="account-security-card">
+          <div>
+            <span class="card-kicker">Seguridad</span>
+            <h3>Cambiar contraseña</h3>
+          </div>
+          <form id="account-password-form">
+            <label class="field">Nueva contraseña<input id="account-new-password" type="password" autocomplete="new-password" minlength="8" required></label>
+            <label class="field">Repetir contraseña<input id="account-confirm-password" type="password" autocomplete="new-password" minlength="8" required></label>
+            <button class="button secondary full" type="submit">Actualizar contraseña</button>
+          </form>
+        </section>
+
+        <button class="button danger-soft full" id="logout-button" type="button">Cerrar sesión</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="match-modal" hidden>
+    <section class="modal-card match-card">
+      <button class="modal-close" data-close="match-modal">×</button>
+      <span class="card-kicker">Contexto global</span><h2>Seleccionar partido</h2>
+      <label class="field">Competición<select id="competition-select"><option value="">Inicia sesión para cargar competiciones</option></select></label>
+      <label class="field">Partido<select id="match-select"><option value="">Selecciona una competición</option></select></label>
+      <button class="button primary full" id="load-match-button">Cargar partido</button>
+      <p class="modal-note">El partido seleccionado alimentará Directo, Equipo, Estadísticas y overlays.</p>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="graphics-queue-modal" hidden>
+    <section class="modal-card graphics-queue-card" aria-label="Cola de gráficos">
+      <button class="modal-close" data-close="graphics-queue-modal" type="button" aria-label="Cerrar">×</button>
+      <span class="card-kicker">REALIZACIÓN</span><h2>Cola de gráficos</h2>
+      <p class="modal-note">Prepara el siguiente gráfico y compruébalo antes de enviarlo a emisión.</p>
+      <div class="graphics-queue-add">
+        <label class="field">Gráfico<select id="graphics-cue-panel">
+          <option value="scoreboard">Marcador</option><option value="prematch">Previa</option>
+          <option value="intermission">Descanso</option><option value="lineups">Alineación</option>
+          <option value="top_scorers">Puntuadores</option><option value="standings">Clasificación</option>
+          <option value="penalties">Penaltis</option><option value="bottom_bar">Barra inferior</option>
+        </select></label>
+        <label class="field" id="graphics-cue-team-field" hidden>Equipo<select id="graphics-cue-team"><option value="team1">Local</option><option value="team2">Visitante</option></select></label>
+        <label class="field">Nombre de la entrada<input id="graphics-cue-label" maxlength="80" placeholder="Opcional"></label>
+        <label class="field graphics-duration-field">Retirar tras<select id="graphics-cue-duration"><option value="0">Manual</option><option value="5">5 s</option><option value="8">8 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></label>
+        <button class="button secondary" id="graphics-cue-add" type="button">Añadir a la cola</button>
+      </div>
+      <div class="graphics-queue-body">
+        <div><strong>Siguiente en emisión</strong><div class="graphics-cue-preview-stage"><iframe id="graphics-cue-preview" class="overlay-fit-frame" title="Vista previa del siguiente gráfico"></iframe></div><button class="button primary full" id="graphics-cue-take" type="button" disabled>Lanzar siguiente gráfico</button></div>
+        <div><div class="graphics-list-heading"><strong>Orden de emisión</strong><button class="text-button" id="graphics-cue-clear" type="button">Vaciar</button></div><div id="graphics-cue-list" class="graphics-cue-list" aria-live="polite">La cola está vacía.</div></div>
+      </div>
+      <section class="graphics-sequences-panel">
+        <div class="graphics-list-heading"><div><strong>Secuencias personales</strong><small>Se guardan en la cuenta del realizador.</small></div><button class="button secondary compact-button" id="graphics-sequence-new" type="button">Nueva secuencia</button></div>
+        <div id="graphics-sequence-editor" class="graphics-sequence-editor" hidden>
+          <label class="field">Nombre<input id="graphics-sequence-name" maxlength="80"></label>
+          <div id="graphics-sequence-steps" class="graphics-sequence-steps"></div>
+          <div class="action-row"><button class="button secondary" id="graphics-sequence-add-step" type="button">Añadir gráfico</button><button class="button primary" id="graphics-sequence-save" type="button">Guardar secuencia</button><button class="text-button" id="graphics-sequence-cancel" type="button">Cancelar</button></div>
+        </div>
+        <div id="graphics-sequence-list" class="graphics-sequence-list"><div class="empty-state">Todavía no hay secuencias personales.</div></div>
+      </section>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="replay-modal" hidden>
+    <section class="modal-card replay-card" aria-label="Replays y highlights">
+      <button class="modal-close" id="replay-modal-close" data-close="replay-modal" type="button" aria-label="Cerrar">×</button>
+      <span class="card-kicker">REPLAY OBS</span><h2>REPETICIONES</h2>
+      <p class="modal-note replay-note">Cada evento se guarda como un vídeo independiente con sus cámaras y velocidades.</p>
+      <div class="replay-toolbar">
+        <span class="status-pill" id="replay-buffer-status"><i></i>Búfer detenido</span>
+        <button class="button secondary" id="replay-buffer-toggle" type="button">Iniciar búfer</button>
+        <button class="button primary" id="replay-mark" type="button">MARCAR</button>
+      </div>
+      <div class="replay-plugin-controls" id="replay-plugin-controls" hidden>
+        <span id="replay-plugin-detail">Plugin multicámara</span>
+        <button class="button primary" id="replay-take" type="button">Lanzar replay</button>
+        <button class="button secondary" id="replay-previous-camera" type="button">CAM anterior</button>
+        <button class="button secondary" id="replay-next-camera" type="button">CAM siguiente</button>
+        <button class="button secondary" id="replay-out" type="button">Volver a directo</button>
+      </div>
+      <section id="replay-label-picker" hidden><h3>Etiqueta del evento</h3><div id="replay-label-options" class="replay-choice-grid"></div><div class="action-row"><label>Etiqueta personalizada<input id="replay-custom-label" maxlength="80"></label><button class="button primary" id="replay-use-label" type="button">Continuar</button></div></section>
+      <section class="replay-composer" id="replay-composer" hidden>
+        <div class="replay-composer-heading"><div><span class="card-kicker">MONTAJE RÁPIDO</span><h3 id="replay-composer-title">Componer repetición</h3></div><span id="replay-composer-state">Esperando cámaras…</span></div>
+        <div id="replay-guide"></div>
+        <details class="replay-template-editor"><summary>Plantillas personales</summary><div class="action-row"><select id="replay-template-select"></select><input id="replay-template-name" maxlength="80" placeholder="Nombre"><label><input id="replay-template-default" type="checkbox"> Predeterminada</label></div><div class="action-row"><button class="text-button" data-template-action="create">Crear</button><button class="text-button" data-template-action="update">Guardar cambios</button><button class="text-button" data-template-action="duplicate">Duplicar</button><button class="text-button" data-template-action="delete">Eliminar</button></div></details>
+        <div id="replay-composer-segments" class="replay-composer-segments"></div>
+        <div class="action-row"><button class="button secondary" id="replay-composer-add" type="button">Añadir plano</button><button class="button secondary" id="replay-composer-save" type="button">Guardar vídeo del evento</button><button class="button primary" id="replay-composer-take" type="button">LANZAR + GUARDAR</button><button class="text-button" id="replay-goal-skip" type="button" hidden>SIN REPETICIÓN</button></div>
+      </section>
+      <div id="replay-library-area"><div class="action-row"><input id="replay-search" type="search" placeholder="Buscar repetición"><select id="replay-filter"></select></div><div id="replay-preview" hidden><video id="replay-preview-video" controls preload="metadata"></video><p id="replay-preview-sequence"></p></div>
+      <div class="replay-list" id="replay-list"><div class="empty-state">Todavía no hay clips guardados.</div></div>
+      <div class="replay-export">
+        <label class="field">Periodo<select id="replay-period-filter"><option value="">Todos</option></select></label>
+        <label class="field">Nombre del vídeo<input id="replay-highlight-title" maxlength="120" value="Highlights entretiempo"></label>
+        <button class="button primary" id="replay-build-highlights" type="button">Generar vídeo seleccionado</button>
+      </div>
+      <button class="button secondary" id="replay-open-folder" type="button">Abrir carpeta de vídeos</button><button class="button secondary" id="replay-undo-delete" type="button" hidden>Deshacer eliminación</button><div class="replay-exports" id="replay-exports"></div></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="goal-modal" hidden>
+    <section class="modal-card goal-card">
+      <button class="modal-close" data-close="goal-modal">×</button>
+      <span class="card-kicker">Evento de partido</span><h2 id="goal-modal-title">Registrar gol</h2>
+      <form id="goal-form">
+        <input id="goal-team" type="hidden">
+        <label class="field">Goleador<select id="goal-scorer" required></select></label>
+        <label class="field">Asistencia<select id="goal-assistant"><option value="">Sin asistencia</option></select></label>
+        <label class="field">Tiempo<input id="goal-time" placeholder="OCR actual"></label>
+        <label class="check-row goal-score-check" hidden><input id="goal-increment-score" type="checkbox"><span>Incrementar también el resultado manual</span></label>
+        <p class="modal-note" id="goal-source-note">En modo OCR el gol se registra en el acta, pero no modifica el resultado.</p>
+        <button class="button primary full" type="submit">Registrar gol</button>
+      </form>
+    </section>
+  </div>
+
+
+  <div class="modal-backdrop" id="finish-match-modal" hidden>
+    <section class="modal-card finish-match-card">
+      <button class="modal-close" data-close="finish-match-modal">×</button>
+      <span class="card-kicker">Cierre de partido</span>
+      <h2>Confirmar resultado final</h2>
+      <p class="finish-match-summary" id="finish-match-summary">Comprueba el resultado antes de cerrar el partido.</p>
+      <form id="finish-match-form">
+        <div class="finish-score-grid">
+          <label class="field"><span id="finish-home-name">LOCAL</span><input id="finish-home-score" type="number" min="0" max="999" inputmode="numeric" required></label>
+          <label class="field"><span id="finish-away-name">VISITANTE</span><input id="finish-away-score" type="number" min="0" max="999" inputmode="numeric" required></label>
+        </div>
+        <p class="modal-note">Al confirmar, el partido se marcará como finalizado y este resultado alimentará clasificación y estadísticas.</p>
+        <button class="button danger-soft full" id="confirm-finish-match" type="submit">Confirmar resultado final</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script src="/app/app.js?v=phase74-coach-tag3" type="module"></script>
+</body>
+</html>

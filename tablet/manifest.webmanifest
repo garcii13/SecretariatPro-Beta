@@ -1,0 +1,14 @@
+{
+  "name": "SecretariatDeck",
+  "short_name": "SP Deck",
+  "start_url": "/tablet/",
+  "scope": "/tablet/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080b10",
+  "theme_color": "#080b10",
+  "description": "Mando remoto SecretariatDeck de SecretariatPro Live",
+  "icons": [
+    {"src":"/app/sp_logo.png","sizes":"1254x1254","type":"image/png","purpose":"any maskable"}
+  ]
+}

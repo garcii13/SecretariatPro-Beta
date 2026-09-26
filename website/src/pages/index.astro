@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import MediaShowcase from '../components/MediaShowcase.astro';
+import VideoShowcase from '../components/VideoShowcase.astro';
+import logo from '../assets/secretariatpro-logo.png';
+import homeShot from '../assets/debug-home.png';
+import managerlogo from '../assets/secretariatmanager.png';
+import realizacion from '../assets/capturarealizacion.png';
+import ocr from '../assets/capturaocr.png';
+import timeShot from '../assets/debug-time.png';
+import awayShot from '../assets/debug-away.png';
+---
+<BaseLayout>
+  <section class="hero-copy-centered">
+    <div class="shell hero-grid">
+      <div data-reveal>
+        <h1>Todo el partido.<br/><span class="kicker">Una sola plataforma.</span></h1>
+        <p class="lead">SecretariatPro conecta la gestión de la competición con la realización en directo para crear emisiones deportivas más profesionales, consistentes y sencillas.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell">
+      <div data-reveal>
+        <h2>Dos aplicaciones.<br/>Un único flujo de trabajo.</h2>
+        <p class="lead">Manager prepara la competición. Live transforma esa información en una retransmisión conectada, coherente y lista para emitir.</p>
+      </div>
+
+      <div class="grid-2" style="margin-top:46px">
+        <article class="card" data-reveal>
+          <h3>SecretariatPro Live</h3>
+          <p>La emisión bajo control. Marcador, tiempo, expulsiones, gráficos, estadísticas y contenido de partido en una única interfaz.</p>
+            <MediaShowcase
+    image={logo}
+    alt="Logo de SecretariatPro Live"
+    />
+        </article>
+        <article class="card" data-reveal="delay-1">
+          <h3>SecretariatPro Manager</h3>
+          <p>La competición conectada. Equipos, jugadores, temporadas, partidos, usuarios, asignaciones e identidad visual centralizados.</p>
+            <MediaShowcase
+    image={managerlogo}
+    alt="Logo de SecretariatPro Manager"
+    />
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell split">
+      <div data-reveal>
+        <h2>Control del partido.<br/><span class="kicker">Sin perder de vista la emisión.</span></h2>
+        <p class="lead">Las acciones críticas permanecen accesibles durante el directo para que el realizador pueda trabajar con rapidez y mantener el foco en el juego.</p>
+        <div class="feature-line">
+          <span>Marcador</span>
+          <span>Tiempo</span>
+          <span>Expulsiones</span>
+          <span>Gráficos</span>
+        </div>
+      </div>
+
+      <MediaShowcase
+        image={realizacion}
+        alt="Control de tiempo en SecretariatPro Live"
+        title="Control de partido"
+        caption="Tiempo, marcador y acciones críticas en una única interfaz."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell">
+      <div data-reveal>
+        <h2>Del calendario a la emisión.</h2>
+        <p class="lead">La información se crea una vez y acompaña al partido hasta el directo.</p>
+      </div>
+
+      <div class="timeline">
+        {['Crear competición','Crear partido','Asignar realizador','Abrir Live','Emitir','Registrar resultado'].map((step, i) => (
+          <div class="step" data-reveal><span>0{i+1}</span>{step}</div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell split">
+      <div data-reveal>
+        <h2>El marcador físico, conectado a la emisión.</h2>
+        <p class="lead">Live puede leer información del marcador físico mediante OCR para reducir acciones manuales y permitir al realizador concentrarse en el partido.</p>
+      </div>
+
+      <MediaShowcase
+        image={ocr}
+        alt="Interfaz de control OCR de SecretariatPro"
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell">
+      <div data-reveal>
+        <h2>Una identidad visual propia para cada competición.</h2>
+        <p class="lead">Marcador, prematch, intermission, alineaciones y estadísticas comparten colores, logos y estilo definidos desde Manager.</p>
+      </div>
+
+      <div class="grid-4" style="margin-top:42px">
+        <div class="card" data-reveal><h3>Scoreboard</h3><p>Marcador y tiempo integrados en la retransmisión.</p></div>
+        <div class="card" data-reveal><h3>Prepartido</h3><p>Presentación previa construida a partir de los datos del partido.</p></div>
+        <div class="card" data-reveal><h3>Alineaciones</h3><p>Jugadores y rosters conectados directamente con Manager.</p></div>
+        <div class="card" data-reveal><h3>Estadísticas</h3><p>Información adicional para enriquecer la retransmisión.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div data-reveal>
+        <h2>SecretariatPro.<br/><span class="kicker">En funcionamiento.</span></h2>
+        <p class="lead">Del control del partido a la salida gráfica, todo ocurre dentro del mismo flujo de trabajo.</p>
+      </div>
+
+      <div style="margin-top:46px">
+        <VideoShowcase
+            src = '/media/videomuestra.mp4'
+          title="Una retransmisión con SecretariatPro"
+          caption="Control, datos y gráficos trabajando de forma coordinada durante el partido."
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell" data-reveal>
+      <h2>Menos fricción.<br/><span class="kicker">Más control.</span></h2>
+      <div class="grid-4" style="margin-top:42px">
+        <div class="card"><h3>Automatización</h3><p>Reduce tareas repetitivas durante el directo.</p></div>
+        <div class="card"><h3>Consistencia</h3><p>Misma identidad y datos en todos los partidos.</p></div>
+        <div class="card"><h3>Control</h3><p>Gestiona partidos, usuarios y competiciones centralmente.</p></div>
+        <div class="card"><h3>Flexibilidad</h3><p>Adapta SecretariatPro a cada organización.</p></div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

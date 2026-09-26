@@ -1,0 +1,8 @@
+# Constraints verified for PaddleOCR 2.7.3 on macOS ARM64.
+numpy==1.26.4
+opencv-python==4.6.0.66
+opencv-contrib-python==4.6.0.66
+paddlepaddle==2.6.2
+paddleocr==2.7.3
+joblib==1.5.3
+scikit-learn==1.8.0

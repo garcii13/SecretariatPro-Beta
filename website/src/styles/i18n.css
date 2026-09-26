@@ -1,0 +1,27 @@
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.language-link {
+  color: #758ca1;
+  transition: color 0.2s ease;
+}
+
+.language-link:hover,
+.language-link.active {
+  color: var(--aqua);
+}
+
+@media (max-width: 900px) {
+  .language-switcher {
+    margin-left: 0;
+    padding-top: 4px;
+  }
+}

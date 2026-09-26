@@ -1,0 +1,123 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/secretariatpro-logo.png';
+import {
+  getLang,
+  normalisePath,
+  switchLanguagePath
+} from '../lib/i18n';
+
+const current = normalisePath(Astro.url.pathname);
+const lang = getLang(Astro.url.pathname);
+
+const links = lang === 'es'
+  ? [
+      ['/', 'Inicio'],
+      ['/live', 'Live'],
+      ['/manager', 'Manager'],
+      ['/cuenta', 'Mi cuenta']
+    ]
+  : [
+      ['/en/', 'Home'],
+      ['/en/live', 'Live'],
+      ['/en/manager', 'Manager'],
+      ['/en/account', 'My account']
+    ];
+
+const esHref = switchLanguagePath(Astro.url.pathname, 'es');
+const enHref = switchLanguagePath(Astro.url.pathname, 'en');
+---
+
+<header class="site-header">
+  <div class="shell nav-shell">
+    <a
+      href={lang === 'es' ? '/' : '/en/'}
+      class="brand"
+      aria-label={lang === 'es' ? 'SecretariatPro, inicio' : 'SecretariatPro, home'}
+    >
+      <Image
+        src={logo}
+        alt=""
+        width={42}
+        height={42}
+        densities={[1, 2, 3]}
+        format="png"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      />
+      <span>SecretariatPro</span>
+    </a>
+
+    <button
+      class="nav-toggle"
+      aria-controls="main-nav"
+      aria-expanded="false"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+      <span class="sr-only">
+        {lang === 'es' ? 'Abrir navegación' : 'Open navigation'}
+      </span>
+    </button>
+
+    <nav
+      id="main-nav"
+      class="main-nav"
+      aria-label={lang === 'es' ? 'Navegación principal' : 'Main navigation'}
+    >
+      {links.map(([href, label]) => {
+        const normalisedHref = normalisePath(href);
+
+        return (
+          <a
+            href={href}
+            class:list={[
+              'nav-link',
+              current === normalisedHref && 'active'
+            ]}
+          >
+            {label}
+          </a>
+        );
+      })}
+
+      <div
+        class="language-switcher"
+        aria-label={lang === 'es' ? 'Seleccionar idioma' : 'Select language'}
+      >
+        <a
+          href={esHref}
+          hreflang="es"
+          lang="es"
+          class:list={['language-link', lang === 'es' && 'active']}
+        >
+          ES
+        </a>
+
+        <span aria-hidden="true">/</span>
+
+        <a
+          href={enHref}
+          hreflang="en"
+          lang="en"
+          class:list={['language-link', lang === 'en' && 'active']}
+        >
+          EN
+        </a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector('.nav-toggle');
+  const nav = document.querySelector('.main-nav');
+
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    nav?.classList.toggle('open', !open);
+  });
+</script>

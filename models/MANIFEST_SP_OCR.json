@@ -1,0 +1,38 @@
+{
+  "base_release": "68.0.0-beta-rc",
+  "clock": {
+    "name": "SP-OCR v0.7 RC",
+    "file": "spocr_v0.7_hybrid.joblib",
+    "sha256": "7128c3cf7860767aa60ce40875ef292d458d2bcbecb25d70dcdd9badc1feca36",
+    "exact_leading_zero": true,
+    "prior_historical_frozen_correct": 139,
+    "prior_historical_frozen_total": 162,
+    "prior_new_frozen_correct": 44,
+    "prior_new_frozen_total": 45,
+    "match_frozen_correct": 23,
+    "match_frozen_total": 24,
+    "match_frozen_baseline_correct": 21,
+    "match_batch_correct": 99,
+    "match_batch_total": 101,
+    "match_batch_baseline_correct": 77,
+    "regressions": 0
+  },
+  "scores": {
+    "name": "SP-SCORE v0.2",
+    "file": "spscore_v0.2_digits.joblib",
+    "sha256": "2b7e238776ddf11b0f3af3d711616c3bbf144f796d76719097ea1382d8a46d4c",
+    "historical_frozen_correct": 57,
+    "historical_frozen_total": 57,
+    "match_frozen_correct": 15,
+    "match_frozen_total": 15,
+    "match_batch_correct": 116,
+    "match_batch_total": 116,
+    "match_batch_baseline_correct": 71,
+    "regressions": 0
+  },
+  "capture": {
+    "led_phase_frames": 3,
+    "led_phase_gap_ms": 22,
+    "reading_confirmations": 2
+  }
+}

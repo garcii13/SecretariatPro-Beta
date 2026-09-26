@@ -1,0 +1,29 @@
+---
+import { Image } from 'astro:assets';
+const modules = import.meta.glob('../assets/product/*.{png,jpg,jpeg,webp,avif}', { eager: true });
+const items = Object.entries(modules).map(([path, mod]) => {
+  const filename = path.split('/').pop() || 'Producto';
+  const label = filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
+  return { path, image: mod.default, label };
+});
+const { limit = 6 } = Astro.props;
+const visible = items.slice(0, limit);
+---
+{visible.length > 0 ? (
+  <div class="product-gallery">
+    {visible.map((item, index) => (
+      <figure class:list={['media-showcase', index === 0 && 'media-featured']} data-reveal>
+        <div class="media-frame">
+          <Image src={item.image} alt={`Captura real de SecretariatPro: ${item.label}`} widths={[640,960,1280,1600]} sizes="(max-width: 900px) 100vw, 50vw" quality={88} />
+        </div>
+        <figcaption><strong>{item.label}</strong></figcaption>
+      </figure>
+    ))}
+  </div>
+) : (
+  <div class="product-gallery placeholders" data-reveal>
+    <div class="media-placeholder"><span>LIVE</span><strong>Añade una captura real de Live</strong><small>src/assets/product/live-main.png</small></div>
+    <div class="media-placeholder"><span>MANAGER</span><strong>Añade una captura real de Manager</strong><small>src/assets/product/manager-main.png</small></div>
+    <div class="media-placeholder"><span>OVERLAY</span><strong>Añade una captura de la emisión</strong><small>src/assets/product/overlay-match.png</small></div>
+  </div>
+)}

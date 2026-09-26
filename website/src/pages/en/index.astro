@@ -1,0 +1,251 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import MediaShowcase from '../../components/MediaShowcase.astro';
+import VideoShowcase from '../../components/VideoShowcase.astro';
+
+import logo from '../../assets/secretariatpro-logo.png';
+import homeShot from '../../assets/debug-home.png';
+import managerlogo from '../../assets/secretariatmanager.png';
+import realizacion from '../../assets/capturarealizacion.png';
+import ocr from '../../assets/capturaocr.png';
+import timeShot from '../../assets/debug-time.png';
+import awayShot from '../../assets/debug-away.png';
+---
+
+<BaseLayout
+  lang="en"
+  title="SecretariatPro | Sports broadcasting software"
+  description="SecretariatPro connects competition management and live production to create more professional, consistent and straightforward sports broadcasts."
+>
+  <section class="hero-copy-centered">
+    <div class="shell hero-grid">
+      <div data-reveal>
+        <h1>
+          The whole game.<br />
+          <span class="kicker">One platform.</span>
+        </h1>
+
+        <p class="lead">
+          SecretariatPro connects competition management with live
+          production to create more professional, consistent and
+          straightforward sports broadcasts.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell">
+      <div data-reveal>
+        <h2>
+          Two applications.<br />
+          One connected workflow.
+        </h2>
+
+        <p class="lead">
+          Manager prepares the competition. Live turns that information
+          into a connected, consistent broadcast ready to go on air.
+        </p>
+      </div>
+
+      <div class="grid-2" style="margin-top:46px">
+        <article class="card" data-reveal>
+          <h3>SecretariatPro Live</h3>
+
+          <p>
+            The broadcast under control. Scoreboard, time, penalties,
+            graphics, statistics and match content in a single interface.
+          </p>
+
+          <MediaShowcase
+            image={logo}
+            alt="SecretariatPro Live logo"
+          />
+        </article>
+
+        <article class="card" data-reveal="delay-1">
+          <h3>SecretariatPro Manager</h3>
+
+          <p>
+            The competition connected. Teams, players, seasons, matches,
+            users, assignments and visual identity managed centrally.
+          </p>
+
+          <MediaShowcase
+            image={managerlogo}
+            alt="SecretariatPro Manager logo"
+          />
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell split">
+      <div data-reveal>
+        <h2>
+          Match control.<br />
+          <span class="kicker">Without losing sight of the broadcast.</span>
+        </h2>
+
+        <p class="lead">
+          Critical actions remain accessible throughout the live production
+          so the operator can work quickly and stay focused on the game.
+        </p>
+
+        <div class="feature-line">
+          <span>Scoreboard</span>
+          <span>Time</span>
+          <span>Penalties</span>
+          <span>Graphics</span>
+        </div>
+      </div>
+
+      <MediaShowcase
+        image={realizacion}
+        alt="SecretariatPro Live match control"
+        title="Match control"
+        caption="Time, score and critical actions in a single interface."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell">
+      <div data-reveal>
+        <h2>From schedule to broadcast.</h2>
+
+        <p class="lead">
+          Information is created once and follows the match all the way
+          to the live broadcast.
+        </p>
+      </div>
+
+      <div class="timeline">
+        {[
+          'Create competition',
+          'Create match',
+          'Assign operator',
+          'Open Live',
+          'Broadcast',
+          'Record result'
+        ].map((step, i) => (
+          <div class="step" data-reveal>
+            <span>0{i + 1}</span>
+            {step}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell split">
+      <div data-reveal>
+        <h2>The physical scoreboard, connected to the broadcast.</h2>
+
+        <p class="lead">
+          Live can read information from the physical scoreboard using OCR,
+          reducing manual actions and allowing the operator to focus on
+          the game.
+        </p>
+      </div>
+
+      <MediaShowcase
+        image={ocr}
+        alt="SecretariatPro OCR control interface"
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell">
+      <div data-reveal>
+        <h2>A visual identity for every competition.</h2>
+
+        <p class="lead">
+          Scoreboard, prematch, intermission, line-ups and statistics share
+          the colours, logos and visual style defined in Manager.
+        </p>
+      </div>
+
+      <div class="grid-4" style="margin-top:42px">
+        <div class="card" data-reveal>
+          <h3>Scoreboard</h3>
+          <p>Score and time integrated into the broadcast.</p>
+        </div>
+
+        <div class="card" data-reveal>
+          <h3>Prematch</h3>
+          <p>Pre-match presentation built from match data.</p>
+        </div>
+
+        <div class="card" data-reveal>
+          <h3>Line-ups</h3>
+          <p>Players and rosters connected directly to Manager.</p>
+        </div>
+
+        <div class="card" data-reveal>
+          <h3>Statistics</h3>
+          <p>Additional information to enrich the broadcast.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell">
+      <div data-reveal>
+        <h2>
+          SecretariatPro.<br />
+          <span class="kicker">In action.</span>
+        </h2>
+
+        <p class="lead">
+          From match control to graphics output, everything happens within
+          the same workflow.
+        </p>
+      </div>
+
+      <div style="margin-top:46px">
+        <VideoShowcase
+          src="/media/videomuestra.mp4"
+          title="A broadcast with SecretariatPro"
+          caption="Control, data and graphics working together throughout the match."
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell" data-reveal>
+      <h2>
+        Less friction.<br />
+        <span class="kicker">More control.</span>
+      </h2>
+
+      <div class="grid-4" style="margin-top:42px">
+        <div class="card">
+          <h3>Automation</h3>
+          <p>Reduce repetitive tasks during live production.</p>
+        </div>
+
+        <div class="card">
+          <h3>Consistency</h3>
+          <p>The same identity and data across every match.</p>
+        </div>
+
+        <div class="card">
+          <h3>Control</h3>
+          <p>Manage matches, users and competitions centrally.</p>
+        </div>
+
+        <div class="card">
+          <h3>Flexibility</h3>
+          <p>Adapt SecretariatPro to each organisation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

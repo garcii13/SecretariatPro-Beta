@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <!-- Compatibility markers: styles.css?v=phase41 app.js?v=phase41 -->
+  <!-- Legacy architecture label retained for compatibility tests: Usuarios y realizadores -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SecretariatPro Manager</title>
+  <script>
+    (() => {
+      const preference = localStorage.getItem("secretariatpro.manager.theme") || "system";
+      const resolved = preference === "system"
+        ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+        : (preference === "light" ? "light" : "dark");
+      document.documentElement.dataset.themePreference = preference;
+      document.documentElement.dataset.appTheme = resolved;
+      const supportedLanguages = ["es", "en", "sv", "cs", "fi", "de"];
+      const systemLanguage = (navigator.languages || [navigator.language || "en"])
+        .map((value) => String(value).toLowerCase().split("-")[0])
+        .find((value) => supportedLanguages.includes(value)) || "en";
+      document.documentElement.lang = localStorage.getItem("secretariatpro.manager.language") || systemLanguage;
+    })();
+  </script>
+  <!-- Compatibility: styles.css?v=phase42 -->
+  <link rel="stylesheet" href="/manager/styles.css?v=phase56-scoped-import5">
+</head>
+<body data-compat-build="phase38" data-manager-release="phase56">
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <div class="login-layer" id="login-layer">
+    <form class="login-card" id="login-form">
+      <div class="login-brand">
+        <img src="/manager/sp_logo.png" alt="SecretariatPro">
+        <div><span>SECRETARIATPRO</span><h1>Manager</h1></div>
+      </div>
+      <p>Administra la competición, sus equipos, jugadores, realizadores e identidad visual desde una aplicación independiente.</p>
+      <label>Correo electrónico<input id="login-email" type="email" required autocomplete="username" placeholder="nombre@correo.com"></label>
+      <label>Contraseña<input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••"></label>
+      <button type="submit" id="login-button"><span>Iniciar sesión</span></button>
+      <button type="button" class="link-button" id="forgot-password">Olvidé mi contraseña</button>
+      <div class="login-message" id="login-message" role="status"></div>
+      <div class="login-diagnostic" id="login-diagnostic">Conectando con el motor local…</div>
+    </form>
+  </div>
+
+  <div class="shell" id="manager-shell" hidden>
+    <aside class="sidebar" id="manager-sidebar" aria-label="Navegación principal">
+      <div class="brand"><img src="/manager/sp_logo.png" alt=""><div><strong>SecretariatPro</strong><span>Manager</span></div></div>
+      <nav>
+        <button class="active" data-view="dashboard"><span class="nav-icon">⌂</span>Resumen</button>
+        <button data-view="competitions"><span class="nav-icon">◆</span>Competiciones</button>
+        <button data-view="teams"><span class="nav-icon">◉</span>Equipos</button>
+        <button data-view="players"><span class="nav-icon">♙</span>Jugadores</button>
+        <button data-view="matches"><span class="nav-icon">▣</span>Partidos</button>
+        <button data-view="members"><span class="nav-icon">◎</span>Usuarios</button>
+        <button data-view="imports"><span class="nav-icon">⇧</span>Importación masiva</button>
+        <button data-view="identity"><span class="nav-icon">✦</span>Identidad visual</button>
+        <button data-view="profile"><span class="nav-icon">♙</span>Mi perfil</button>
+        <button data-view="settings"><span class="nav-icon">⚙</span>Configuración</button>
+        <button data-view="subscription"><span class="nav-icon">◇</span>Membresía</button>
+      </nav>
+      <div class="sidebar-footer">
+        <small id="build-label">Manager</small>
+        <button class="logout" id="logout-button">Cerrar sesión</button>
+      </div>
+    </aside>
+    <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Cerrar menú" tabindex="-1"></button>
+
+    <main>
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-controls="manager-sidebar" aria-expanded="true" title="Abrir o cerrar menú">
+          <span aria-hidden="true">☰</span><span class="sidebar-toggle-label">Menú</span>
+        </button>
+        <div class="workspace-control">
+          <span class="eyebrow">ESPACIO DE TRABAJO</span>
+          <select id="workspace-select"></select>
+        </div>
+        <div class="top-actions">
+          <span class="status" id="subscription-status">Comprobando</span>
+          <button class="profile" id="profile-button" type="button" aria-label="Abrir cuenta de usuario">
+            <div class="profile-avatar" id="profile-avatar"><span id="profile-initials">?</span></div>
+            <span><strong id="profile-name">Usuario</strong><small id="profile-email">—</small></span>
+            <i>⌄</i>
+          </button>
+        </div>
+      </header>
+
+      <div class="readonly-banner" id="readonly-banner" hidden>La membresía está en modo consulta. Puedes revisar y exportar datos, pero no modificarlos.</div>
+
+      <section class="view active" id="view-dashboard">
+        <div class="heading">
+          <div><span class="eyebrow">PANEL DE CONTROL</span><h1 id="workspace-name">SecretariatPro Manager</h1><p>Todo lo que prepares aquí estará disponible para los realizadores en SecretariatPro.</p></div>
+          <button class="secondary" data-action="refresh">Actualizar</button>
+        </div>
+        <div class="metrics" id="dashboard-metrics">
+          <article><span>Competiciones</span><strong>—</strong></article>
+          <article><span>Equipos</span><strong>—</strong></article>
+          <article><span>Jugadores</span><strong>—</strong></article>
+          <article><span>Partidos</span><strong>—</strong></article>
+          <article><span>Miembros</span><strong>—</strong></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="panel large"><div class="panel-head"><div><span class="eyebrow">AGENDA</span><h2>Próximos y últimos partidos</h2></div><button class="ghost" data-view-jump="matches">Ver todos</button></div><div id="dashboard-matches" class="empty-state">Cargando partidos…</div></article>
+          <article class="panel"><span class="eyebrow">CUENTA</span><h2>Datos del espacio</h2><dl class="details"><div><dt>Tipo</dt><dd id="workspace-type">—</dd></div><div><dt>Tu rol</dt><dd id="workspace-role">—</dd></div><div><dt>Plan</dt><dd id="plan-name">—</dd></div><div><dt>Válida hasta</dt><dd id="plan-end">—</dd></div></dl></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-competitions">
+        <div class="heading"><div><span class="eyebrow">TEMPORADAS Y LIGAS</span><h1>Competiciones</h1><p>Crea temporadas, ligas y sistemas de puntuación. La competición activa alimentará calendario, clasificación y overlays.</p></div><div class="heading-actions"><button class="secondary" data-create="season">Nueva temporada</button><button data-create="competition">Nueva competición</button></div></div>
+        <div class="split-panels"><article class="panel"><div class="panel-head"><h2>Temporadas</h2><span class="count" id="season-count">0</span></div><div id="seasons-list"></div></article><article class="panel wide"><div class="panel-head"><h2>Competiciones</h2><span class="count" id="competition-count">0</span></div><div id="competitions-list"></div></article></div>
+      </section>
+
+      <section class="view" id="view-teams">
+        <div class="heading"><div><span class="eyebrow">ESTRUCTURA DEPORTIVA</span><h1>Equipos</h1><p>Gestiona la identidad de cada club y entra en su ficha para organizar los rosters de cada temporada y competición.</p></div><button data-create="team">Nuevo equipo</button></div>
+        <div class="master-detail">
+          <article class="panel master-panel"><div class="panel-head"><h2>Directorio de equipos</h2><span class="count" id="team-count">0</span></div><div class="team-grid" id="teams-list"></div></article>
+          <article class="panel detail-panel" id="team-detail"><div class="empty-state detail-empty">Selecciona un equipo para consultar su ficha y sus rosters.</div></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-players">
+        <div class="heading"><div><span class="eyebrow">DIRECTORIO GENERAL</span><h1>Jugadores</h1><p>Crea jugadores de forma independiente y consulta o modifica sus participaciones en los distintos rosters.</p></div><button data-create="player">Nuevo jugador</button></div>
+        <div class="master-detail">
+          <article class="panel master-panel"><div class="panel-head"><h2>Jugadores</h2><span class="count" id="player-count">0</span></div><div id="players-list"></div></article>
+          <article class="panel detail-panel" id="player-detail"><div class="empty-state detail-empty">Selecciona un jugador para consultar sus equipos, competiciones y dorsales.</div></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-matches">
+        <div class="heading"><div><span class="eyebrow">CALENDARIO</span><h1>Partidos</h1><p>Programa encuentros, asigna realizadores y revisa el estado de cada partido.</p></div><button data-create="match">Nuevo partido</button></div>
+        <article class="panel"><div id="matches-list"></div></article>
+      </section>
+
+      <section class="view" id="view-members">
+        <div class="heading"><div><span class="eyebrow">ORGANIZACIÓN</span><h1>Usuarios</h1><p>Invita realizadores y gestores por correo, aunque todavía no tengan una cuenta.</p><span hidden>Añadir usuario existente</span></div><button data-create="member">Invitar usuario</button></div>
+        <article class="panel"><div class="notice">Si el correo no tiene cuenta, recibirá un enlace seguro para crear su contraseña. Su acceso quedará pendiente hasta que acepte la invitación.</div><div id="members-list"></div></article>
+      </section>
+
+      <section class="view" id="view-profile">
+        <div class="heading"><div><span class="eyebrow">CUENTA PERSONAL</span><h1>Mi perfil</h1><p>Gestiona tu nombre, foto y contraseña desde el portal web seguro de SecretariatPro.</p></div></div>
+        <div class="profile-portal-grid">
+          <article class="panel profile-portal-card">
+            <div class="account-avatar" id="profile-page-avatar"><span>?</span></div>
+            <div><span class="eyebrow">SESIÓN ACTUAL</span><h2 id="profile-page-name">Usuario</h2><p id="profile-page-email">—</p></div>
+          </article>
+          <article class="panel profile-portal-card profile-portal-action">
+            <div><span class="eyebrow">PORTAL WEB</span><h2>Gestionar mi cuenta</h2><p>El portal se abre en el navegador y permite completar invitaciones, cambiar la contraseña y actualizar los datos personales.</p></div>
+            <button type="button" id="open-profile-portal">Abrir portal web</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-imports">
+        <div class="heading"><div><span class="eyebrow">EXCEL Y CSV</span><h1>Importación masiva</h1><p>Selecciona temporada y competición antes de importar personas o partidos.</p></div><div class="template-download-box"><button type="button" class="secondary" id="download-player-template">Descargar plantilla Excel</button><small id="template-download-status">Se guardará en la carpeta Descargas.</small></div></div>
+        <article class="panel import-scope-panel"><div class="form-grid">
+          <label>Importar<select id="import-kind"><option value="people">Personas y rosters</option><option value="matches">Partidos</option></select></label>
+          <label>Temporada<select id="import-season"></select></label>
+          <label>Competición<select id="import-competition"></select></label>
+        </div><p id="import-mode-help"></p></article>
+        <div class="import-grid">
+          <article class="panel dropzone" id="dropzone"><input id="import-file" type="file" accept=".xlsx,.xlsm,.csv" hidden><div class="upload-icon">⇧</div><strong>Arrastra aquí un Excel o CSV</strong><span>O selecciona un archivo de hasta 20 MB.</span><button id="select-import-file">Seleccionar archivo</button></article>
+          <article class="panel"><span class="eyebrow">DATOS ADMITIDOS</span><h2>Excel y CSV</h2><div class="chips" id="import-scopes"></div><p class="muted">Las personas se asignan al equipo indicado en el archivo y al roster seleccionado. Los partidos necesitan equipos existentes; la hora puede quedar pendiente.</p></article>
+        </div>
+        <article class="panel" id="import-result" hidden>
+          <div class="panel-head"><div><span class="eyebrow">ANÁLISIS</span><h2 id="import-result-title">Resultado</h2></div><span class="count" id="import-total">0 filas</span></div>
+          <div id="import-analysis"></div>
+          <div class="import-confirmation" id="import-confirmation" hidden>
+            <div><strong>¿Todo correcto?</strong><span id="import-confirmation-text">Confirma para guardar los datos en Supabase.</span></div>
+            <div class="import-confirmation-actions"><button type="button" class="secondary" id="cancel-import">Cancelar</button><button type="button" id="confirm-import">Confirmar importación</button></div>
+          </div>
+          <div id="import-report" hidden></div>
+        </article>
+      </section>
+
+      <section class="view" id="view-identity">
+        <div class="heading"><div><span class="eyebrow">IMAGEN DE EMISIÓN</span><h1>Identidad visual</h1><p>Crea varias personalizaciones cuando tu cuenta lo permita, conserva las anteriores y edita cada una con la vista previa completa.</p></div><button type="button" id="identity-new">Nueva personalización</button><span hidden>Nueva versión</span></div>
+        <div class="identity-summary"><article><span>Modo contratado</span><strong id="identity-mode">—</strong></article><article><span>Carga en SecretariatPro</span><strong>Automática al iniciar sesión</strong></article></div>
+        <div class="identity-layout">
+          <form class="panel identity-editor" id="identity-form">
+            <div class="panel-head"><div><span class="eyebrow">VERSIÓN</span><h2>Editor de identidad</h2></div><span class="pill" id="identity-editor-state">Borrador nuevo</span></div>
+            <div class="form-grid compact">
+              <label class="full">Nombre de la versión<input name="name" value="Identidad principal" required></label>
+              <label class="full">Ámbito<select name="competition_id" id="identity-competition"><option value="">Identidad general</option></select></label>
+              <label>Control de realizadores<select name="locked"><option value="true">Bloqueada</option></select></label>
+              <label>Al guardar<select name="published"><option value="false">Guardar borrador</option><option value="true">Publicar ahora</option></select></label>
+            </div>
+            <div class="palette-section"><div><span class="eyebrow">MARCADOR</span><h3>Marcador principal</h3></div><div class="color-fields" data-palette-section="scoreboard"></div></div>
+            <div class="palette-section"><div><span class="eyebrow">BOTTOM BAR</span><h3>Goles y avisos</h3></div><div class="color-fields" data-palette-section="bottom_bar"></div></div>
+            <div class="palette-section"><div><span class="eyebrow">PANELES</span><h3>Prematch, descanso y estadísticas</h3></div><div class="color-fields" data-palette-section="panels"></div></div>
+            <div class="palette-section"><h3>Tamaño y tipografía por elemento</h3><p>50–150 %. Se aplica a la identidad seleccionada al publicarla. Solo editable desde el Manager.</p><div id="element-controls" class="form-grid compact"></div></div>
+            <div class="palette-section period-strip-editor"><div><span class="eyebrow">PERIODO</span><h3>Indicador bajo el reloj</h3><p>El realizador selecciona el periodo activo; aquí decides si se muestra y cuántas secciones tiene.</p></div><div class="form-grid compact"><label class="check-field full"><input id="period-strip-enabled" type="checkbox"> Mostrar indicador de periodo</label><label class="check-field full"><input id="period-clock-number" type="checkbox"> Mostrar número dentro del reloj</label><label>Número de secciones<input id="period-strip-segments" type="number" min="1" max="12" value="3"></label><label>Etiquetas separadas por comas<input id="period-strip-labels" value="1, 2, 3" maxlength="100"></label><label>Color de encendido<input id="period-strip-active-color" type="color" value="#8cff00"></label><label>Color del texto de los periodos<input id="period-strip-text-color" type="color" value="#102000"></label></div></div>
+            <div class="palette-section"><div><span class="eyebrow">GOLES</span><h3>Cartel del goleador tras la repetición</h3><p>El marcador vuelve después de retirar el bottom del gol.</p></div><div class="form-grid compact"><label>Espera sin plugin (segundos)<input id="goal-celebration-delay" type="number" min="0" max="30" value="4"></label><label>Tiempo en pantalla (segundos)<input id="goal-celebration-duration" type="number" min="1" max="30" value="6"></label></div></div>
+            <div class="modal-message" id="identity-message"></div>
+            <div class="identity-actions"><button type="reset" class="secondary" id="identity-reset">Restablecer</button><button type="submit" id="identity-save">Guardar versión</button></div>
+          </form>
+          <div class="identity-preview-column">
+            <article class="panel preview-stage">
+              <div class="panel-head"><div><span class="eyebrow">VISTA PREVIA</span><h2>Overlay</h2></div><span class="live-dot">EN DIRECTO</span></div>
+              <div class="preview-canvas" id="visual-preview">
+                <div class="preview-scoreboard"><div class="preview-logo">SP</div><div class="preview-team">LOCAL</div><strong>2</strong><div class="preview-clock"><span>12:34</span><div id="preview-period-strip" class="preview-period-strip"><i class="active">1</i><i>2</i><i>3</i></div></div><strong>1</strong><div class="preview-team">VISITA</div><div class="preview-logo">VS</div></div>
+                <div class="preview-bottom"><b>23:17</b><strong>2 — 1</strong><span><em>#19</em> GARCÍA · Gol</span></div>
+                <div class="preview-panel"><span>INTERMISSION</span><div><b>LOCAL</b><strong>2 — 1</strong><b>VISITA</b></div><small>Resumen del partido y estadísticas</small></div>
+              </div>
+            </article>
+            <div id="themes-list" class="theme-grid compact-grid"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="view" id="view-settings">
+        <div class="heading"><div><span class="eyebrow">PREFERENCIAS</span><h1>Configuración</h1><p>Personaliza el idioma y la apariencia del Manager. Estos ajustes solo afectan a esta aplicación y no modifican los overlays.</p></div></div>
+        <article class="panel"><h2>Gráficos de emisión</h2><p>Configura tamaños y tipografías independientes para el marcador y cada panel, asociados a la identidad general o a la competición permitida por tu cuenta.</p><button data-view-jump="identity">Ajustar gráficos de emisión</button></article>
+        <div class="settings-grid">
+          <article class="panel settings-card">
+            <div class="panel-head"><div><span class="eyebrow">GENERAL</span><h2>Idioma y tema</h2></div></div>
+            <div class="form-grid compact">
+              <label class="full">Idioma
+                <select id="settings-language">
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
+                  <option value="sv">Svenska</option>
+                  <option value="cs">Čeština</option>
+                  <option value="fi">Suomi</option>
+                  <option value="de">Deutsch</option>
+                </select>
+              </label>
+              <label class="full">Tema de la aplicación
+                <select id="settings-theme">
+                  <option value="system">Sistema</option>
+                  <option value="dark">Oscuro</option>
+                  <option value="light">Claro</option>
+                </select>
+                <small class="field-help">Sistema sigue automáticamente la apariencia del ordenador. El tema solo afecta al Manager, nunca a los gráficos emitidos.</small>
+              </label>
+            </div>
+            <div class="settings-actions"><button type="button" class="secondary" id="settings-reset">Restablecer preferencias</button></div>
+          </article>
+          <article class="panel settings-card" id="sport-mode-card" hidden>
+            <div class="panel-head"><div><span class="eyebrow">PLATAFORMA</span><h2>Deporte de la cuenta</h2></div><span class="pill">SOLO PROPIETARIO</span></div>
+            <p>Define las reglas que recibirán todas las sesiones Live de este espacio. Los realizadores no pueden modificar este ajuste.</p>
+            <label>Modo de deporte
+              <select id="settings-sport-mode">
+                <option value="floorball">Floorball</option>
+                <option value="handball">Balonmano</option>
+              </select>
+              <small class="field-help">Balonmano mantiene las expulsiones tras un gol y usa una formación inicial de 7 jugadores.</small>
+            </label>
+            <div class="settings-actions"><button type="button" id="save-sport-mode">Guardar deporte</button></div>
+          </article>
+          <article class="panel settings-preview">
+            <span class="eyebrow">VISTA PREVIA</span><h2>Aspecto del Manager</h2>
+            <div class="manager-theme-preview"><div class="preview-sidebar"><span></span><span></span><span></span></div><div class="preview-content"><i></i><strong>SecretariatPro Manager</strong><p>Equipos · Jugadores · Partidos</p><button type="button">Acción principal</button></div></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-subscription">
+        <div class="heading"><div><span class="eyebrow">CUENTA Y ACCESO</span><h1>Membresía</h1><p>La membresía habilita tanto SecretariatPro como Manager. No utiliza códigos de licencia.</p></div></div>
+        <div class="subscription-card"><div><span class="eyebrow">PLAN ACTUAL</span><h2 id="subscription-plan">—</h2><p id="subscription-message">—</p></div><div class="subscription-dates"><div><span>Inicio</span><strong id="subscription-start">—</strong></div><div><span>Fin</span><strong id="subscription-end">—</strong></div><div><span>Retención</span><strong id="subscription-retention">—</strong></div><div><span>Offline</span><strong id="subscription-offline">4 días</strong></div></div></div>
+        <article class="panel"><span class="eyebrow">CAPACIDADES DEL PLAN</span><div id="entitlements-list" class="entitlements"></div></article>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden aria-hidden="true">
+    <form class="modal" id="entity-form">
+      <div class="modal-head"><div><span class="eyebrow" id="modal-eyebrow">NUEVO</span><h2 id="modal-title">Elemento</h2></div><button type="button" class="icon-button" id="modal-close">×</button></div>
+      <div id="modal-fields" class="form-grid"></div>
+      <div class="modal-message" id="modal-message"></div>
+      <div class="modal-actions"><button type="button" class="secondary" id="modal-cancel">Cancelar</button><button type="submit" id="modal-save">Guardar</button></div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="match-events-backdrop" hidden aria-hidden="true">
+    <section class="modal match-events-modal">
+      <div class="modal-head"><div><span class="eyebrow">ACTA ADMINISTRATIVA</span><h2 id="match-events-title">Eventos del partido</h2></div><button type="button" class="icon-button" id="match-events-close">×</button></div>
+      <p class="muted">Registra goles, asistencias y expulsiones de un partido aunque no haya sido producido con SecretariatPro Live.</p>
+      <div class="match-events-toolbar">
+        <button type="button" class="secondary" id="match-events-template">Descargar plantilla Excel</button>
+        <input type="file" id="match-events-file" accept=".xlsx,.xlsm" hidden>
+        <button type="button" class="secondary" id="match-events-import">Importar Excel</button>
+        <button type="button" id="match-events-finalize">Finalizar acta</button>
+      </div>
+      <small class="field-help" id="match-events-template-status">La plantilla se guardará directamente en Descargas.</small>
+      <form id="match-event-form" class="account-section">
+        <div class="form-grid">
+          <label>Tipo<select id="match-event-type"><option value="goal">Gol</option><option value="penalty">Expulsión</option></select></label>
+          <label>Equipo<select id="match-event-team"><option value="home">Local</option><option value="away">Visitante</option></select></label>
+          <label>Tiempo<input id="match-event-time" placeholder="12:34"></label>
+          <label>Jugador<select id="match-event-player"></select></label>
+          <label id="match-event-assistant-wrap">Asistente<select id="match-event-assistant"><option value="">Sin asistencia</option></select></label>
+          <label id="match-event-penalty-wrap" hidden>Sanción<select id="match-event-penalty"><option value="2">2</option><option value="2+2">2+2</option><option value="2+10">2+10</option></select></label>
+          <label class="full">Notas<input id="match-event-notes" placeholder="Opcional"></label>
+        </div>
+        <div class="modal-actions"><button type="submit">Añadir al acta</button></div>
+      </form>
+      <div id="match-events-import-preview" class="notice" hidden></div>
+      <div class="modal-actions" id="match-events-import-actions" hidden><button type="button" class="secondary" id="match-events-import-cancel">Cancelar importación</button><button type="button" id="match-events-import-confirm">Confirmar eventos válidos</button></div>
+      <div id="match-events-list"></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="account-backdrop" hidden aria-hidden="true">
+    <section class="modal account-modal">
+      <div class="modal-head"><div><span class="eyebrow">CUENTA</span><h2>Perfil de usuario</h2></div><button type="button" class="icon-button" id="account-close">×</button></div>
+      <div class="account-hero">
+        <div class="account-avatar" id="account-avatar"><span id="account-initials">?</span></div>
+        <div><strong id="account-name-label">Usuario</strong><span id="account-email-label">—</span><small id="account-workspace-label">—</small></div>
+        <div class="avatar-actions"><input type="file" id="account-avatar-file" accept="image/png,image/jpeg,image/webp" hidden><button type="button" id="account-avatar-select">Cambiar foto</button><button type="button" class="ghost danger-text" id="account-avatar-remove">Eliminar</button></div>
+      </div>
+      <form id="account-profile-form" class="account-section"><div><span class="eyebrow">DATOS PERSONALES</span><h3>Nombre visible</h3></div><label>Nombre<input id="account-display-name" required minlength="2" maxlength="80"></label><button type="submit">Guardar nombre</button><div class="modal-message" id="account-profile-message"></div></form>
+      <form id="account-password-form" class="account-section"><div><span class="eyebrow">SEGURIDAD</span><h3>Cambiar contraseña</h3></div><div class="form-grid"><label>Nueva contraseña<input id="account-password" type="password" autocomplete="new-password" minlength="8" required></label><label>Confirmar contraseña<input id="account-password-confirm" type="password" autocomplete="new-password" minlength="8" required></label></div><button type="submit">Actualizar contraseña</button><div class="modal-message" id="account-password-message"></div></form>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <!-- Compatibility: app.js?v=phase42 -->
+  <script src="/manager/app.js?v=phase56-scoped-import5"></script>
+</body>
+</html>

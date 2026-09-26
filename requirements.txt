@@ -1,0 +1,66 @@
+# SecretariatPro — dependencias completas
+#
+# macOS Apple Silicon usa deliberadamente el stack OCR legacy de PaddleOCR 2.7.3.
+# Esa versión exige OpenCV <= 4.6.0.66. No elevar OpenCV en macOS sin migrar
+# primero el backend OCR. Windows/Linux pueden usar OpenCV moderno.
+
+# Interfaz heredada / utilidades gráficas
+customtkinter>=5.2.0
+Pillow>=10.0.0
+
+# API local y panel web
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.8.0
+
+# Captura, vídeo y procesamiento
+mss>=9.0.1
+numpy==1.26.4 ; sys_platform == "darwin"
+numpy>=1.24 ; sys_platform != "darwin"
+# PaddleOCR 2.7.3 arrastra opencv-python/opencv-contrib-python <=4.6.0.66 en macOS.
+opencv-python>=4.9.0 ; sys_platform != "darwin"
+
+# Windows: captura nativa y localización de ventanas
+pywin32>=306 ; sys_platform == "win32"
+pygetwindow>=0.0.9 ; sys_platform == "win32"
+
+# macOS: listado y captura de ventanas/cámaras
+pyobjc-framework-Quartz>=10.1 ; sys_platform == "darwin"
+pyobjc-framework-AVFoundation>=10.1 ; sys_platform == "darwin"
+
+# OCR
+# SP-OCR v0.7 / SP-SCORE v0.2 (modelos LED híbridos)
+joblib==1.5.3
+scikit-learn==1.8.0
+
+# macOS Apple Silicon beta: runtime fijado para evitar Paddle 3.x/PIR en macOS 26.
+paddlepaddle==2.6.2 ; sys_platform == "darwin"
+paddleocr==2.7.3 ; sys_platform == "darwin"
+
+# Other platforms keep the compatible range used by SecretariatPro.
+paddlepaddle>=2.6.0 ; sys_platform != "darwin"
+paddleocr>=2.7.3 ; sys_platform != "darwin"
+
+# Supabase y configuración
+supabase>=2.0.0
+python-dotenv>=1.0.0
+
+# OBS WebSocket
+obsws-python
+
+# Ventana nativa y empaquetado de la aplicación
+pywebview>=6.2.1,<7
+pyinstaller>=6.0
+
+# Código QR para acceso desde tablet/iPad
+qrcode>=7.4.2
+
+# SecretariatPro Manager: importación Excel/CSV
+openpyxl>=3.1.0
+python-multipart>=0.0.9
+
+# Bundled FFmpeg for independent multicamera event videos.
+imageio-ffmpeg>=0.6,<0.7
+
+# LAN adapter selection for tablet pairing.
+psutil>=5.9,<8

@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MediaShowcase from '../../components/MediaShowcase.astro';
+import VideoShowcase from '../../components/VideoShowcase.astro';
+
+import directo from '../../assets/livecaptura.png';
+import estadisticas from '../../assets/estadisticascaptura.png';
+import equipo from '../../assets/equipocaptura.png';
+import realizacion from '../../assets/capturarealizacion.png';
+---
+
+<BaseLayout
+  lang="en"
+  title="SecretariatPro Live | Live sports production"
+  description="SecretariatPro Live brings the critical actions of a sports broadcast together in a fast, clear interface connected to the competition."
+>
+  <section class="page-hero">
+    <div class="shell" data-reveal>
+      <h1>
+        Everything the operator needs.<br />
+        <span class="kicker">Without losing focus on the game.</span>
+      </h1>
+
+      <p class="lead">
+        Live brings the critical actions of a sports broadcast together
+        in a fast, clear interface connected to the competition.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:30px">
+    <div class="shell">
+      <MediaShowcase
+        image={directo}
+        alt="SecretariatPro Live interface"
+        title="The broadcast under control"
+        caption="Scoreboard, time, penalties, graphics and match data in a single environment."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell media-duo">
+      <MediaShowcase
+        image={realizacion}
+        alt="SecretariatPro Live match control"
+        title="Speed and ease of use"
+        caption="Critical actions accessible throughout the match."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell media-duo">
+      <MediaShowcase
+        image={equipo}
+        alt="Team control in SecretariatPro Live"
+        title="Teams and data"
+        caption="Competition information connected and ready for broadcast."
+      />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell grid-3">
+      {[
+        [
+          'OCR',
+          'Physical scoreboard reading and synchronisation with Live.'
+        ],
+        [
+          'Graphics',
+          'Scoreboard, prematch, intermission, line-ups and statistics.'
+        ],
+        [
+          'Connected data',
+          'Teams, players and competition data provided by Manager.'
+        ],
+        [
+          'Cross-platform',
+          'Designed to operate on Windows and macOS.'
+        ],
+        [
+          'Direct OBS connection',
+          'Control the entire broadcast from SecretariatPro.'
+        ],
+        [
+          'Connect your preferred device',
+          'Keep control from any tablet or mobile device.'
+        ]
+      ].map(([t, d]) => (
+        <article class="card" data-reveal>
+          <h3>{t}</h3>
+          <p>{d}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

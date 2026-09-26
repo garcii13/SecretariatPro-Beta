@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MediaShowcase from '../../components/MediaShowcase.astro';
+import manager from '../../assets/managercaptura.png';
+---
+
+<BaseLayout
+  lang="en"
+  title="SecretariatPro Manager | Competition management"
+  description="The central environment where federations, leagues and clubs organise the information their operators use in Live."
+>
+  <section class="page-hero">
+    <div class="shell" data-reveal>
+      <h1>
+        The competition behind <span class="kicker">every broadcast.</span>
+      </h1>
+
+      <p class="lead">
+        The central environment where federations, leagues and clubs
+        organise the information their operators use in Live.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:30px">
+    <div class="shell">
+      <MediaShowcase
+        image={manager}
+        alt="SecretariatPro Manager interface"
+        title="One competition. Many matches. One management environment."
+        caption="Data, users and visual identity prepared for Live."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell grid-4">
+      {[
+        ['Competitions', 'Seasons and competition structure.'],
+        ['Teams', 'Names, colours, logos and identity.'],
+        ['Players', 'Central player database and seasonal rosters.'],
+        ['Matches', 'Creation, editing and schedule management.'],
+        ['Operators', 'Assignment of matches to authorised users.'],
+        ['Users', 'Access and permissions by organisation.'],
+        ['Visual identity', 'Graphics configuration used by Live.'],
+        ['Shared data', 'Everyone works from a single source.']
+      ].map(([t, d]) => (
+        <article class="card" data-reveal>
+          <h3>{t}</h3>
+          <p>{d}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell split">
+      <div data-reveal>
+        <h2>
+          One Manager.<br />
+          Many live matches.
+        </h2>
+
+        <p class="lead">
+          Manager centralises the competition and distributes the
+          information required by authorised Live installations.
+        </p>
+      </div>
+
+      <div class="panel" data-reveal="delay-1">
+        <div class="panel-head">
+          <span class="panel-title">Competition Hub</span>
+          <span class="status-dot">● synchronised</span>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric">
+            <small>MATCHES</small>
+            <strong>24</strong>
+            Active season
+          </div>
+
+          <div class="metric">
+            <small>TEAMS</small>
+            <strong>10</strong>
+            Centralised data
+          </div>
+
+          <div class="metric">
+            <small>OPERATORS</small>
+            <strong>6</strong>
+            Authorised users
+          </div>
+
+          <div class="metric">
+            <small>LIVE</small>
+            <strong>3</strong>
+            Assigned matches
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell" data-reveal>
+      <h2>One source of truth for the entire competition.</h2>
+
+      <p class="lead">
+        Fewer loose files, less duplicated information and a consistent
+        visual identity across matches and operators.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

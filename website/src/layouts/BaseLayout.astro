@@ -1,0 +1,128 @@
+---
+import '../styles/global.css';
+import '../styles/i18n.css';
+
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+import {
+  getAlternates,
+  getLang,
+  normalisePath
+} from '../lib/i18n';
+
+const lang = Astro.props.lang ?? getLang(Astro.url.pathname);
+
+const {
+  title = lang === 'es'
+    ? 'SecretariatPro | Software para retransmisiones deportivas'
+    : 'SecretariatPro | Sports broadcasting software',
+
+  description = lang === 'es'
+    ? 'Gestiona competiciones y crea retransmisiones deportivas profesionales con SecretariatPro Live y Manager.'
+    : 'Manage competitions and create professional sports broadcasts with SecretariatPro Live and Manager.'
+} = Astro.props;
+
+const site =
+  Astro.site?.toString().replace(/\/$/, '') ??
+  'https://secretariatproapp.com';
+
+const alternates = getAlternates(Astro.url.pathname);
+const canonicalPath = normalisePath(Astro.url.pathname);
+const canonicalUrl = `${site}${canonicalPath === '/' ? '/' : canonicalPath}`;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="theme-color" content="#011a38" />
+    <meta name="description" content={description} />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={lang === 'es' ? 'es_ES' : 'en_GB'} />
+
+    <link rel="canonical" href={canonicalUrl} />
+
+    <link
+      rel="alternate"
+      hreflang="es"
+      href={`${site}${alternates.es === '/' ? '/' : alternates.es}`}
+    />
+
+    <link
+      rel="alternate"
+      hreflang="en"
+      href={`${site}${alternates.en}`}
+    />
+
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={`${site}${alternates.es === '/' ? '/' : alternates.es}`}
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/assets/favicon-32.png"
+    />
+
+    <link
+      rel="apple-touch-icon"
+      href="/assets/apple-touch-icon.png"
+    />
+
+    <title>{title}</title>
+  </head>
+
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <Header />
+
+    <main>
+      <slot />
+    </main>
+
+    <Footer />
+
+    <script>
+      const revealItems = document.querySelectorAll('[data-reveal]');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+
+      revealItems.forEach((item) => observer.observe(item));
+
+      const stages = document.querySelectorAll('[data-tilt]');
+
+      stages.forEach((stage) => {
+        stage.addEventListener('pointermove', (event) => {
+          const rect = stage.getBoundingClientRect();
+          const x = (event.clientX - rect.left) / rect.width - 0.5;
+          const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+          stage.style.setProperty('--rx', `${(-y * 4).toFixed(2)}deg`);
+          stage.style.setProperty('--ry', `${(x * 6).toFixed(2)}deg`);
+        });
+
+        stage.addEventListener('pointerleave', () => {
+          stage.style.setProperty('--rx', '0deg');
+          stage.style.setProperty('--ry', '0deg');
+        });
+      });
+    </script>
+  </body>
+</html>

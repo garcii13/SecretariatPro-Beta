@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MediaShowcase from '../components/MediaShowcase.astro';
+import VideoShowcase from '../components/VideoShowcase.astro';
+import directo from '../assets/livecaptura.png';
+import estadisticas from '../assets/estadisticascaptura.png';
+import equipo from '../assets/equipocaptura.png';
+import realizacion from '../assets/capturarealizacion.png';
+---
+<BaseLayout title="SecretariatPro Live | Realización deportiva">
+  <section class="page-hero">
+    <div class="shell" data-reveal>
+      <h1>Todo lo que necesita el realizador.<br/><span class="kicker">Sin distraerse del partido.</span></h1>
+      <p class="lead">Live concentra las acciones críticas de una retransmisión en una interfaz rápida, clara y conectada con la competición.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:30px">
+    <div class="shell">
+      <MediaShowcase
+        image={directo}
+        alt="Interfaz de SecretariatPro Live"
+        title="La emisión bajo control"
+        caption="Marcador, tiempo, expulsiones, gráficos y datos de partido en un mismo entorno."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell media-duo">
+      <MediaShowcase
+        image={realizacion}
+        alt="Control de tiempo en SecretariatPro Live"
+        title="Comodiad y rapidez"
+        caption="Acciones críticas accesibles durante todo el partido."
+      />
+        </div>
+   </section>
+    <section class="section band">
+            <div class="shell media-duo">
+      <MediaShowcase
+        image={equipo}
+        alt="Control de equipo en SecretariatPro Live"
+        title="Equipos y datos"
+        caption="Información conectada con la competición y preparada para emisión."
+      />
+            </div>
+  </section>
+
+  <section class="section">
+    <div class="shell grid-3">
+      {[
+        ['OCR','Lectura del marcador físico y sincronización con Live.'],
+        ['Gráficos','Scoreboard, prematch, intermission, alineaciones y estadísticas.'],
+        ['Datos conectados','Equipos, jugadores y competición procedentes de Manager.'],
+        ['Multiplataforma','Diseñado para operar en Windows y macOS.'],
+            ['Conexión directa con OBS','Controla toda la retrasmisión desde SecretariatPro.'],
+          ['Conecta tu dispositivo favorito','Mantén el control desde cualquier Tablet o Dispositivo Movil']
+      ].map(([t,d]) => <article class="card" data-reveal><h3>{t}</h3><p>{d}</p></article>)}
+    </div>
+  </section>
+
+</BaseLayout>

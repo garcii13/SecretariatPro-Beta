@@ -1,0 +1,94 @@
+---
+import type { Lang } from '../lib/i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const es = lang === 'es';
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? 'https://yjiegitbskiolwkglcfl.supabase.co';
+const supabaseKey = import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_YfiPPc_RXtpuirNlP34r0g_t7DIDm4A';
+---
+
+<section class="page-hero account-hero">
+  <div class="shell account-shell" data-account-portal data-lang={lang} data-supabase-url={supabaseUrl} data-supabase-key={supabaseKey}>
+    <div data-reveal>
+      <span class="account-kicker">{es ? 'CUENTA SECRETARIATPRO' : 'SECRETARIATPRO ACCOUNT'}</span>
+      <h1>{es ? 'Tu perfil, en un solo lugar.' : 'Your profile, in one place.'}</h1>
+      <p class="lead">{es
+        ? 'Acepta invitaciones, crea tu contraseña y gestiona los datos que se muestran en Live y Manager.'
+        : 'Accept invitations, create your password, and manage the details shown in Live and Manager.'}</p>
+    </div>
+
+    <div class="account-notice" data-account-message hidden role="status" aria-live="polite"></div>
+    <div class="account-loading card" data-account-loading>{es ? 'Comprobando la sesión…' : 'Checking your session…'}</div>
+
+    <div class="account-grid" data-account-signed-out hidden>
+      <article class="card account-card">
+        <span class="account-kicker">{es ? 'ACCESO' : 'SIGN IN'}</span>
+        <h2>{es ? 'Inicia sesión' : 'Sign in'}</h2>
+        <form class="account-form" data-login-form>
+          <label>{es ? 'Correo electrónico' : 'Email'}<input name="email" type="email" autocomplete="email" required /></label>
+          <label>{es ? 'Contraseña' : 'Password'}<input name="password" type="password" autocomplete="current-password" required /></label>
+          <button class="button" type="submit">{es ? 'Entrar' : 'Sign in'}</button>
+        </form>
+      </article>
+
+      <article class="card account-card">
+        <span class="account-kicker">{es ? 'RECUPERACIÓN' : 'RECOVERY'}</span>
+        <h2>{es ? '¿Has olvidado tu contraseña?' : 'Forgot your password?'}</h2>
+        <p class="muted">{es ? 'Te enviaremos un enlace seguro para crear una nueva.' : 'We will send you a secure link to create a new one.'}</p>
+        <form class="account-form" data-reset-form>
+          <label>{es ? 'Correo electrónico' : 'Email'}<input name="email" type="email" autocomplete="email" required /></label>
+          <button class="button button-secondary" type="submit">{es ? 'Enviar enlace' : 'Send link'}</button>
+        </form>
+      </article>
+    </div>
+
+    <div data-account-signed-in hidden>
+      <div class="account-summary card">
+        <div class="account-avatar" data-avatar><span>?</span></div>
+        <div>
+          <span class="account-kicker">{es ? 'SESIÓN ACTIVA' : 'SIGNED IN'}</span>
+          <h2 data-profile-name>{es ? 'Usuario' : 'User'}</h2>
+          <p class="muted" data-profile-email></p>
+        </div>
+        <button class="button button-secondary button-small account-signout" type="button" data-signout>{es ? 'Cerrar sesión' : 'Sign out'}</button>
+      </div>
+
+      <div class="account-grid">
+        <article class="card account-card">
+          <span class="account-kicker">{es ? 'PERFIL' : 'PROFILE'}</span>
+          <h2>{es ? 'Nombre y fotografía' : 'Name and photo'}</h2>
+          <form class="account-form" data-profile-form>
+            <label>{es ? 'Nombre visible' : 'Display name'}<input name="display_name" minlength="2" maxlength="80" autocomplete="name" required /></label>
+            <label>{es ? 'Foto de perfil' : 'Profile photo'}<input name="avatar" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+            <div class="account-actions">
+              <button class="button" type="submit">{es ? 'Guardar perfil' : 'Save profile'}</button>
+              <button class="button button-secondary" type="button" data-remove-avatar>{es ? 'Eliminar foto' : 'Remove photo'}</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card account-card" data-password-card>
+          <span class="account-kicker">{es ? 'SEGURIDAD' : 'SECURITY'}</span>
+          <h2 data-password-title>{es ? 'Cambiar contraseña' : 'Change password'}</h2>
+          <p class="muted" data-password-help>{es ? 'Usa al menos 8 caracteres.' : 'Use at least 8 characters.'}</p>
+          <form class="account-form" data-password-form>
+            <label>{es ? 'Nueva contraseña' : 'New password'}<input name="password" type="password" minlength="8" autocomplete="new-password" required /></label>
+            <label>{es ? 'Repite la contraseña' : 'Repeat password'}<input name="confirm_password" type="password" minlength="8" autocomplete="new-password" required /></label>
+            <button class="button" type="submit">{es ? 'Guardar contraseña' : 'Save password'}</button>
+          </form>
+        </article>
+
+        <article class="card account-card account-memberships">
+          <span class="account-kicker">{es ? 'ORGANIZACIONES' : 'ORGANISATIONS'}</span>
+          <h2>{es ? 'Tus espacios de trabajo' : 'Your workspaces'}</h2>
+          <div data-memberships><p class="muted">{es ? 'Cargando…' : 'Loading…'}</p></div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import '../scripts/account';
+</script>

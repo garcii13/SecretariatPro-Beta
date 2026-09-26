@@ -1,0 +1,21 @@
+---
+const {
+  src = '/media/secretariatpro-demo.mp4',
+  title = 'SecretariatPro en funcionamiento',
+  caption = ''
+} = Astro.props;
+---
+<section class="video-showcase card" data-reveal>
+  <div class="video-copy">
+    <h3>{title}</h3>
+    {caption && <p>{caption}</p>}
+  </div>
+  <div class="video-frame">
+    <video controls playsinline preload="none">
+      <source src={src} type="video/mp4" />
+      Tu navegador no puede reproducir este vídeo.
+    </video>
+    <div class="video-placeholder" aria-hidden="true">
+    </div>
+  </div>
+</section>

@@ -1,0 +1,75 @@
+name: Beta installers
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to build
+        type: choice
+        default: all
+        options: [all, windows-2022, macos-15, macos-15-intel]
+  push:
+    tags: ['v*-beta.*']
+env:
+  PYTHONUTF8: "1"
+permissions:
+  contents: read
+jobs:
+  installers:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.platform == 'windows-2022' && '["windows-2022"]' || inputs.platform == 'macos-15' && '["macos-15"]' || inputs.platform == 'macos-15-intel' && '["macos-15-intel"]' || '["windows-2022", "macos-15", "macos-15-intel"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Download released OCR models
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ocr-models-v0.7-v0.2 --pattern "secretariatpro-ocr-models-v0.7-v0.2.zip" --dir .
+      - name: Restore verified OCR models
+        run: python packaging/unpack_models.py secretariatpro-ocr-models-v0.7-v0.2.zip
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: python -m pip install -r requirements.txt -r requirements-test.txt -c constraints-macos.txt
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Audit and regression tests
+        run: python -m unittest discover -s tests
+      - name: Check JavaScript
+        run: |
+          node --check script.js
+          node --check webapp/app.js
+          node --check manager_app/app.js
+      - name: Record resolved dependencies
+        run: python -m pip freeze > resolved-dependencies.txt
+      - name: Build native applications
+        run: |
+          python -m PyInstaller --noconfirm --clean SecretariatPro_App.spec
+          python -m PyInstaller --noconfirm --clean SecretariatPro_Manager.spec
+          python -m PyInstaller --noconfirm --clean SecretariatPro_OCR.spec
+      - name: Prepare Windows installer prerequisites
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./packaging/windows-prerequisites.ps1
+      - name: Assemble installer
+        run: python packaging/assemble.py
+      - name: Smoke test installed applications (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./packaging/smoke-windows.ps1
+      - uses: actions/upload-artifact@v7
+        with:
+          name: SecretariatPro-beta-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.sha256
+            release/smoke-*.log
+            resolved-dependencies.txt
+          if-no-files-found: error
+          retention-days: 30

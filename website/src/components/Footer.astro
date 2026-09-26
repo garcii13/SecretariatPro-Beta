@@ -1,0 +1,70 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/secretariatpro-logo.png';
+import { getLang } from '../lib/i18n';
+
+const lang = getLang(Astro.url.pathname);
+---
+
+<footer class="site-footer">
+  <div class="shell footer-grid footer-grid-simple">
+    <div class="footer-main">
+      <a
+        href={lang === 'es' ? '/' : '/en/'}
+        class="brand footer-brand"
+      >
+        <Image
+          src={logo}
+          alt=""
+          width={42}
+          height={42}
+          densities={[1, 2, 3]}
+          format="png"
+          loading="lazy"
+          decoding="async"
+        />
+        <span>SecretariatPro</span>
+      </a>
+
+      <p>
+        {lang === 'es'
+          ? 'Gestión de competición y realización en directo, conectadas en un único sistema.'
+          : 'Competition management and live production, connected in a single system.'}
+      </p>
+    </div>
+
+    <div>
+      <strong>{lang === 'es' ? 'Producto' : 'Product'}</strong>
+      <a href={lang === 'es' ? '/live' : '/en/live'}>Live</a>
+      <a href={lang === 'es' ? '/manager' : '/en/manager'}>Manager</a>
+      <a href={lang === 'es' ? '/cuenta' : '/en/account'}>
+        {lang === 'es' ? 'Mi cuenta' : 'My account'}
+      </a>
+    </div>
+
+    <div>
+      <strong>Legal</strong>
+
+      <a href={lang === 'es' ? '/aviso-legal' : '/en/legal-notice'}>
+        {lang === 'es' ? 'Aviso legal' : 'Legal notice'}
+      </a>
+
+      <a href={lang === 'es' ? '/privacidad' : '/en/privacy'}>
+        {lang === 'es' ? 'Privacidad' : 'Privacy'}
+      </a>
+
+      <a href={lang === 'es' ? '/cookies' : '/en/cookies'}>
+        {lang === 'es' ? 'Cookies' : 'Cookies'}
+      </a>
+
+      <a href={lang === 'es' ? '/condiciones' : '/en/terms'}>
+        {lang === 'es' ? 'Condiciones de uso' : 'Terms of use'}
+      </a>
+    </div>
+  </div>
+
+  <div class="shell footer-bottom">
+    <span>© {new Date().getFullYear()} SecretariatPro</span>
+    <span>ES · EN</span>
+  </div>
+</footer>

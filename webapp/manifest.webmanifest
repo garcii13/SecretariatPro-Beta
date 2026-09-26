@@ -1,0 +1,17 @@
+{
+  "name": "SecretariatPro Remote",
+  "short_name": "SecretariatPro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#041630",
+  "theme_color": "#041630",
+  "description": "Control profesional local de retransmisiones deportivas",
+  "icons": [
+    {
+      "src": "/app/sp_logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

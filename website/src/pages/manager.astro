@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MediaShowcase from '../components/MediaShowcase.astro';
+import manager from '../assets/managercaptura.png';
+---
+<BaseLayout title="SecretariatPro Manager | Gestión de competiciones">
+  <section class="page-hero">
+    <div class="shell" data-reveal>
+      <h1>La competición detrás de <span class="kicker">cada emisión.</span></h1>
+      <p class="lead">El entorno central desde el que federaciones, ligas y clubes organizan la información que utilizarán sus realizadores en Live.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:30px">
+    <div class="shell">
+      <MediaShowcase
+        image={manager}
+        alt="Interfaz de SecretariatPro"
+        title="Una competición. Muchos partidos. Un único entorno de gestión."
+        caption="Datos, usuarios e identidad visual preparados para llegar a Live."
+      />
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell grid-4">
+      {[
+        ['Competiciones','Temporadas y estructura competitiva.'],
+        ['Equipos','Nombres, colores, logos e identidad.'],
+        ['Jugadores','Base central y rosters por temporada.'],
+        ['Partidos','Creación, edición y control del calendario.'],
+        ['Realizadores','Asignación de partidos a usuarios autorizados.'],
+        ['Usuarios','Accesos y permisos por organización.'],
+        ['Identidad visual','Configuración gráfica utilizada por Live.'],
+        ['Datos comunes','Todos trabajan desde una única fuente.']
+      ].map(([t,d]) => <article class="card" data-reveal><h3>{t}</h3><p>{d}</p></article>)}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="shell split">
+      <div data-reveal>
+        <h2>Un Manager.<br/>Muchos partidos en directo.</h2>
+        <p class="lead">Manager centraliza la competición y distribuye la información necesaria a las instalaciones Live autorizadas.</p>
+      </div>
+
+      <div class="panel" data-reveal="delay-1">
+        <div class="panel-head"><span class="panel-title">Competition Hub</span><span class="status-dot">● sincronizado</span></div>
+        <div class="metric-grid">
+          <div class="metric"><small>PARTIDOS</small><strong>24</strong>Temporada activa</div>
+          <div class="metric"><small>EQUIPOS</small><strong>10</strong>Datos centralizados</div>
+          <div class="metric"><small>REALIZADORES</small><strong>6</strong>Usuarios autorizados</div>
+          <div class="metric"><small>LIVE</small><strong>3</strong>Partidos asignados</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section band">
+    <div class="shell" data-reveal>
+      <h2>Una única fuente de verdad para toda la competición.</h2>
+      <p class="lead">Menos archivos sueltos, menos información duplicada y una identidad visual coherente entre partidos y realizadores.</p>
+    </div>
+  </section>
+</BaseLayout>

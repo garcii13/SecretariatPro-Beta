@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scoreboard</title>
+  <link rel="stylesheet" href="styles.css?v=phase57-coach-tag12">
+</head>
+<body>
+
+<!-- ---------- SCOREBOARD ---------- -->
+<div class="scoreboard-wrapper hidden" id="scoreboard-wrapper">
+  <div class="scoreboard" id="scoreboard">
+    <div class="section team1-bar">
+      <img id="team1-logo" src="" alt="Team 1 Logo">
+    </div>
+
+    <div class="section grey team1-name-box">
+      <input type="text" class="score-input team1-name" placeholder="Team 1" readonly tabindex="-1">
+    </div>
+
+    <div class="section center">
+      <input type="text" class="score-box team1-score" placeholder="0" readonly tabindex="-1">
+      <div class="logo-liga">
+        <img id="scoreboard-league-logo" src="" alt="League Logo" class="league-logo">
+      </div>
+      <input type="text" class="score-box team2-score" placeholder="0" readonly tabindex="-1">
+      <div class="time-box"><span class="clock-content"><span id="clock-period" hidden></span><span id="match-time">00:00</span></span>
+        <div id="period-strip" class="period-strip hidden" aria-label="Periodo actual"></div>
+      </div>
+    </div>
+
+    <div class="section grey team2-name-box">
+      <input type="text" class="score-input team2-name" placeholder="Team 2" readonly tabindex="-1">
+    </div>
+
+    <div class="section team2-bar">
+      <img id="team2-logo" src="" alt="Team 2 Logo">
+    </div>
+
+    <div class="sp-team-status-stack sp-team-status-stack--home" id="team1-status-stack" aria-live="polite" aria-label="Estados del equipo local"></div>
+    <div class="sp-team-status-stack sp-team-status-stack--away" id="team2-status-stack" aria-live="polite" aria-label="Estados del equipo visitante"></div>
+  </div>
+</div>
+
+<!-- Goal bottom bar -->
+<div class="bottom-bar" id="bottom-bar">
+  <div class="bottom-team-block" id="bottom-team-block">
+    <span class="bottom-team-accent" aria-hidden="true"></span>
+    <img id="bottom-team-logo" src="" alt="Team logo">
+  </div>
+  <div class="bottom-match-state" aria-label="Estado actual del partido">
+    <div class="bottom-match-time" id="bottom-match-time">00:00</div>
+    <div class="bottom-current-score" id="bottom-current-score">0–0</div>
+  </div>
+  <div class="bottom-event-copy">
+    <div class="bottom-person-row bottom-scorer-row">
+      <span class="bottom-person-number" id="bottom-scorer-number"></span>
+      <span class="bottom-person-name" id="bottom-scorer-name"></span>
+      <span class="bottom-goal-count" id="bottom-goal-count"></span>
+    </div>
+    <div class="bottom-person-row bottom-assistant-row" id="bottom-assistant-row" hidden>
+      <span class="bottom-person-number" id="bottom-assistant-number"></span>
+      <span class="bottom-person-name" id="bottom-assistant-name"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Player statistics bottom panel -->
+<div class="player-profile-bar" id="player-profile-bar">
+  <div class="player-profile-team-block" id="player-profile-team-block">
+    <img id="player-profile-team-logo" src="" alt="Team logo">
+  </div>
+  <div class="player-profile-main">
+    <div class="player-profile-identity">
+      <span class="player-profile-number" id="player-profile-number">#0</span>
+      <span class="player-profile-name" id="player-profile-name">JUGADOR</span>
+    </div>
+    <div class="player-profile-details">
+      <div><span>FECHA NAC.</span><b id="player-profile-birth">—</b></div>
+      <div><span>NACIONALIDAD</span><b id="player-profile-nationality">—</b></div>
+      <div><span>POSICIÓN</span><b id="player-profile-position">—</b></div>
+    </div>
+  </div>
+  <div class="player-profile-stats">
+    <div><b id="player-profile-played">0</b><span>PARTIDOS</span></div>
+    <div><b id="player-profile-goals">0</b><span>GOLES</span></div>
+    <div><b id="player-profile-assists">0</b><span>ASIST.</span></div>
+  </div>
+</div>
+
+<!-- ---------- INTERMISSION MODAL ---------- -->
+<div class="intermission-modal" id="intermission-modal">
+  <div class="intermission-content">
+    <div class="intermission-header">
+      <div class="intermission-team-summary intermission-home">
+        <div class="team-stripe" id="intermission-team1-stripe"></div>
+        <img src="" alt="Team 1 Logo" class="team-logo" id="intermission-team1-logo">
+        <div class="team-name" id="intermission-team1-name">Team 1</div>
+        <div class="team-score" id="intermission-team1-score">0</div>
+      </div>
+      <div class="intermission-center">
+        <div class="league-logo-container">
+          <img id="intermission-league-logo" src="" alt="League Logo" class="league-logo">
+        </div>
+        <div class="intermission-events-title">EVENTOS</div>
+      </div>
+      <div class="intermission-team-summary intermission-away">
+        <div class="team-stripe" id="intermission-team2-stripe"></div>
+        <div class="team-score" id="intermission-team2-score">0</div>
+        <div class="team-name" id="intermission-team2-name">Team 2</div>
+        <img src="" alt="Team 2 Logo" class="team-logo" id="intermission-team2-logo">
+      </div>
+    </div>
+    <div class="intermission-events-columns">
+      <div class="intermission-events-side intermission-events-home">
+        <div class="intermission-side-title" id="intermission-events-home-title">LOCAL</div>
+        <div class="intermission-events-viewport" id="intermission-events-home-viewport">
+          <div class="intermission-events-list" id="intermission-events-home-list"></div>
+        </div>
+      </div>
+      <div class="intermission-events-side intermission-events-away">
+        <div class="intermission-side-title" id="intermission-events-away-title">VISITANTE</div>
+        <div class="intermission-events-viewport" id="intermission-events-away-viewport">
+          <div class="intermission-events-list" id="intermission-events-away-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- PREMATCH MODAL ---------- -->
+<div id="prematch-modal" class="modal hidden">
+  <div class="prematch-panel">
+    <div class="prematch-accent prematch-accent-home" id="prematch-team1-stripe"></div>
+    <div class="prematch-accent prematch-accent-away" id="prematch-team2-stripe"></div>
+
+    <header class="prematch-header">
+      <div class="prematch-header-copy">
+        <div class="prematch-kicker">PREMATCH</div>
+        <div class="league-name" id="prematch-league-name">Liga Oro</div>
+      </div>
+    </header>
+
+    <div class="prematch-main">
+      <section class="prematch-team-card prematch-team-home" id="prematch-team1-card">
+        <div class="prematch-team-glow" id="prematch-team1-glow"></div>
+        <img id="prematch-team1-logo" class="prematch-team-logo" src="" alt="Team 1 Logo">
+        <div id="prematch-team1-name" class="prematch-team-name">El Valle</div>
+        <div class="prematch-team-role">LOCAL</div>
+      </section>
+
+      <section class="prematch-comparison">
+        <div class="prematch-stat-row prematch-stat-featured">
+          <div class="prematch-stat-value" id="prematch-team1-position">1º</div>
+          <div class="prematch-stat-label">POSICIÓN</div>
+          <div class="prematch-stat-value" id="prematch-team2-position">2º</div>
+        </div>
+        <div class="prematch-stat-row">
+          <div class="prematch-stat-value" id="prematch-team1-points">42</div>
+          <div class="prematch-stat-label">PUNTOS</div>
+          <div class="prematch-stat-value" id="prematch-team2-points">39</div>
+        </div>
+        <div class="prematch-stat-row">
+          <div class="prematch-stat-value prematch-stat-record" id="prematch-team1-wins">14</div>
+          <div class="prematch-stat-label">V · E · D</div>
+          <div class="prematch-stat-value prematch-stat-record" id="prematch-team2-wins">13</div>
+        </div>
+        <div class="prematch-stat-row">
+          <div class="prematch-stat-value" id="prematch-team1-goals-for">60</div>
+          <div class="prematch-stat-label">GOLES A FAVOR</div>
+          <div class="prematch-stat-value" id="prematch-team2-goals-for">58</div>
+        </div>
+        <div class="prematch-stat-row">
+          <div class="prematch-stat-value" id="prematch-team1-goals-against">25</div>
+          <div class="prematch-stat-label">GOLES EN CONTRA</div>
+          <div class="prematch-stat-value" id="prematch-team2-goals-against">30</div>
+        </div>
+      </section>
+
+      <section class="prematch-team-card prematch-team-away" id="prematch-team2-card">
+        <div class="prematch-team-glow" id="prematch-team2-glow"></div>
+        <img id="prematch-team2-logo" class="prematch-team-logo" src="" alt="Team 2 Logo">
+        <div id="prematch-team2-name" class="prematch-team-name">Leganés</div>
+        <div class="prematch-team-role">VISITANTE</div>
+      </section>
+    </div>
+
+    <footer class="prematch-footer prematch-footer-split">
+      <div class="prematch-info-box prematch-info-venue">
+        <span class="prematch-info-label">PABELLÓN</span>
+        <span id="prematch-venue" class="prematch-info-value">—</span>
+      </div>
+      <img id="prematch-league-logo" class="prematch-league-logo prematch-footer-logo" src="" alt="Competition logo">
+      <div class="prematch-info-box prematch-info-time">
+        <span class="prematch-info-label">INICIO</span>
+        <span id="prematch-kickoff" class="prematch-info-value">19:30h</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+
+<!-- ---------- STATISTICS: LINEUPS ---------- -->
+<div id="lineups-team1-modal" class="lineups-modal hidden">
+  <div class="lineups-panel team-lineup-panel">
+    <div class="lineups-team-stripe" id="lineups-team1-stripe"></div>
+    <div class="lineups-header team-only-header">
+      <img id="lineups-competition-logo-1" class="lineups-competition-logo" src="" alt="Competition logo">
+      <div class="lineups-heading-copy">
+        <div id="lineups-title-1" class="lineups-title">ALINEACIONES</div>
+        <div id="lineups-competition-name-1" class="lineups-competition-name"></div>
+      </div>
+      <img id="lineups-team1-logo" class="lineups-team-logo team-only-logo" src="" alt="Local logo">
+    </div>
+    <div id="lineups-team1-name" class="lineups-team-name team-only-name">LOCAL</div>
+    <div id="lineups-team1-starting" class="starting-formation"></div>
+    <div class="squad-caption">CONVOCADOS</div>
+    <div id="lineups-team1-list" class="lineups-list team-only-list"></div>
+    <div id="lineups-team1-coach" class="lineups-coach"></div>
+  </div>
+</div>
+<div id="lineups-team2-modal" class="lineups-modal hidden">
+  <div class="lineups-panel team-lineup-panel">
+    <div class="lineups-team-stripe" id="lineups-team2-stripe"></div>
+    <div class="lineups-header team-only-header">
+      <img id="lineups-competition-logo-2" class="lineups-competition-logo" src="" alt="Competition logo">
+      <div class="lineups-heading-copy">
+        <div id="lineups-title-2" class="lineups-title">ALINEACIONES</div>
+        <div id="lineups-competition-name-2" class="lineups-competition-name"></div>
+      </div>
+      <img id="lineups-team2-logo" class="lineups-team-logo team-only-logo" src="" alt="Away logo">
+    </div>
+    <div id="lineups-team2-name" class="lineups-team-name team-only-name">VISITANTE</div>
+    <div id="lineups-team2-starting" class="starting-formation"></div>
+    <div class="squad-caption">CONVOCADOS</div>
+    <div id="lineups-team2-list" class="lineups-list team-only-list"></div>
+    <div id="lineups-team2-coach" class="lineups-coach"></div>
+  </div>
+</div>
+
+<div id="top-scorers-modal" class="stats-modal hidden">
+  <div class="stats-panel scorer-prematch-panel">
+    <div class="scorer-accent scorer-accent-home"></div>
+    <div class="scorer-accent scorer-accent-away"></div>
+    <header class="scorer-prematch-header">
+      <div class="stats-title">MÁXIMOS PUNTUADORES</div>
+      <div id="top-scorers-competition" class="stats-subtitle"></div>
+    </header>
+    <div class="scorers-grid scorers-original-layout">
+      <section class="scorer-side scorer-card-home" id="top-team1">
+        <div class="scorer-color"></div>
+        <img class="scorer-team-logo">
+        <div class="scorer-team-name"></div>
+        <div class="scorer-player-name"></div>
+        <div class="scorer-metrics">
+          <div><b class="home-goals">0</b><span>GOLES</span></div>
+          <div><b class="home-assists">0</b><span>ASIST.</span></div>
+          <div><b class="home-points">0</b><span>PUNTOS</span></div>
+        </div>
+      </section>
+      <div class="scorers-center-logo"><img id="top-scorers-logo" class="stats-competition-logo scorers-competition-logo" src="" alt="Competition logo"></div>
+      <section class="scorer-side scorer-card-away" id="top-team2">
+        <div class="scorer-color"></div>
+        <img class="scorer-team-logo">
+        <div class="scorer-team-name"></div>
+        <div class="scorer-player-name"></div>
+        <div class="scorer-metrics">
+          <div><b class="away-goals">0</b><span>GOLES</span></div>
+          <div><b class="away-assists">0</b><span>ASIST.</span></div>
+          <div><b class="away-points">0</b><span>PUNTOS</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- STATISTICS: STANDINGS ---------- -->
+<div id="standings-modal" class="stats-modal hidden">
+  <div class="stats-panel standings-panel">
+    <div class="stats-header"><img id="standings-logo" class="stats-competition-logo" src=""><div><div class="stats-title">CLASIFICACIÓN</div><div id="standings-competition" class="stats-subtitle"></div></div></div>
+    <div class="standings-head"><span>#</span><span>EQUIPO</span><span>PJ</span><span>DG</span><span>PTS</span></div>
+    <div id="standings-rows" class="standings-rows"></div>
+  </div>
+</div>
+
+<!-- ---------- PENALTY SHOOTOUT ---------- -->
+<div id="penalties-modal" class="penalties-modal hidden">
+  <div class="penalties-panel">
+    <div class="penalties-top-accent"></div>
+    <header class="penalties-header">
+      <div class="penalties-kicker">PENALTIS</div>
+      <img id="penalties-league-logo" class="penalties-league-logo" src="" alt="Competition logo">
+    </header>
+    <div class="penalties-rows">
+      <section class="penalties-team-row penalties-home-row">
+        <div class="penalties-team-identity">
+          <div id="penalties-team1-logo-box" class="penalties-team-logo-box"><img id="penalties-team1-logo" class="penalties-team-logo" src="" alt="Local logo"></div>
+          <div id="penalties-team1-name" class="penalties-team-name">LOCAL</div>
+        </div>
+        <div id="penalties-team1-attempts" class="penalties-attempts"></div>
+      </section>
+      <section class="penalties-team-row penalties-away-row">
+        <div class="penalties-team-identity">
+          <div id="penalties-team2-logo-box" class="penalties-team-logo-box"><img id="penalties-team2-logo" class="penalties-team-logo" src="" alt="Away logo"></div>
+          <div id="penalties-team2-name" class="penalties-team-name">VISITANTE</div>
+        </div>
+        <div id="penalties-team2-attempts" class="penalties-attempts"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="script.js?v=phase57-coach-tag12"></script>
+</body>
+</html>

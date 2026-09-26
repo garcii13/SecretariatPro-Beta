@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#090c11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SecretariatPro Deck</title>
+  <link rel="manifest" href="/tablet/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/app/sp_logo.png">
+  <link rel="stylesheet" href="/tablet/tablet.css?v=phase74-r2">
+</head>
+<body>
+  <main class="tablet-shell">
+    <header class="deck-header">
+      <div class="deck-brand">
+        <img src="/app/sp_logo.png" alt="SP">
+        <div>
+          <strong>SECRETARIATDECK</strong>
+          <span id="match-name">Sin partido cargado</span>
+        </div>
+      </div>
+      <div class="deck-statuses">
+        <span class="status-chip" id="api-chip"><i></i><b>PC</b></span>
+        <span class="status-chip" id="obs-chip"><i></i><b>OBS</b></span>
+        <span class="status-chip score-chip"><b id="score-copy">0–0 · 00:00</b></span>
+      </div>
+    </header>
+
+    <section class="deck-grid" id="deck-grid" aria-label="SecretariatDeck">
+      <div class="scene-grid" id="scene-grid" aria-live="polite"></div>
+
+      <button class="deck-key" data-overlay="scoreboard"><span>SC</span><b data-i18n="scoreboard">Marcador</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="prematch"><span>PM</span><b>Prematch</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="intermission"><span>IN</span><b>Intermission</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="lineups" data-lineup-team="team1"><span>L1</span><b data-i18n="lineupHome">Alineación local</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="lineups" data-lineup-team="team2"><span>L2</span><b data-i18n="lineupAway">Alineación visitante</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="top_scorers"><span>TOP</span><b data-i18n="scorers">Puntuadores</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="standings"><span>CL</span><b data-i18n="standings">Clasificación</b><small>LISTO</small></button>
+      <button class="deck-key" data-profile-team="team1"><span>P1</span><b data-i18n="playerHome">Jugador local</b><small>FICHA</small></button>
+      <button class="deck-key" data-profile-team="team2"><span>P2</span><b data-i18n="playerAway">Jugador visitante</b><small>FICHA</small></button>
+      <button class="deck-key" data-overlay="penalties"><span>PE</span><b data-i18n="shootout">Penaltis</b><small>LISTO</small></button>
+      <button class="deck-key" data-overlay="bottom_bar"><span>BB</span><b>Bottom bar</b><small>LISTO</small></button>
+      <button class="deck-key event-key" data-goal-team="team1"><span>G1</span><b data-i18n="goalHome">Gol local</b><small>ACTA</small></button>
+      <button class="deck-key event-key" data-goal-team="team2"><span>G2</span><b data-i18n="goalAway">Gol visitante</b><small>ACTA</small></button>
+      <button class="deck-key penalty-key" data-penalty-team="team1"><span>2L</span><b data-i18n="penaltyHome">Expulsión local</b><small>PP</small></button>
+      <button class="deck-key penalty-key" data-penalty-team="team2"><span>2V</span><b data-i18n="penaltyAway">Expulsión visitante</b><small>PP</small></button>
+<button class="deck-key" data-extra="mark"><span>●</span><b data-i18n="mark">MARCAR</b></button>
+<button class="deck-key" data-extra="library"><span>▶</span><b data-i18n="library">REPETICIONES</b></button>
+<button class="deck-key" data-extra="period"><span>P</span><b data-i18n="period">Periodo</b></button>
+<button class="deck-key" data-extra="empty1"><span>EN1</span><b data-i18n="empty1">Empty net · 1</b></button>
+<button class="deck-key" data-extra="empty2"><span>EN2</span><b data-i18n="empty2">Empty net · 2</b></button>
+<button class="deck-key" data-extra="queue"><span>Q</span><b data-i18n="queue">Cola de gráficos</b></button>
+<button class="deck-key" data-extra="sequences"><span>SEQ</span><b data-i18n="sequences">Secuencias</b></button>
+      <button class="deck-key clear-key" data-hide-all><span>CLR</span><b data-i18n="clear">Limpiar todo</b><small>MASTER</small></button>
+    </section>
+
+    <section class="active-pp-deck" id="active-pp-deck" hidden></section>
+  </main>
+
+  <div class="workflow" id="workflow" hidden>
+    <section class="workflow-card">
+      <header>
+        <div>
+          <small id="workflow-kicker">EVENTO</small>
+          <h1 id="workflow-title">Selecciona</h1>
+          <p id="workflow-help"></p>
+        </div>
+        <button type="button" class="workflow-close" id="workflow-close" aria-label="Cerrar">×</button>
+      </header>
+      <div class="workflow-summary" id="workflow-summary"></div>
+      <div class="workflow-grid" id="workflow-grid"></div>
+      <footer>
+        <button type="button" id="workflow-back" hidden>Volver</button>
+        <button type="button" id="workflow-cancel">Cancelar</button>
+      </footer>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script src="/tablet/tablet.js?v=phase74-r2" type="module"></script>
+</body>
+</html>

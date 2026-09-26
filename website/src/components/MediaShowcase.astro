@@ -1,0 +1,33 @@
+---
+import { Image } from 'astro:assets';
+
+const {
+  image,
+  alt = '',
+  title,
+  caption,
+  priority = false,
+  className = ''
+} = Astro.props;
+---
+<figure class:list={['media-showcase', className]} data-reveal>
+  <div class="media-frame">
+    <Image
+      src={image}
+      alt={alt}
+      widths={[640, 960, 1280, 1600]}
+      sizes="(max-width: 900px) 100vw, 58vw"
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchpriority={priority ? 'high' : 'auto'}
+      quality={88}
+    />
+    <div class="media-glow" aria-hidden="true"></div>
+  </div>
+  {(title || caption) && (
+    <figcaption>
+      {title && <strong>{title}</strong>}
+      {caption && <span>{caption}</span>}
+    </figcaption>
+  )}
+</figure>
