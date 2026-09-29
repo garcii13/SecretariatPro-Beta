@@ -26,7 +26,8 @@ if sys.platform == 'darwin':
         native_binaries.append((source, destination))
     binaries = native_binaries
 
-a = Analysis([str(base/'ocr_worker.py')], pathex=[str(base)], datas=datas, binaries=binaries, hiddenimports=hidden)
+a = Analysis([str(base/'ocr_worker.py')], pathex=[str(base)], datas=datas, binaries=binaries, hiddenimports=hidden,
+             runtime_hooks=[str(base/'packaging/rthook_paddle.py')])
 # collect_all also returns .dylib files as data, which Analysis reclassifies.
 # Replace any remaining foreign-architecture helpers with the matching native
 # NumPy helper; exclude unused foreign libraries without a native equivalent.

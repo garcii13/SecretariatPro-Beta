@@ -45,7 +45,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[str(ROOT / "packaging/rthook_paddle.py")],
     excludes=[],
     noarchive=False,
 )
