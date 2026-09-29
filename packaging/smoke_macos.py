@@ -11,7 +11,8 @@ from urllib.request import urlopen
 root = Path(__file__).resolve().parents[1]
 if os.environ.get('CI') != 'true':
     raise SystemExit('Run on an isolated CI runner, not against user application data')
-for product, port in (('Live', 18765), ('Manager', 18766)):
+products = (('Live', 18765),) if os.environ.get('SP_BUILD_PRODUCT') == 'Live' else (('Live', 18765), ('Manager', 18766))
+for product, port in products:
     images = list((root / 'release').glob(f'SecretariatPro-{product}-*-macos-*.dmg'))
     if len(images) != 1:
         raise SystemExit(f'Expected one DMG for {product}')
@@ -54,6 +55,10 @@ for product, port in (('Live', 18765), ('Manager', 18766)):
                 if app.poll() is not None:
                     raise RuntimeError(f'{product} exited after opening: {log.read_text()}')
                 if product == 'Live':
+                    camera = subprocess.run([str(executable), '--diagnose-camera'], capture_output=True, text=True, timeout=30)
+                    if camera.returncode or '"type": "camera_runtime_ok"' not in camera.stdout:
+                        raise RuntimeError(f'Installed Live camera runtime failed: {camera.stdout}\n{camera.stderr}')
+                    print(camera.stdout)
                     worker = executable.parent / 'SecretariatPro_OCR'
                     for option, expected in (('--diagnose-camera', 'camera_runtime_ok'), ('--diagnose-window', 'window_runtime_ok'), ('--diagnose-ocr', 'ocr_runtime_ok')):
                         result = subprocess.run([str(worker), option], capture_output=True, text=True, timeout=180)

@@ -6,11 +6,17 @@ on:
         description: Platform to build
         type: choice
         default: all
-        options: [all, windows-2022, macos-15, macos-15-intel]
+        options: [all, macos, windows-2022, macos-15, macos-15-intel]
+      product:
+        description: Application to build
+        type: choice
+        default: all
+        options: [all, Live]
   push:
     tags: ['v*-beta.*']
 env:
   PYTHONUTF8: "1"
+  SP_BUILD_PRODUCT: ${{ inputs.product || 'all' }}
 permissions:
   contents: read
 jobs:
@@ -18,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(inputs.platform == 'windows-2022' && '["windows-2022"]' || inputs.platform == 'macos-15' && '["macos-15"]' || inputs.platform == 'macos-15-intel' && '["macos-15-intel"]' || '["windows-2022", "macos-15", "macos-15-intel"]') }}
+        os: ${{ fromJSON(inputs.platform == 'windows-2022' && '["windows-2022"]' || inputs.platform == 'macos-15' && '["macos-15"]' || inputs.platform == 'macos-15-intel' && '["macos-15-intel"]' || inputs.platform == 'macos' && '["macos-15", "macos-15-intel"]' || '["windows-2022", "macos-15", "macos-15-intel"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     steps:
@@ -44,14 +50,17 @@ jobs:
         run: |
           node --check script.js
           node --check webapp/app.js
+          node --test tests/ocr_preview.test.cjs
           node --check manager_app/app.js
       - name: Record resolved dependencies
         run: python -m pip freeze > resolved-dependencies.txt
-      - name: Build native applications
+      - name: Build Live and OCR
         run: |
           python -m PyInstaller --noconfirm --clean SecretariatPro_App.spec
-          python -m PyInstaller --noconfirm --clean SecretariatPro_Manager.spec
           python -m PyInstaller --noconfirm --clean SecretariatPro_OCR.spec
+      - name: Build Manager
+        if: inputs.product != 'Live'
+        run: python -m PyInstaller --noconfirm --clean SecretariatPro_Manager.spec
       - name: Prepare Windows installer prerequisites
         if: runner.os == 'Windows'
         shell: pwsh

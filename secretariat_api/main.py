@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import re
+import logging
+from secretariat_core.release import RELEASE_VERSION
 
 import asyncio
 import json
@@ -394,7 +396,7 @@ async def overlay_score_file(filename: str) -> Response:
 
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
-    return {"ok": True, "version": API_VERSION, "base_dir": str(BASE_DIR), "local_logo_service": False}
+    return {"ok": True, "version": API_VERSION, "release": RELEASE_VERSION, "base_dir": str(BASE_DIR), "local_logo_service": False}
 
 
 @app.post("/api/system/clipboard")
@@ -1535,6 +1537,7 @@ async def ocr_preview(
     except HTTPException:
         raise
     except Exception as exc:
+        logging.getLogger("secretariat.capture").warning("OCR preview failed (%s, id=%s): %s", source_type, source_id, exc)
         raise HTTPException(503, str(exc)) from exc
 
 

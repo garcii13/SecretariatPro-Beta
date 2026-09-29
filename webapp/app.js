@@ -2341,7 +2341,7 @@ function ocrSourceKey(config = {}) {
 
 function renderOCR(config, runtime = {}) {
   const sourceLabel = config.source_label || config.window_title || "Sin fuente seleccionada";
-  $("#ocr-current-window").textContent = sourceLabel;
+  if (!previewController) $("#ocr-current-window").textContent = sourceLabel;
   if (document.activeElement !== $("#ocr-poll")) $("#ocr-poll").value = config.poll_ms || 700;
   if (!app.ocrDrag && !app.ocrDirty) {
     app.ocrRegions = structuredClone(config.regions || {});
@@ -2356,21 +2356,25 @@ function renderOCR(config, runtime = {}) {
     option.dataset.sourceLabel = sourceLabel;
     select.prepend(option);
   }
-  if (sourceKey && document.activeElement !== select) select.value = sourceKey;
+  if (sourceKey && !app.ocrDirty && document.activeElement !== select) {
+    if (select.value !== sourceKey && previewController) previewController.reset("Fuente cambiada. Captura un nuevo preview.");
+    select.value = sourceKey;
+  }
 
   const running = Boolean(runtime.running);
   $("#start-ocr").disabled = running;
   $("#stop-ocr").disabled = !running;
-  $("#ocr-runtime-dot").className = running ? "is-running" : runtime.error ? "is-error" : "";
-  $("#ocr-runtime-copy").textContent = running ? "OCR en marcha" : runtime.error ? "OCR con incidencia" : "OCR detenido";
   const cameraStream = runtime?.camera_stream || {};
-  const persistentCameraCopy = !running && cameraStream.active && (config.source_type || "window") === "camera"
+  const sourceError = runtime.error || ((config.source_type || "window") === "camera" ? cameraStream.error : "");
+  $("#ocr-runtime-dot").className = sourceError ? "is-error" : running ? "is-running" : "";
+  $("#ocr-runtime-copy").textContent = sourceError ? "OCR con incidencia" : running ? "OCR en marcha" : "OCR detenido";
+  const persistentCameraCopy = !running && cameraStream.active && !cameraStream.error && (config.source_type || "window") === "camera"
     ? `Cámara encendida de forma continua${cameraStream.detail ? ` · ${cameraStream.detail}` : ""}.`
     : "";
   const modeCopy = app.snapshot?.score_control?.mode === "manual"
     ? "El reloj se aplica; las lecturas de resultado se supervisan pero no sobrescriben el modo manual."
     : "Reloj y resultado alimentan directamente la emisión.";
-  $("#ocr-runtime-detail").textContent = runtime.error || persistentCameraCopy || modeCopy;
+  $("#ocr-runtime-detail").textContent = sourceError || persistentCameraCopy || (running ? modeCopy : "La lectura está detenida. Captura un preview y configura las regiones antes de iniciar OCR.");
   updateOCRPerspectiveHelp();
   updateOCRReadingMeta(runtime);
   drawOCRRegions();
@@ -3303,6 +3307,7 @@ async function refreshWindows() {
   try {
     const rows = await api("/api/ocr/sources");
     const select = $("#ocr-window");
+    const current = select.value || ocrSourceKey(app.snapshot?.ocr || {});
     select.innerHTML = '<option value="">Selecciona una fuente de vídeo</option>';
     const windows = rows.filter((row) => row.source_type === "window");
     const cameras = rows.filter((row) => row.source_type === "camera");
@@ -3321,8 +3326,8 @@ async function refreshWindows() {
     };
     addGroup("Ventanas", windows);
     addGroup("Cámaras", cameras);
-    const current = ocrSourceKey(app.snapshot?.ocr || {});
     if (current && [...select.options].some((option) => option.value === current)) select.value = current;
+    else if (current && previewController) previewController.reset("La fuente anterior ya no está disponible. Selecciona otra fuente.");
     toast(`${windows.length} ventanas · ${cameras.length} cámaras encontradas.`);
   } catch (error) { toast(error.message, true); }
 }
@@ -3454,6 +3459,7 @@ function drawOCRRegions() {
   const dpr = window.devicePixelRatio || 1;
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  if (!$("#ocr-preview-image").classList.contains("is-visible")) return;
   if (app.ocrPerspectiveEdit) {
     const points = app.ocrPerspectiveDraft || [];
     context.strokeStyle = "#4b7cff";
@@ -3583,11 +3589,13 @@ function endOCRRegionDrag(event) {
 async function activateOCRSourceSelection() {
   const source = selectedOCRSource();
   if (!source.source_id) return;
+  const generation = app.ocrSourceGeneration = (app.ocrSourceGeneration || 0) + 1;
   try {
     const result = await api("/api/ocr/source/activate", {
       method: "POST",
       body: JSON.stringify(source),
     });
+    if (generation !== app.ocrSourceGeneration) return;
     if (result?.snapshot) render(result.snapshot);
     const camera = result?.source?.camera || {};
     if (source.source_type === "camera") {
@@ -3595,8 +3603,26 @@ async function activateOCRSourceSelection() {
       toast(`Cámara OCR activa de forma continua${detail}.`);
     }
   } catch (error) {
+    if (generation !== app.ocrSourceGeneration) return;
+    ocrPreviewController().reset(error.message || "No se pudo activar la fuente OCR.");
     toast(error.message || "No se pudo activar la fuente OCR.", true);
   }
+}
+
+let previewController;
+function ocrPreviewController() {
+  if (!previewController) previewController = new window.OCRPreviewController({
+    image: $("#ocr-preview-image"), empty: $("#ocr-empty"), status: $("#ocr-current-window"),
+    onReady: () => requestAnimationFrame(syncOCRCanvasSize),
+    onReset: () => {
+      app.ocrDrag = null;
+      const canvas = $("#ocr-region-canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+    },
+    onError: (message) => toast(message, true),
+  });
+  return previewController;
 }
 
 async function captureOCRPreview() {
@@ -3608,24 +3634,11 @@ async function captureOCRPreview() {
     source_label: fallback.source_label || fallback.window_title || "",
   };
   if (!source.source_id && !source.source_label) return toast("Selecciona una fuente OCR.", true);
-  const image = $("#ocr-preview-image");
-  image.classList.remove("is-visible");
-  $("#ocr-empty").hidden = false;
-  $("#ocr-current-window").textContent = "Capturando preview…";
-  image.onload = () => {
-    $("#ocr-empty").hidden = true;
-    image.classList.add("is-visible");
-    $("#ocr-current-window").textContent = source.source_label || "Fuente OCR";
-    requestAnimationFrame(syncOCRCanvasSize);
-  };
-  image.onerror = () => {
-    image.classList.remove("is-visible");
-    $("#ocr-empty").hidden = false;
-    $("#ocr-current-window").textContent = "No se pudo capturar la fuente";
-    toast("No se pudo obtener el preview OCR.", true);
-  };
   const raw = app.ocrPerspectiveEdit ? "&raw=true" : "";
-  image.src = `/api/ocr/preview?source_type=${encodeURIComponent(source.source_type)}&source_id=${encodeURIComponent(source.source_id)}&window_title=${encodeURIComponent(source.source_label)}${raw}&v=${Date.now()}`;
+  return ocrPreviewController().load(
+    `/api/ocr/preview?source_type=${encodeURIComponent(source.source_type)}&source_id=${encodeURIComponent(source.source_id)}&window_title=${encodeURIComponent(source.source_label)}${raw}&v=${Date.now()}`,
+    source.source_label,
+  );
 }
 
 
@@ -4266,7 +4279,8 @@ function bindEvents() {
   $("#refresh-windows").addEventListener("click", refreshWindows);
   $("#ocr-window").addEventListener("change", async (event) => {
     const option = event.target.selectedOptions?.[0];
-    $("#ocr-current-window").textContent = option?.dataset?.sourceLabel || (event.target.value ? option?.textContent : "Sin fuente seleccionada");
+    app.ocrSourceGeneration = (app.ocrSourceGeneration || 0) + 1;
+    ocrPreviewController().reset(event.target.value ? "Fuente seleccionada. Pulsa Capturar preview." : "Sin fuente seleccionada");
     app.ocrDirty = true;
     if (event.target.value) await activateOCRSourceSelection();
   });

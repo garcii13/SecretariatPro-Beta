@@ -41,6 +41,11 @@ class MacWindowCapture:
         value, error = result
         if error is not None or value is None:
             detail = str(error.localizedDescription()) if error is not None else "sin imagen"
+            if any(word in detail.lower() for word in ("tcc", "denied", "declined", "permission")):
+                raise WindowCaptureError("macOS ha denegado la captura de ventanas a esta copia de Live. "
+                    "Si el permiso de Grabación de pantalla aparece activado, cierra Live y vuelve a añadir "
+                    "la copia de Aplicaciones en esa lista; el permiso puede pertenecer a una compilación anterior. "
+                    f"Detalle: {detail}")
             raise WindowCaptureError(f"No se pudo capturar la ventana: {detail}. Comprueba el permiso de Grabación de pantalla de SecretariatPro.")
         return value
 

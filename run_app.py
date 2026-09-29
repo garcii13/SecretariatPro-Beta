@@ -19,7 +19,28 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w", encoding="utf-8")
 
+# On Mac, reuse this unpacked, signed app for camera capture. Starting the
+# large one-file OCR executable first extracts the OCR stack before the camera
+# can even initialize, which can exceed the camera startup timeout.
+if sys.platform == "darwin" and len(sys.argv) > 1 and sys.argv[1] == "--camera":
+    for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS"):
+        os.environ[variable] = "1"
+    from video_source import camera_worker
+    try:
+        camera_worker(int(sys.argv[2]), sys.argv[3])
+    except Exception as exc:
+        print("SPCAMERA_ERROR " + json.dumps({"message": str(exc)}, ensure_ascii=False), flush=True)
+        raise SystemExit(1)
+    raise SystemExit(0)
+
+if sys.platform == "darwin" and len(sys.argv) > 1 and sys.argv[1] == "--diagnose-camera":
+    import cv2
+    import numpy
+    print("OCRMSG " + json.dumps({"type": "camera_runtime_ok", "numpy": numpy.__version__, "opencv": cv2.__version__}), flush=True)
+    raise SystemExit(0)
+
 import uvicorn
+from secretariat_core.release import RELEASE_VERSION
 
 APP_TITLE = "SecretariatPro Live"
 DEFAULT_HOST = "0.0.0.0"
@@ -139,6 +160,19 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    if sys.platform == "darwin":
+        import logging
+        from logging.handlers import RotatingFileHandler
+        from secretariat_core.app_environment import data_directory
+        log_dir = data_directory(BASE_DIR) / ".runtime"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        handler = RotatingFileHandler(log_dir / "live.log", maxBytes=2_000_000, backupCount=2, encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+        for name in ("secretariat.capture", "uvicorn.error"):
+            logger = logging.getLogger(name)
+            logger.addHandler(handler)
+            logger.setLevel(logging.INFO)
+        logging.getLogger("secretariat.capture").info("Live %s starting", RELEASE_VERSION)
     import webview
 
     args = parse_args()
@@ -147,6 +181,9 @@ def main() -> int:
 
     existing = health_payload(args.port)
     if existing and existing.get("ok") is True:
+        if existing.get("release") != RELEASE_VERSION:
+            show_error("Hay otra versión de Live abierta. Ciérrala antes de abrir esta versión para evitar mezclar motores y fuentes de vídeo.")
+            return 2
         # A second launcher may attach to the already running SecretariatPro API.
         pass
     else:
@@ -178,7 +215,7 @@ def main() -> int:
     # resizing, restoring and multi-monitor movement.
     webview.settings["SHOW_DEFAULT_MENUS"] = False
     window = webview.create_window(
-        APP_TITLE,
+        f"{APP_TITLE} · {RELEASE_VERSION}",
         desktop_url,
         width=1440,
         height=900,

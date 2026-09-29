@@ -2,9 +2,14 @@ name: Publish verified installers
 on:
   workflow_dispatch:
     inputs:
+      scope:
+        description: Release scope
+        type: choice
+        default: macos-live
+        options: [macos-live, all]
       windows_run:
-        description: Successful Windows installer run
-        required: true
+        description: Successful Windows installer run (only for all platforms)
+        required: false
         type: string
       macos_arm_run:
         description: Successful Apple Silicon installer run
@@ -21,6 +26,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
+      SP_RELEASE_SCOPE: ${{ inputs.scope }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       WINDOWS_RUN: ${{ inputs.windows_run }}

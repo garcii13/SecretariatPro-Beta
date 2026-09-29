@@ -2,9 +2,11 @@
 from pathlib import Path
 import sys
 import importlib.util
+import runpy
 from PyInstaller.utils.hooks import collect_all, collect_submodules, copy_metadata
 
 ROOT = Path(SPECPATH)
+release_version = runpy.run_path(str(ROOT / 'secretariat_core/release.py'))['RELEASE_VERSION']
 
 datas = [
     (str(ROOT / "webapp"), "webapp"),
@@ -104,6 +106,9 @@ if sys.platform == "darwin":
         icon=str(ROOT / "assets" / "secretariatpro.png"),
         bundle_identifier="com.secretariatpro.app",
         info_plist={
+            "CFBundleShortVersionString": release_version.split('-')[0],
+            "CFBundleVersion": release_version.rsplit('.', 1)[-1],
+            "CFBundleGetInfoString": f"SecretariatPro Live {release_version}",
             "NSCameraUsageDescription": "SecretariatPro utiliza la cámara seleccionada únicamente como fuente de vídeo para el OCR del marcador.",
             "NSCameraUseContinuityCameraDeviceType": True,
         },

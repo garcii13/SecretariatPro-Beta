@@ -14,6 +14,7 @@ no longer means open -> capture one preview -> close.
 
 from dataclasses import dataclass
 import mmap
+import json
 import os
 from pathlib import Path
 import platform
@@ -54,6 +55,7 @@ def _camera_backend(cv2: Any) -> int:
 
 
 def open_camera(index: int):
+    ensure_camera_permission()
     import cv2
 
     camera_index = int(index)
@@ -64,6 +66,33 @@ def open_camera(index: int):
     except Exception:
         pass
     return cap
+
+
+def ensure_camera_permission(timeout=25.0):
+    """Wait for macOS consent before OpenCV attempts to open the device."""
+    if sys.platform != "darwin":
+        return
+    import AVFoundation
+    device = AVFoundation.AVCaptureDevice
+    media = AVFoundation.AVMediaTypeVideo
+    status = device.authorizationStatusForMediaType_(media)
+    if status == AVFoundation.AVAuthorizationStatusAuthorized:
+        return
+    if status == AVFoundation.AVAuthorizationStatusNotDetermined:
+        done = threading.Event()
+        result = []
+
+        def completed(granted):
+            result.append(bool(granted))
+            done.set()
+
+        print("Waiting for macOS camera permission", flush=True)
+        device.requestAccessForMediaType_completionHandler_(media, completed)
+        if not done.wait(timeout):
+            raise RuntimeError("macOS está esperando tu autorización de Cámara. Acepta el aviso y vuelve a activar la fuente.")
+        if result and result[0]:
+            return
+    raise RuntimeError("macOS ha denegado el acceso a Cámara de esta copia de Live. Revísalo en Ajustes del Sistema → Privacidad y seguridad → Cámara.")
 
 
 def _macos_camera_devices() -> list[VideoSource] | None:
@@ -414,22 +443,35 @@ class IsolatedCameraStream:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.unlink(missing_ok=True)
         if getattr(sys, "frozen", False):
-            worker = Path(sys.executable).parent / ("SecretariatPro_OCR.exe" if sys.platform == "win32" else "SecretariatPro_OCR")
+            worker = (Path(sys.executable) if sys.platform == "darwin" else
+                      Path(sys.executable).parent / "SecretariatPro_OCR.exe")
             command = [str(worker), "--camera", str(index), str(self.path)]
         else:
             command = [sys.executable, str(Path(__file__).with_name("ocr_worker.py")), "--camera", str(index), str(self.path)]
         with self.path.with_suffix(".log").open("w", encoding="utf-8") as log:
+            log.write(f"Starting camera {index} via {Path(command[0]).name}\n")
+            log.flush()
             self.process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         self.reader = SharedFrameReader(self.path)
-        deadline = time.monotonic() + 12
+        deadline = time.monotonic() + (30 if sys.platform == "darwin" else 12)
         while time.monotonic() < deadline and self.process.poll() is None:
             if self.reader.read() is not None:
                 return
             time.sleep(.05)
         code = self.process.poll()
         self.close()
-        raise RuntimeError(f"La cámara no se pudo iniciar (salida {code}). Revisa permisos y conexión; diagnóstico: {self.path.with_suffix('.log')}")
+        if code is not None:
+            for line in self.path.with_suffix('.log').read_text(encoding='utf-8', errors='replace')[-8192:].splitlines():
+                if line.startswith('SPCAMERA_ERROR '):
+                    try:
+                        message = json.loads(line.removeprefix('SPCAMERA_ERROR ')).get('message')
+                    except (ValueError, AttributeError):
+                        continue
+                    if message:
+                        raise RuntimeError(str(message))
+        detail = "se agotó el tiempo de arranque" if code is None else f"el proceso terminó con código {code}"
+        raise RuntimeError(f"La cámara no se pudo iniciar: {detail}. Comprueba su conexión y el permiso de Cámara de Live en Ajustes del Sistema. Diagnóstico: {self.path.with_suffix('.log')}")
 
     def read(self, *, require_new: bool = False):
         if self.process.poll() is not None:
@@ -449,9 +491,11 @@ class IsolatedCameraStream:
 
 
 def camera_worker(index: int, frame_path: str):
+    print(f"Camera runtime ready; opening device {index}", flush=True)
     import cv2
     cv2.setNumThreads(1)
     stream = CameraStream(index)
+    print("Camera device opened; waiting for frames", flush=True)
     publisher = SharedFramePublisher(Path(frame_path))
     try:
         while True:
@@ -477,6 +521,7 @@ class PersistentCameraService:
         cv2.setNumThreads(1)
         self.frame_path = Path(frame_path)
         self._lock = threading.RLock()
+        self._transition_lock = threading.RLock()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._stream: CameraStream | None = None
@@ -517,6 +562,12 @@ class PersistentCameraService:
         return frame
 
     def activate(self, index: int) -> dict[str, Any]:
+        # Source selection and preview requests can arrive together. They must
+        # share one startup, not terminate each other's process or mmap file.
+        with self._transition_lock:
+            return self._activate(index)
+
+    def _activate(self, index: int) -> dict[str, Any]:
         wanted = int(index)
         with self._lock:
             if self._index == wanted and self._stream is not None and self._thread is not None and self._thread.is_alive():
@@ -584,6 +635,10 @@ class PersistentCameraService:
             time.sleep(0.01)
 
     def deactivate(self) -> None:
+        with self._transition_lock:
+            self._deactivate()
+
+    def _deactivate(self) -> None:
         with self._lock:
             stop = self._stop
             thread = self._thread

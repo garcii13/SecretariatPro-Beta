@@ -5,10 +5,12 @@ import platform
 import shutil
 import subprocess
 import tempfile
+import os
+import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "1.0.0-beta.7"
-PRODUCTS = ("Live", "Manager")
+VERSION = runpy.run_path(str(ROOT / 'secretariat_core/release.py'))['RELEASE_VERSION']
+PRODUCTS = ("Live",) if os.environ.get("SP_BUILD_PRODUCT") == "Live" else ("Live", "Manager")
 
 
 def assemble(root: Path = ROOT) -> list[Path]:
