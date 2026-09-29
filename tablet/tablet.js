@@ -128,6 +128,14 @@ function renderPowerplayDeck(powerplay = {}) {
   host.hidden = !host.children.length;
 }
 
+function renderLive(live) {
+  if (!app.snapshot) return;
+  Object.assign(app.snapshot, { scores: live.scores, graphic_scores: live.graphic_scores, score_control: live.score_control });
+  app.snapshot.state = { ...app.snapshot.state, powerplay: live.powerplay };
+  const scores = live.scores || {};
+  $("#score-copy").textContent = `${scores.team1_score ?? 0}–${scores.team2_score ?? 0} · ${scores.time || "00:00"}`;
+}
+
 function render(snapshot) {
   app.snapshot = snapshot;
   app.language = ["es","en","sv","cs","fi","de"].includes(snapshot?.settings?.language) ? snapshot.settings.language : "es";
@@ -308,7 +316,7 @@ function connectSocket() {
   const socket = new WebSocket(`${protocol}//${location.host}/api/ws`);
   app.socket = socket;
   socket.onopen = () => { $("#api-chip").classList.add("is-ok"); clearInterval(app.pollTimer); app.pollTimer = null; };
-  socket.onmessage = (event) => { const message = JSON.parse(event.data); if (message.type === "state") render(message.payload); };
+  socket.onmessage = (event) => { const message = JSON.parse(event.data); if (message.type === "state") render(message.payload); if (message.type === "live") renderLive(message.payload); };
   socket.onclose = () => {
     $("#api-chip").classList.remove("is-ok");
     if (!app.pollTimer) app.pollTimer = setInterval(() => api("/api/state").then(render).catch(() => {}), 2500);

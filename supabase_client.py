@@ -40,7 +40,7 @@ class SupabaseConfigurationError(RuntimeError):
 
 
 class ScoreboardSupabaseClient:
-    def __init__(self, env_path: Path | str | None = None) -> None:
+    def __init__(self, env_path: Path | str | None = None, *, interactive: bool = False) -> None:
         self.env_path = Path(env_path) if env_path else ENV_PATH
         import json
         public_path = BASE_DIR / "public_config.json"
@@ -60,10 +60,29 @@ class ScoreboardSupabaseClient:
             raise SupabaseConfigurationError(
                 f"Faltan SUPABASE_URL y/o SUPABASE_PUBLISHABLE_KEY en {self.env_path}"
             )
-        self.client: Client = create_client(self.url, self.key)
+        self._http_transport = None
+        if interactive:
+            from supabase import ClientOptions
+            import httpx
+            # Bound stalled Live requests including Auth. Leave the Manager's
+            # bulk import/export timeouts unchanged. These are per-I/O limits.
+            self._http_transport = httpx.Client(timeout=httpx.Timeout(15.0, connect=5.0, pool=5.0), follow_redirects=True)
+            try:
+                self.client = create_client(self.url, self.key, options=ClientOptions(httpx_client=self._http_transport))
+            except Exception:
+                self._http_transport.close()
+                raise
+        else:
+            self.client: Client = create_client(self.url, self.key)
         self.user: Any | None = None
         self.active_workspace: dict[str, Any] = {}
         self.active_membership: dict[str, Any] = {}
+
+    def close(self) -> None:
+        """Release an abandoned Live login without signing out other sessions."""
+        transport = getattr(self, "_http_transport", None)
+        if transport is not None:
+            transport.close()
 
     @property
     def user_email(self) -> str:
@@ -348,7 +367,15 @@ class ScoreboardSupabaseClient:
             (row for row in workspaces if str(row.get("id") or "") == str(preferred_workspace_id or "")),
             None,
         ) or workspaces[0]
-        workspace = self.activate_workspace(str(selected.get("id") or ""))
+        # The membership list was validated immediately above. Re-fetching it
+        # via activate_workspace used to add two serial round trips per login.
+        self.active_workspace = dict(selected)
+        self.active_membership = {
+            "workspace_id": str(selected.get("id") or ""),
+            "role": selected.get("role") or "producer",
+            "status": selected.get("membership_status") or "active",
+        }
+        workspace = dict(self.active_workspace)
         subscription = self.latest_workspace_subscription(str(workspace.get("id") or ""))
         return {"workspaces": workspaces, "workspace": workspace, "subscription": subscription}
 
@@ -502,10 +529,9 @@ class ScoreboardSupabaseClient:
         try:
             response = self.client.rpc("sp_submit_ocr_sample", rpc_payload).execute()
         except Exception:
-            try:
-                bucket.remove([object_path])
-            except Exception:
-                pass
+            # The server may have committed metadata before a timeout. Keep
+            # the deterministic object for retry; deleting it can break a
+            # successfully created sample (or another client's duplicate).
             raise
         value = getattr(response, "data", None)
         if isinstance(value, list):
@@ -514,6 +540,8 @@ class ScoreboardSupabaseClient:
             sample_id = value.get("id") or value.get("sample_id")
         else:
             sample_id = value
+        if not sample_id:
+            raise RuntimeError("OCR Lab no confirmó el guardado de los metadatos")
         return {"uploaded": True, "duplicate": False, "id": sample_id, "path": object_path}
 
     # ------------------------------------------------------------------

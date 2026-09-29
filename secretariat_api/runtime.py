@@ -61,6 +61,8 @@ class ApplicationRuntime:
         self._ocr_sample_outbox = self.paths.base_dir / ".runtime" / "ocr_sample_outbox"
         self._ocr_sample_outbox.mkdir(parents=True, exist_ok=True)
         self._ocr_sample_diag_lock = threading.RLock()
+        self._ocr_sample_delivery_lock = threading.Lock()
+        self._ocr_sample_wake = threading.Event()
         self._ocr_sample_diag: dict[str, Any] = {
             "generated": 0,
             "uploaded": 0,
@@ -82,8 +84,12 @@ class ApplicationRuntime:
             camera_service=self.camera_service,
         )
         self._lock = threading.RLock()
+        self._login_lock = threading.Lock()
+        self._session_generation = 0
         from concurrent.futures import ThreadPoolExecutor
         self._replay_import_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="replay-import")
+        self._account_sync_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="account-sync")
+        self._competitions_loaded = False
 
         self.supabase: Any | None = None
         self.workspaces: list[dict[str, Any]] = []
@@ -223,6 +229,7 @@ class ApplicationRuntime:
         """Apply a Manager publication to the running overlay without changing the match."""
         with self._lock:
             client = self.supabase
+            workspace_id = str(self.active_workspace.get("id") or "")
             competition_id = str((self.active_competition or {}).get("id") or "")
             previous = copy.deepcopy(self.published_theme)
         if not client or not getattr(client, "user_id", "") or not self.production_access_allowed():
@@ -234,6 +241,8 @@ class ApplicationRuntime:
         if (theme or {}) == previous:
             return False
         with self._lock:
+            if self.supabase is not client or str(self.active_workspace.get("id") or "") != workspace_id or str((self.active_competition or {}).get("id") or "") != competition_id:
+                return False
             settings = self._apply_published_theme(self.settings_store.load(), theme or {})
             self.settings_store.save(settings)
             self.account_settings_store.save(client.user_id, settings, client.user_email)
@@ -442,12 +451,9 @@ class ApplicationRuntime:
                 normalized,
                 str(getattr(self.supabase, "user_email", "") or ""),
             )
-            try:
-                self.supabase.save_user_app_settings(normalized)
-            except Exception:
-                # Cloud metadata sync is best-effort. A temporary connection
-                # issue must never prevent a live production setting from saving.
-                pass
+            # Serialize account writes, including the initial login sync, so a
+            # slow old request cannot overwrite a more recent settings change.
+            self._account_sync_pool.submit(self._sync_initial_account_settings, self.supabase, copy.deepcopy(normalized))
 
     def safe_settings(self) -> dict[str, Any]:
         raw = self.settings_store.load()
@@ -505,10 +511,7 @@ class ApplicationRuntime:
                     pass
             self._update_ocr_sample_diag(last_error="")
         else:
-            try:
-                self._flush_ocr_sample_outbox_once()
-            except Exception:
-                pass
+            self._ocr_sample_wake.set()
         # The isolated worker gets the consent flag in its immutable startup
         # config. Restarting only when needed applies a changed preference
         # immediately without complicating the real-time IPC protocol.
@@ -537,7 +540,7 @@ class ApplicationRuntime:
         payload["connected"] = bool(self.supabase)
         return payload
 
-    def _queue_ocr_sample(self, payload: dict[str, Any], error: str = "") -> None:
+    def _queue_ocr_sample(self, payload: dict[str, Any], error: str = "") -> bool:
         # Payload contains only the minimised OCR crop, never a full video frame.
         try:
             item = dict(payload)
@@ -545,10 +548,13 @@ class ApplicationRuntime:
             item["queued_at"] = datetime.now(timezone.utc).isoformat()
             item["last_error"] = str(error or "")[:500]
             path = self._ocr_sample_outbox / f"{time.time_ns()}_{uuid4().hex}.json"
-            path.write_text(json.dumps(item, ensure_ascii=False), encoding="utf-8")
-        except Exception:
-            pass
+            from secretariat_core.json_store import JSONStore
+            JSONStore(path).write(item)
+        except Exception as exc:
+            self._update_ocr_sample_diag(last_error=f"No se pudo guardar la muestra local: {type(exc).__name__}: {exc}"[:500])
+            return False
         self._update_ocr_sample_diag(last_error=str(error or "")[:500])
+        return True
 
     def _send_ocr_sample_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         if not self.supabase:
@@ -579,7 +585,10 @@ class ApplicationRuntime:
             "width": payload.get("width"),
             "height": payload.get("height"),
         }
-        return self.supabase.upload_ocr_sample(image_bytes, metadata)
+        result = self.supabase.upload_ocr_sample(image_bytes, metadata)
+        if not isinstance(result, dict) or not result.get("id"):
+            raise RuntimeError("El servidor no confirmó el identificador de la muestra; se conserva en la cola local")
+        return result
 
     def upload_ocr_sample(self, payload: dict[str, Any]) -> None:
         if not self.ocr_sample_sharing_enabled():
@@ -588,27 +597,41 @@ class ApplicationRuntime:
         with self._ocr_sample_diag_lock:
             self._ocr_sample_diag["generated"] = int(self._ocr_sample_diag.get("generated") or 0) + 1
             self._ocr_sample_diag["last_generated_at"] = now
-            self._ocr_sample_diag["last_attempt_at"] = now
-        try:
-            self._send_ocr_sample_payload(payload)
-        except Exception as exc:
-            # Never interrupt OCR. Persist the minimised sample and retry later.
-            self._queue_ocr_sample(payload, f"{type(exc).__name__}: {exc}")
-            return
-        with self._ocr_sample_diag_lock:
-            self._ocr_sample_diag["uploaded"] = int(self._ocr_sample_diag.get("uploaded") or 0) + 1
-            self._ocr_sample_diag["last_success_at"] = datetime.now(timezone.utc).isoformat()
-            self._ocr_sample_diag["last_error"] = ""
-        self._update_ocr_sample_diag()
+        # Persist BEFORE networking: a close/crash must not lose an in-flight
+        # sample. Only the single retry thread talks to the Lab.
+        if self._queue_ocr_sample(payload):
+            self._ocr_sample_wake.set()
 
     def _flush_ocr_sample_outbox_once(self, limit: int = 8) -> int:
+        if not self._ocr_sample_delivery_lock.acquire(blocking=False):
+            return 0
+        try:
+            return self._flush_ocr_sample_outbox_locked(limit)
+        finally:
+            self._ocr_sample_delivery_lock.release()
+
+    def _flush_ocr_sample_outbox_locked(self, limit: int = 8) -> int:
         if not self.ocr_sample_sharing_enabled() or not self.supabase:
             self._update_ocr_sample_diag()
             return 0
         sent = 0
-        for path in self._ocr_sample_queue_files()[:max(1, int(limit))]:
+        for path in self._ocr_sample_queue_files():
+            if sent >= max(1, int(limit)) or self._ocr_sample_retry_stop.is_set():
+                break
             try:
                 payload = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(payload, dict):
+                    raise ValueError("La muestra no es un objeto JSON")
+            except (ValueError, OSError):
+                # Preserve corrupt entries for diagnosis without blocking all
+                # subsequent valid samples forever.
+                try:
+                    path.rename(path.with_suffix(".invalid"))
+                except OSError:
+                    pass
+                self._update_ocr_sample_diag(last_error="Muestra local dañada conservada como .invalid")
+                continue
+            try:
                 queued_workspace = str(payload.get("workspace_id") or "").strip()
                 active_workspace = str((self.active_workspace or {}).get("id") or "").strip()
                 if queued_workspace and queued_workspace != active_workspace:
@@ -629,13 +652,18 @@ class ApplicationRuntime:
         return sent
 
     def _ocr_sample_retry_loop(self) -> None:
-        while not self._ocr_sample_retry_stop.wait(12.0):
+        while not self._ocr_sample_retry_stop.is_set():
+            self._ocr_sample_wake.wait(12.0)
+            self._ocr_sample_wake.clear()
+            if self._ocr_sample_retry_stop.is_set():
+                break
             try:
                 self._flush_ocr_sample_outbox_once()
             except Exception:
                 pass
 
     def shutdown(self) -> None:
+        self._account_sync_pool.shutdown(wait=False, cancel_futures=True)
         self._replay_import_pool.shutdown(wait=True)
         try:
             self.replay_plugin.cleanup()
@@ -643,6 +671,7 @@ class ApplicationRuntime:
             pass
         self.replays.clear_compositor()
         self._ocr_sample_retry_stop.set()
+        self._ocr_sample_wake.set()
         try:
             self.ocr_runtime.stop()
         except Exception:
@@ -939,10 +968,31 @@ class ApplicationRuntime:
 
     # ---------------- Supabase session ----------------
     def login(self, email: str, password: str) -> dict[str, Any]:
-        if ScoreboardSupabaseClient is None:
-            raise RuntimeError("El cliente Supabase no está disponible")
-        client = ScoreboardSupabaseClient()
-        user_email = client.login(email, password)
+        if not self._login_lock.acquire(blocking=False):
+            raise BlockingIOError("Ya hay un inicio de sesión en curso. Espera a que termine.")
+        client = None
+        try:
+            if ScoreboardSupabaseClient is None:
+                raise RuntimeError("El cliente Supabase no está disponible")
+            client = ScoreboardSupabaseClient(interactive=True)
+            return self._login_once(email, password, client)
+        except Exception:
+            if client is not None and self.supabase is not client:
+                client.close()
+            raise
+        finally:
+            self._login_lock.release()
+
+    def _login_once(self, email: str, password: str, client) -> dict[str, Any]:
+        generation = self._session_generation
+        try:
+            user_email = client.login(email, password)
+        except Exception as exc:
+            if getattr(exc, "code", None) == "invalid_credentials" or getattr(exc, "code", None) == "invalid_login_credentials":
+                raise ValueError("El correo o la contraseña no son correctos") from exc
+            if getattr(exc, "status", None) in (400, 401, 422):
+                raise ValueError(str(exc)) from exc
+            raise ConnectionError("No se pudo completar la autenticación. Comprueba la conexión e inténtalo de nuevo.") from exc
 
         preferred_workspace_id = str((self.subscription_store.load().get("workspace") or {}).get("id") or "")
         context: dict[str, Any]
@@ -980,7 +1030,34 @@ class ApplicationRuntime:
                     "status": "active",
                 }
 
-        competitions = client.list_competitions() if access.get("allowed") else []
+        # Independent data is fetched concurrently after authentication and
+        # membership validation. A competition-list outage is not bad credentials.
+        from concurrent.futures import ThreadPoolExecutor
+        warnings = []
+        competitions = []
+        competitions_loaded = not access.get("allowed")
+        theme = {}
+        consent = {"enabled": False, "can_manage": False, "role": "producer"}
+        if workspace and online_validation:
+            with ThreadPoolExecutor(max_workers=3, thread_name_prefix="login-data") as pool:
+                pending = {"theme": pool.submit(client.published_visual_theme), "consent": pool.submit(client.ocr_consent)}
+                if access.get("allowed"):
+                    pending["competitions"] = pool.submit(client.list_competitions)
+                for key, future in pending.items():
+                    try:
+                        value = future.result()
+                        if key == "theme":
+                            theme = value or {}
+                        elif key == "consent":
+                            consent = value
+                        else:
+                            competitions = value or []
+                            competitions_loaded = True
+                    except Exception:
+                        if key == "competitions":
+                            warnings.append("Sesión iniciada. No se pudieron cargar las competiciones; vuelve a abrir el selector de partido para reintentarlo.")
+        elif workspace and access.get("allowed"):
+            warnings.append("Sesión iniciada con permiso local vigente. Vuelve a abrir el selector de partido cuando se recupere la conexión.")
 
         current_settings = self.settings_store.load()
         local_account = self.account_settings_store.load(client.user_id)
@@ -1001,28 +1078,28 @@ class ApplicationRuntime:
             selected_settings["replay_templates"] = []
             selected_settings["graphics_sequences"] = []
 
-        selected_settings = self._settings_with_published_theme(client, selected_settings)
-
         with self._lock:
+            if generation != self._session_generation:
+                raise RuntimeError("El inicio de sesión se canceló al cerrar la sesión")
+            selected_settings = self._apply_published_theme(selected_settings, theme)
             self.supabase = client
             self.workspaces = list(workspaces)
             self.active_workspace = dict(workspace)
             self.subscription = dict(subscription)
             self.subscription_access = dict(access)
             self.subscription_access["online_validation"] = online_validation
+            self._next_subscription_validation = time.monotonic() + 300.0
             self.competitions = competitions
+            self._competitions_loaded = competitions_loaded
+            self.ocr_consent = dict(consent)
             self.matches_by_competition.clear()
             self.settings_store.save(selected_settings)
             self.account_settings_store.save(client.user_id, selected_settings, user_email)
-        self.refresh_ocr_consent()
         self._sync_overlay_settings_state(selected_settings)
         self._sync_sport_mode_state()
 
         if cloud_account is None:
-            try:
-                client.save_user_app_settings(selected_settings)
-            except Exception:
-                pass
+            self._account_sync_pool.submit(self._sync_initial_account_settings, client, copy.deepcopy(selected_settings))
         if not self.subscription_access.get("allowed"):
             self.hide_all_overlays()
         return {
@@ -1030,7 +1107,16 @@ class ApplicationRuntime:
             "competitions": self.public_competitions(),
             "workspace": copy.deepcopy(self.active_workspace),
             "access": copy.deepcopy(self.subscription_access),
+            "warnings": warnings,
         }
+
+    def _sync_initial_account_settings(self, client, settings) -> None:
+        if self.supabase is not client:
+            return
+        try:
+            client.save_user_app_settings(settings)
+        except Exception:
+            pass  # Settings are already persisted locally; retry on the next save.
 
     def activate_workspace(self, workspace_id: str) -> dict[str, Any]:
         client = self.require_supabase()
@@ -1046,6 +1132,7 @@ class ApplicationRuntime:
             self.subscription_access = access
             self._next_subscription_validation = time.monotonic() + 300.0
             self.competitions = competitions
+            self._competitions_loaded = True
             self.matches_by_competition.clear()
             self.active_match = None
             self.active_competition = None
@@ -1125,6 +1212,8 @@ class ApplicationRuntime:
                 pass
 
     def logout(self) -> None:
+        with self._lock:
+            self._session_generation += 1
         self.hide_all_overlays()
         try:
             self.ocr_runtime.stop()
@@ -1150,6 +1239,7 @@ class ApplicationRuntime:
             self.subscription_access = evaluate_subscription(None)
             self._next_subscription_validation = 0.0
             self.competitions = []
+            self._competitions_loaded = False
             self.matches_by_competition.clear()
             self.active_match = None
             self.active_competition = None
@@ -1225,6 +1315,18 @@ class ApplicationRuntime:
 
     def public_competitions(self) -> list[dict[str, Any]]:
         return [{**item, "label": competition_label(item)} for item in self.competitions]
+
+    def available_competitions(self) -> list[dict[str, Any]]:
+        client = self.require_supabase()
+        workspace_id = str(self.active_workspace.get("id") or "")
+        if not self._competitions_loaded:
+            rows = client.list_competitions()
+            with self._lock:
+                if self.supabase is not client or str(self.active_workspace.get("id") or "") != workspace_id:
+                    raise RuntimeError("El espacio de trabajo ha cambiado; vuelve a abrir el selector")
+                self.competitions = rows
+                self._competitions_loaded = True
+        return self.public_competitions()
 
     def list_matches(self, competition_id: str) -> list[dict[str, Any]]:
         client = self.require_supabase()

@@ -45,6 +45,8 @@ def main(config_path):
         sys.path.insert(0, base)
     import window_capture
     import ocr_engine
+    import cv2
+    cv2.setNumThreads(1)
     from video_source import SharedFrameReader
     from secretariat_core.ocr_geometry import apply_perspective
     from secretariat_core.led_temporal import ReadingConsensus, fuse_led_crops
@@ -73,9 +75,15 @@ def main(config_path):
     phase_gap_s = max(0.0, min(0.05, float(cfg.get("led_phase_gap_ms") or 22.0) / 1000.0))
     consensus = ReadingConsensus(max(1, min(3, int(cfg.get("reading_confirmations") or 2))))
 
-    def capture_source():
+    def capture_source(wait_s=0.0):
         if source_type == "camera":
-            return camera.read() if camera is not None else None
+            deadline = time.monotonic() + wait_s
+            while camera is not None:
+                frame = camera.read(require_new=True)
+                if frame is not None or time.monotonic() >= deadline:
+                    return frame
+                time.sleep(0.005)
+            return None
         frame, _ = window_capture.capture_window(window_id)
         return frame
 
@@ -99,7 +107,7 @@ def main(config_path):
             for _ in range(phase_frames - 1):
                 if phase_gap_s:
                     time.sleep(phase_gap_s)
-                extra = capture_source()
+                extra = capture_source(wait_s=0.07)
                 if extra is not None:
                     phase_images.append(apply_perspective(extra, perspective))
             img = phase_images[0]
@@ -141,9 +149,12 @@ def main(config_path):
                     sample_threshold = sample_threshold_for(key, cfg)
                     difficult = (not value) or confidence < sample_threshold or ocr_pass == "legacy_fallback"
                     if share_samples and difficult and now - last_sample_at.get(key, 0.0) >= sample_interval:
-                        sample = encode_private_sample(img, regions.get(key))
+                        # Apply the interval even to identical samples; otherwise
+                        # a frozen digit would be JPEG-encoded on every cycle.
+                        last_sample_at[key] = now
+                        # Store the actual fused crop that produced this reading.
+                        sample = encode_private_sample(phase_crop, {"x": 0, "y": 0, "w": 1, "h": 1})
                         if sample and sample.get("sha256") != last_sample_hash.get(key):
-                            last_sample_at[key] = now
                             last_sample_hash[key] = str(sample.get("sha256") or "")
                             emit({
                                 "type": "sample", "key": key,
@@ -173,7 +184,23 @@ if __name__ == "__main__":
     import multiprocessing
     multiprocessing.freeze_support()
     try:
-        if sys.argv[1] == "--camera":
+        if sys.argv[1] == "--diagnose-camera":
+            import platform
+            import numpy
+            import cv2
+            emit({"type": "camera_runtime_ok", "architecture": platform.machine(),
+                  "numpy": numpy.__version__, "opencv": cv2.__version__})
+        elif sys.argv[1] == "--diagnose-ocr":
+            import ocr_engine
+            import paddle
+            import paddleocr
+            if ocr_engine._get_spocr() is None:
+                raise RuntimeError(ocr_engine._spocr_error)
+            if ocr_engine._get_spscore() is None:
+                raise RuntimeError(ocr_engine._spscore_error)
+            emit({"type": "ocr_runtime_ok", "clock": ocr_engine.SPOCR_MODEL_NAME,
+                  "scores": ocr_engine.SPSCORE_MODEL_NAME, "paddle": paddle.__version__})
+        elif sys.argv[1] == "--camera":
             from video_source import camera_worker
             camera_worker(int(sys.argv[2]), sys.argv[3])
         else:

@@ -1285,6 +1285,7 @@ function renderLive(live) {
     app.snapshot.state = app.snapshot.state || {};
     app.snapshot.state.powerplay = powerplay;
     if (live.score_control) app.snapshot.score_control = live.score_control;
+    if (live.graphic_scores) app.snapshot.graphic_scores = live.graphic_scores;
   }
 }
 
@@ -2602,6 +2603,10 @@ function renderSettings(settings, delivery = {}) {
       sharingStatus.textContent += ` ${textTranslation("La asociación gestiona esta preferencia para todos sus realizadores.", language)}`;
     }
   }
+  renderOCRDeliveryStatus(delivery, sharing);
+}
+
+function renderOCRDeliveryStatus(delivery = {}, sharing = {}) {
   const deliveryStatus = $("#settings-ocr-delivery-status");
   if (deliveryStatus) {
     const queued = Number(delivery.queued || 0);
@@ -3119,6 +3124,7 @@ function connectSocket() {
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
     if (message.type === "state") render(message.payload);
+    if (message.type === "live") renderLive(message.payload);
   };
   socket.onclose = () => {
     $("#api-status").className = "status-pill is-warn";
@@ -3247,9 +3253,9 @@ async function endPenalty(teamKey) {
   } catch (error) { toast(error.message, true); }
 }
 
-async function loadCompetitions() {
+async function loadCompetitions(initialRows = null) {
   try {
-    const rows = await api("/api/competitions");
+    const rows = Array.isArray(initialRows) ? initialRows : await api("/api/competitions");
     const select = $("#competition-select");
     const matchSelect = $("#match-select");
     matchSelect.innerHTML = '<option value="">Selecciona primero una competición</option>';
@@ -3261,7 +3267,7 @@ async function loadCompetitions() {
     }
   } catch (error) {
     toast(error.message, true);
-    openModal("login-modal");
+    if (error.status === 401) openModal("login-modal");
   }
 }
 
@@ -4078,21 +4084,35 @@ function bindEvents() {
 
   $("#login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (app.loginBusy) return;
+    app.loginBusy = true;
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = textTranslation("Iniciando sesión…", app.language);
+    event.currentTarget.setAttribute("aria-busy", "true");
     try {
-      await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email: $("#login-email").value, password: $("#login-password").value }) });
+      const result = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ email: $("#login-email").value, password: $("#login-password").value }) });
       $("#login-password").value = "";
-      const snapshot = await api("/api/state");
+      const snapshot = result.snapshot;
       render(snapshot);
       closeModal("login-modal");
       if (snapshot.online?.access?.allowed) {
         openModal("match-modal");
-        await loadCompetitions();
+        await loadCompetitions(result.competitions);
         refreshTabletAccess();
         toast("Sesión iniciada. Membresía validada.");
+        (result.warnings || []).forEach((message) => toast(message, true));
       } else {
         toast(snapshot.online?.access?.message || "La membresía no está activa.", true);
       }
     } catch (error) { toast(error.message, true); }
+    finally {
+      app.loginBusy = false;
+      button.disabled = false;
+      button.textContent = originalLabel;
+      $("#login-form").removeAttribute("aria-busy");
+    }
   });
   $("#forgot-password-button").addEventListener("click", async () => {
     const button = $("#forgot-password-button");
@@ -4410,6 +4430,16 @@ async function boot() {
   installPremiumInteractions();
   startLivePolling();
   setInterval(() => { if (app.activeView === "live") refreshPreflight(); }, 10000);
+  let deliveryBusy = false;
+  setInterval(async () => {
+    if (document.visibilityState !== "visible" || app.activeView !== "settings" || deliveryBusy || !app.snapshot?.online?.access?.allowed) return;
+    deliveryBusy = true;
+    try {
+      const delivery = await api("/api/ocr/sample-sharing-status");
+      app.snapshot.ocr_sample_delivery = delivery;
+      renderOCRDeliveryStatus(delivery, app.snapshot.settings?.ocr_data_sharing || {});
+    } catch (_) {} finally { deliveryBusy = false; }
+  }, 5000);
   setInterval(() => {
     if (app.socket?.readyState === WebSocket.OPEN) app.socket.send("ping");
   }, 20000);

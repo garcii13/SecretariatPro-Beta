@@ -24,6 +24,7 @@ import qrcode
 import qrcode.image.svg
 
 from secretariat_core.services.broadcast_flow import BroadcastFlow
+from secretariat_core.services.program_preview import ProgramPreview
 from secretariat_api.lan_access import lan_addresses, listener_reachable
 from secretariat_core.services.overlay import ALL_PANELS, hide_all, set_panel, toggle_panel, overlay_summary
 from secretariat_core.services.graphics_queue import add_cue, clear_cues, cue_preview, move_cue, remove_cue, take_cue
@@ -150,7 +151,12 @@ class ConnectionManager:
 
     async def broadcast(self, payload: dict[str, Any]) -> None:
         encoded = json.dumps(payload, ensure_ascii=False)
-        tablet_encoded = json.dumps({"type": "state", "payload": _tablet_snapshot(payload.get("payload") or {})}, ensure_ascii=False)
+        tablet_payload = payload.get("payload") or {}
+        if payload.get("type") == "live":
+            tablet_payload = {key: tablet_payload.get(key) for key in ("scores", "graphic_scores", "powerplay", "score_control")}
+        else:
+            tablet_payload = _tablet_snapshot(tablet_payload)
+        tablet_encoded = json.dumps({"type": payload.get("type", "state"), "payload": tablet_payload}, ensure_ascii=False)
         stale: list[WebSocket] = []
         async with self._lock:
             targets = list(self.connections)
@@ -188,15 +194,12 @@ async def _show_goal_celebration() -> None:
 
 async def watch_state_files(stop_event: asyncio.Event) -> None:
     watched = [runtime.paths.data_file, runtime.paths.app_settings_file, runtime.paths.account_settings_file, runtime.paths.ocr_config_file]
-    watched.extend(runtime.paths.scores_dir / filename for filename in runtime.score_store.FILES.values())
+    score_paths = {runtime.paths.scores_dir / filename for filename in runtime.score_store.FILES.values()}
+    watched.extend(score_paths)
     mtimes: dict[str, int] = {}
-    next_theme_check = 0.0
     while not stop_event.is_set():
         changed = await run_in_threadpool(runtime.advance_powerplays)
-        now = asyncio.get_running_loop().time()
-        if now >= next_theme_check:
-            next_theme_check = now + 5.0
-            changed = bool(await run_in_threadpool(runtime.refresh_published_theme)) or changed
+        scores_changed = False
         for path in watched:
             try:
                 mtime = path.stat().st_mtime_ns
@@ -204,12 +207,34 @@ async def watch_state_files(stop_event: asyncio.Event) -> None:
                 mtime = -1
             key = str(path)
             if key in mtimes and mtimes[key] != mtime:
-                changed = True
+                if path in score_paths:
+                    scores_changed = True
+                else:
+                    changed = True
             mtimes[key] = mtime
         if changed:
             await broadcast_state()
+        elif scores_changed:
+            # Clock ticks must not query OBS, rebuild replay libraries or
+            # regenerate the entire desktop/tablet interface.
+            live = await run_in_threadpool(runtime.live_snapshot)
+            await manager.broadcast({"type": "live", "payload": live})
         try:
             await asyncio.wait_for(stop_event.wait(), timeout=0.35)
+        except asyncio.TimeoutError:
+            pass
+
+
+async def watch_published_theme(stop_event: asyncio.Event) -> None:
+    # Cloud latency must never delay local clock/score notifications.
+    # One request at a time; no accumulating tasks on a slow connection.
+    while not stop_event.is_set():
+        try:
+            await run_in_threadpool(runtime.refresh_published_theme)
+        except Exception:
+            pass  # Keep the last published identity; the next pass retries.
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=5.0)
         except asyncio.TimeoutError:
             pass
 
@@ -230,10 +255,11 @@ async def lifespan(_: FastAPI):
             pass
     stop_event = asyncio.Event()
     task = asyncio.create_task(watch_state_files(stop_event))
+    theme_task = asyncio.create_task(watch_published_theme(stop_event))
     yield
     broadcast_flow.cancel()
     stop_event.set()
-    await task
+    await asyncio.gather(task, theme_task)
     if _replay_exports:
         await asyncio.gather(*list(_replay_exports), return_exceptions=True)
     await run_in_threadpool(runtime.shutdown)
@@ -1057,29 +1083,26 @@ async def projector_stream() -> StreamingResponse:
     )
 
 
+_program_preview = ProgramPreview(fps=8)
+
+
 def _obs_program_frames():
     """MJPEG directly from OBS Program; never falls back to desktop pixels."""
     import time
 
     failures = 0
-    frame_index = 0
     while runtime.obs is not None and runtime.obs.connected:
         try:
-            # Refresh the Program scene name twice per second while keeping the
-            # hot path to one WebSocket request per frame.
-            frame = runtime.obs.program_screenshot(
-                width=960, image_format="jpg", refresh_scene=frame_index % 12 == 0
-            )
-            frame_index += 1
+            frame = _program_preview.read(runtime.obs)
             failures = 0
             yield b"--frame\r\nContent-Type: image/jpeg\r\nCache-Control: no-store\r\n\r\n" + frame + b"\r\n"
         except Exception:
             failures += 1
             if failures >= 12:
                 return
-        # 24 fps target. Request latency naturally lowers this rate on slower
-        # machines without buffering stale frames.
-        time.sleep(1 / 24)
+        # Monitoring only: output/recording FPS and OCR capture are unchanged.
+        # Demand-driven requests stop when the last monitor disconnects.
+        time.sleep(_program_preview.interval)
 
 
 @app.get("/api/obs/program-stream")
@@ -1610,13 +1633,17 @@ async def list_ocr_windows() -> list[dict[str, Any]]:
 
 @app.post("/api/auth/login")
 async def login(payload: LoginRequest) -> dict[str, Any]:
-    tablet_access_control.revoke_all()
     try:
         result = await run_in_threadpool(runtime.login, payload.email, payload.password)
-    except Exception as exc:
+    except ValueError as exc:
         raise HTTPException(401, str(exc)) from exc
-    await broadcast_state()
-    return result
+    except BlockingIOError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(503, str(exc)) from exc
+    tablet_access_control.revoke_all()
+    snapshot = await broadcast_state()
+    return {**result, "snapshot": snapshot}
 
 
 @app.post("/api/auth/logout")
@@ -1707,7 +1734,10 @@ async def delete_account_avatar() -> dict[str, Any]:
 async def competitions() -> list[dict[str, Any]]:
     if not runtime.supabase:
         raise HTTPException(401, "Debes iniciar sesión primero")
-    return runtime.public_competitions()
+    try:
+        return await run_in_threadpool(runtime.available_competitions)
+    except Exception as exc:
+        raise HTTPException(503, "No se pudieron cargar las competiciones. Tu sesión sigue abierta; vuelve a intentarlo.") from exc
 
 
 @app.get("/api/competitions/{competition_id}/matches")

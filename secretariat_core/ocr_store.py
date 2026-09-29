@@ -5,6 +5,7 @@ from typing import Any
 import os
 import tempfile
 import threading
+from copy import deepcopy
 
 from .json_store import JSONStore
 from .ocr_geometry import default_perspective, normalize_perspective
@@ -92,7 +93,9 @@ class ScoreFileStore:
                 value = readings.get(key)
                 if value in (None, ""):
                     continue
-                self._atomic_write(self.scores_dir / filename, str(value))
+                text = str(value)
+                if self.read(key, default="") != text:
+                    self._atomic_write(self.scores_dir / filename, text)
 
     def read(self, key: str, default: str = "") -> str:
         filename = self.FILES.get(key, key)
@@ -117,6 +120,7 @@ class ScoreFileStore:
     def write_external(self, readings: dict[str, Any]) -> None:
         with self._lock:
             data = self._reconciliation.read({})
+            previous = deepcopy(data)
             output = dict(readings)
             for key in ("team1_score", "team2_score"):
                 if key not in readings:
@@ -134,7 +138,8 @@ class ScoreFileStore:
                 row.update(ocr=external, internal=value, pending=external < floor)
                 # Publish the external reading unchanged to the scoreboard.
                 output[key] = str(external)
-            self._reconciliation.write(data)
+            if data != previous:
+                self._reconciliation.write(data)
             self.write_readings(output)
 
     def correct_score(self, key: str, value: int) -> None:

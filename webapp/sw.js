@@ -1,5 +1,5 @@
 // Compatibility regression marker: secretariatpro-phase36-v1
-const CACHE = "secretariatpro-phase74-coach-tag3-beta-rc-v1";
+const CACHE = "secretariatpro-phase74-coach-tag3-local-perf2";
 const STATIC = ["/", "/app/styles.css", "/app/app.js", "/app/sp_logo.png", "/app/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {

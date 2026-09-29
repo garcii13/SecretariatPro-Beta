@@ -56,6 +56,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./packaging/windows-prerequisites.ps1
+      - name: Verify packaged camera and OCR runtimes
+        run: python packaging/check_worker.py
       - name: Assemble installer
         run: python packaging/assemble.py
       - name: Smoke test installed applications (Windows)
