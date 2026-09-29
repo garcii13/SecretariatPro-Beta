@@ -15,7 +15,7 @@ for option, expected in (("--diagnose-camera", "camera_runtime_ok"), ("--diagnos
     messages = []
     for line in result.stdout.splitlines():
         try:
-            messages.append(json.loads(line))
+            messages.append(json.loads(line.removeprefix("OCRMSG ")))
         except ValueError:
             pass
     if not any(isinstance(message, dict) and message.get("type") == expected for message in messages):
