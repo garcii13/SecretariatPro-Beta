@@ -316,7 +316,7 @@ class SharedFramePublisher:
         if _FRAME_HEADER_SIZE > len(header):
             mm.write(b"\0" * (_FRAME_HEADER_SIZE - len(header)))
         mm.seek(_FRAME_HEADER_SIZE)
-        mm.write(array.tobytes(order="C"))
+        mm.write(memoryview(array).cast("B"))
         self._seq += 1
         even = self._seq
         header = _FRAME_HEADER.pack(_FRAME_MAGIC, _FRAME_VERSION, even, width, height, channels, frame_bytes, time.time())
@@ -351,8 +351,9 @@ class SharedFrameReader:
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
+        self._last_token = None
 
-    def read(self):
+    def read(self, *, require_new: bool = False, max_age: float = 1.0):
         import numpy as np
 
         try:
@@ -368,10 +369,20 @@ class SharedFrameReader:
                         if magic != _FRAME_MAGIC or version != _FRAME_VERSION or seq1 % 2:
                             time.sleep(0.002)
                             continue
+                        token = (seq1, _ts)
+                        if time.time() - _ts > max_age or (require_new and token == self._last_token):
+                            return None
                         end = _FRAME_HEADER_SIZE + int(frame_bytes)
                         if end > len(mm) or width <= 0 or height <= 0 or channels <= 0:
                             return None
-                        payload = bytes(mm[_FRAME_HEADER_SIZE:end])
+                        # Copy once into owned, writable memory. Never expose an
+                        # mmap view that the capture process can overwrite.
+                        payload = bytearray(frame_bytes)
+                        view = memoryview(mm)[_FRAME_HEADER_SIZE:end]
+                        try:
+                            payload[:] = view
+                        finally:
+                            view.release()
                         raw2 = mm[:_FRAME_HEADER.size]
                         _m2, _v2, seq2, *_rest = _FRAME_HEADER.unpack(raw2)
                         if seq1 != seq2 or seq2 % 2:
@@ -384,7 +395,8 @@ class SharedFrameReader:
                         shaped = frame.reshape((int(height), int(width), int(channels)))
                         if int(channels) == 1:
                             shaped = shaped[:, :, 0]
-                        return shaped.copy()
+                        self._last_token = token
+                        return shaped
                     return None
                 finally:
                     mm.close()
@@ -419,10 +431,10 @@ class IsolatedCameraStream:
         self.close()
         raise RuntimeError(f"La cámara no se pudo iniciar (salida {code}). Revisa permisos y conexión; diagnóstico: {self.path.with_suffix('.log')}")
 
-    def read(self):
+    def read(self, *, require_new: bool = False):
         if self.process.poll() is not None:
             return None
-        return self.reader.read()
+        return self.reader.read(require_new=require_new)
 
     def close(self):
         if self.process.poll() is None:
@@ -437,6 +449,8 @@ class IsolatedCameraStream:
 
 
 def camera_worker(index: int, frame_path: str):
+    import cv2
+    cv2.setNumThreads(1)
     stream = CameraStream(index)
     publisher = SharedFramePublisher(Path(frame_path))
     try:
@@ -459,6 +473,8 @@ class PersistentCameraService:
     """
 
     def __init__(self, frame_path: str | Path) -> None:
+        import cv2
+        cv2.setNumThreads(1)
         self.frame_path = Path(frame_path)
         self._lock = threading.RLock()
         self._stop = threading.Event()
@@ -514,26 +530,20 @@ class PersistentCameraService:
         with self._lock:
             self._index = wanted
             self._stream = stream
-            self._frame = first.copy()
+            self._frame = first
             self._height, self._width = map(int, first.shape[:2])
             self._last_frame_at = time.time()
             self._error = ""
             self._publisher.publish(self._bridge_frame(first))
             self._stop = threading.Event()
-            thread = threading.Thread(target=self._capture_loop, daemon=True, name=f"SecretariatPro-Camera-{wanted}")
+            thread = threading.Thread(target=self._capture_loop, args=(stream, self._stop), daemon=True, name=f"SecretariatPro-Camera-{wanted}")
             self._thread = thread
             thread.start()
         return self.status()
 
-    def _capture_loop(self) -> None:
-        failures = 0
-        last_published = 0.0
-        while not self._stop.is_set():
-            with self._lock:
-                stream = self._stream
-            if stream is None:
-                break
-            frame = stream.read()
+    def _capture_loop(self, stream, stop) -> None:
+        while not stop.is_set():
+            frame = stream.read(require_new=True)
             if frame is None:
                 process = getattr(stream, "process", None)
                 if process is not None and process.poll() is not None:
@@ -542,25 +552,22 @@ class PersistentCameraService:
                         self._publisher.close(remove=True)
                         self._error = "El proceso de cámara se ha cerrado. Reactiva la cámara; Live sigue disponible."
                     break
-                failures += 1
                 with self._lock:
-                    self._error = "La cámara no está entregando imagen"
-                time.sleep(min(0.25, 0.02 * failures))
+                    if time.time() - self._last_frame_at > 1.0:
+                        self._frame = None
+                        self._error = "La cámara no está entregando imagen"
+                stop.wait(0.01)
                 continue
-            failures = 0
             now = time.time()
-            should_publish = now - last_published >= 0.10
-            bridge_frame = self._bridge_frame(frame) if should_publish else None
             with self._lock:
-                self._frame = frame.copy()
+                if stop.is_set():
+                    break
+                self._frame = frame
                 self._height, self._width = map(int, frame.shape[:2])
                 self._last_frame_at = now
                 self._error = ""
-                if bridge_frame is not None:
-                    self._publisher.publish(bridge_frame)
-                    last_published = now
-            # Keep draining the device so its internal buffer never accumulates.
-            time.sleep(0.005)
+                self._publisher.publish(frame)
+            stop.wait(0.01)
 
     def read(self, index: int | None = None, *, timeout: float = 1.0):
         if index is not None:
