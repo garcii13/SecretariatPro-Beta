@@ -2,7 +2,7 @@
 from pathlib import Path
 import sys
 import importlib.util
-from PyInstaller.utils.hooks import collect_all, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_submodules, copy_metadata
 
 ROOT = Path(SPECPATH)
 
@@ -24,6 +24,7 @@ if (ROOT / "models").exists():
 hiddenimports = ["secretariat_api.main"]
 search_paths = [str(ROOT)]
 if sys.platform == 'darwin':
+    datas += copy_metadata('paddleocr', recursive=True)
     ocr_package = Path(next(iter(importlib.util.find_spec('paddleocr').submodule_search_locations)))
     # Resolve the paddleocr package before its same-named internal module.
     search_paths += [str(ocr_package.parent), str(ocr_package)]

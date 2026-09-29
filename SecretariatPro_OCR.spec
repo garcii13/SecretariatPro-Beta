@@ -4,9 +4,11 @@ import platform
 import subprocess
 import sys
 import importlib.util
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_all, copy_metadata
 base = Path(SPECPATH)
 datas = [(str(base / 'models'), 'models')]
+if sys.platform == 'darwin':
+    datas += copy_metadata('paddleocr', recursive=True)
 binaries = []
 hidden = []
 search_paths = [str(base)]
