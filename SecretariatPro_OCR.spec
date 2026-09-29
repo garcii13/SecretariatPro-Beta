@@ -3,11 +3,18 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+import importlib.util
 from PyInstaller.utils.hooks import collect_all
 base = Path(SPECPATH)
 datas = [(str(base / 'models'), 'models')]
 binaries = []
 hidden = []
+search_paths = [str(base)]
+if sys.platform == 'darwin':
+    # PaddleOCR 2.x imports these packages without the paddleocr prefix.
+    # Analyze their real imports so native dependencies (e.g. pyclipper) ship.
+    search_paths += list(importlib.util.find_spec('paddleocr').submodule_search_locations)
+    hidden += ['ppocr.postprocess', 'ppocr.data', 'tools.infer.predict_system', 'ppstructure.predict_system']
 for package in ('paddle', 'paddleocr', 'sklearn', 'joblib'):
     d, b, h = collect_all(package)
     datas += d
@@ -26,7 +33,7 @@ if sys.platform == 'darwin':
         native_binaries.append((source, destination))
     binaries = native_binaries
 
-a = Analysis([str(base/'ocr_worker.py')], pathex=[str(base)], datas=datas, binaries=binaries, hiddenimports=hidden,
+a = Analysis([str(base/'ocr_worker.py')], pathex=search_paths, datas=datas, binaries=binaries, hiddenimports=hidden,
              runtime_hooks=[str(base/'packaging/rthook_paddle.py')])
 # collect_all also returns .dylib files as data, which Analysis reclassifies.
 # Replace any remaining foreign-architecture helpers with the matching native

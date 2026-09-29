@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
+import sys
+import importlib.util
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 ROOT = Path(SPECPATH)
@@ -20,6 +22,10 @@ if (ROOT / "models").exists():
     datas.append((str(ROOT / "models"), "models"))
 
 hiddenimports = ["secretariat_api.main"]
+search_paths = [str(ROOT)]
+if sys.platform == 'darwin':
+    search_paths += list(importlib.util.find_spec('paddleocr').submodule_search_locations)
+    hiddenimports += ['ppocr.postprocess', 'ppocr.data', 'tools.infer.predict_system', 'ppstructure.predict_system']
 if (ROOT / "public_config.json").exists():
     datas.append((str(ROOT / "public_config.json"), "."))
 for package in ("uvicorn", "fastapi", "webview", "supabase", "paddleocr", "sklearn", "joblib", "imageio_ffmpeg", "AVFoundation"):
@@ -39,7 +45,7 @@ for package in ("paddleocr", "sklearn", "joblib", "imageio_ffmpeg"):
 
 a = Analysis(
     [str(ROOT / "run_app.py")],
-    pathex=[str(ROOT)],
+    pathex=search_paths,
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
