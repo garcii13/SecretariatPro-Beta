@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import tempfile
 import time
 import unittest
@@ -154,6 +155,9 @@ class SampleDeliveryTests(unittest.TestCase):
         self.runtime.active_workspace = {"id": "workspace"}
         corrupt = self.runtime._ocr_sample_outbox / "broken.json"
         corrupt.write_text("{")
+        # Windows can give consecutive writes the same mtime. Make the
+        # damaged item oldest explicitly so this tests quarantine before limit.
+        os.utime(corrupt, (1, 1))
         self.runtime.upload_ocr_sample(self.payload)
         self.assertEqual(self.runtime._flush_ocr_sample_outbox_once(limit=1), 1)
         self.assertEqual(len(self.runtime._ocr_sample_queue_files()), 9)
