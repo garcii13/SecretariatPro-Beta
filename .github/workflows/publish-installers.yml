@@ -2,8 +2,16 @@ name: Publish verified installers
 on:
   workflow_dispatch:
     inputs:
-      run_id:
-        description: Successful Beta installers run with all three platforms
+      windows_run:
+        description: Successful Windows installer run
+        required: true
+        type: string
+      macos_arm_run:
+        description: Successful Apple Silicon installer run
+        required: true
+        type: string
+      macos_intel_run:
+        description: Successful Intel Mac installer run
         required: true
         type: string
 permissions:
@@ -15,8 +23,10 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      BUILD_RUN_ID: ${{ inputs.run_id }}
+      WINDOWS_RUN: ${{ inputs.windows_run }}
+      MACOS_ARM_RUN: ${{ inputs.macos_arm_run }}
+      MACOS_INTEL_RUN: ${{ inputs.macos_intel_run }}
     steps:
       - uses: actions/checkout@v7
-      - name: Verify build and retrieve installers
+      - name: Verify builds and publish each application separately
         run: python packaging/publish_installers.py

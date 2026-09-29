@@ -24,7 +24,12 @@ if (ROOT / "models").exists():
 hiddenimports = ["secretariat_api.main"]
 search_paths = [str(ROOT)]
 if sys.platform == 'darwin':
-    search_paths += list(importlib.util.find_spec('paddleocr').submodule_search_locations)
+    ocr_package = Path(next(iter(importlib.util.find_spec('paddleocr').submodule_search_locations)))
+    # Resolve the paddleocr package before its same-named internal module.
+    search_paths += [str(ocr_package.parent), str(ocr_package)]
+    # Legacy modules derive sys.path and resource paths from __file__.
+    # Preserve source trees at their unprefixed import locations as well.
+    datas += [(str(ocr_package / name), name) for name in ('ppocr', 'tools', 'ppstructure')]
     hiddenimports += ['ppocr.postprocess', 'ppocr.data', 'tools.infer.predict_system', 'ppstructure.predict_system']
 if (ROOT / "public_config.json").exists():
     datas.append((str(ROOT / "public_config.json"), "."))

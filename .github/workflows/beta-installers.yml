@@ -64,6 +64,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./packaging/smoke-windows.ps1
+      - name: Smoke test applications from DMG (macOS)
+        if: runner.os == 'macOS'
+        run: python packaging/smoke_macos.py
       - uses: actions/upload-artifact@v7
         with:
           name: SecretariatPro-beta-${{ matrix.os }}

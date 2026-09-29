@@ -13,7 +13,12 @@ search_paths = [str(base)]
 if sys.platform == 'darwin':
     # PaddleOCR 2.x imports these packages without the paddleocr prefix.
     # Analyze their real imports so native dependencies (e.g. pyclipper) ship.
-    search_paths += list(importlib.util.find_spec('paddleocr').submodule_search_locations)
+    ocr_package = Path(next(iter(importlib.util.find_spec('paddleocr').submodule_search_locations)))
+    # Resolve the paddleocr package before its same-named internal module.
+    search_paths += [str(ocr_package.parent), str(ocr_package)]
+    # Legacy modules derive sys.path and resource paths from __file__.
+    # Preserve source trees at their unprefixed import locations as well.
+    datas += [(str(ocr_package / name), name) for name in ('ppocr', 'tools', 'ppstructure')]
     hidden += ['ppocr.postprocess', 'ppocr.data', 'tools.infer.predict_system', 'ppstructure.predict_system']
 for package in ('paddle', 'paddleocr', 'sklearn', 'joblib'):
     d, b, h = collect_all(package)
