@@ -3,13 +3,12 @@
 Windows
 -------
 Usa Win32 PrintWindow(PW_RENDERFULLCONTENT) para capturar una ventana aunque
-esté detrás de otras. Si PrintWindow falla, intenta BitBlt.
+esté detrás de otras. Si falla, no sustituye la ventana por el escritorio.
 
 macOS
 -----
-Primero intenta capturar directamente la ventana mediante Quartz
-CGWindowListCreateImage. Si el sistema o la aplicación no lo permiten, usa
-como respaldo Quartz para localizar la ventana y mss para capturar su rectángulo.
+Usa ScreenCaptureKit desde macOS 14 y Quartz en versiones anteriores.
+La selección siempre identifica una ventana; nunca un rectángulo del escritorio.
 En macOS se requiere permiso de Grabación de pantalla.
 """
 from __future__ import annotations
@@ -18,19 +17,20 @@ import platform
 from dataclasses import dataclass
 
 import numpy as np
+from secretariat_core.macos_window_capture import WindowCaptureError
 
 SYSTEM = platform.system()
 
 if SYSTEM == "Windows":
     import ctypes
-    import win32con
+    from ctypes import wintypes
     import win32gui
     import win32ui
+    _print_window = ctypes.windll.user32.PrintWindow
+    _print_window.argtypes = [wintypes.HWND, wintypes.HDC, wintypes.UINT]
+    _print_window.restype = wintypes.BOOL
 elif SYSTEM == "Darwin":
-    import mss
     import Quartz
-else:
-    import mss
 
 
 @dataclass
@@ -73,7 +73,7 @@ def list_windows() -> list[WindowInfo]:
             | Quartz.kCGWindowListExcludeDesktopElements
         )
         items = Quartz.CGWindowListCopyWindowInfo(options, Quartz.kCGNullWindowID)
-        for item in items:
+        for item in items or []:
             title = (item.get("kCGWindowName") or "").strip()
             owner = (item.get("kCGWindowOwnerName") or "").strip()
             bounds = item.get("kCGWindowBounds") or {}
@@ -89,12 +89,8 @@ def list_windows() -> list[WindowInfo]:
     else:
         raise NotImplementedError(f"Window listing not implemented for {SYSTEM}")
 
-    # Evita entradas repetidas conservando la ventana más grande.
-    dedup: dict[tuple[str, str], WindowInfo] = {}
-    for window in windows:
-        key = (window.app_name, window.title)
-        if key not in dedup or window.rect[2] * window.rect[3] > dedup[key].rect[2] * dedup[key].rect[3]:
-            dedup[key] = window
+    # Titles are not identities: keep separate windows with identical titles.
+    dedup = {window.window_id: window for window in windows}
     return list(dedup.values())
 
 
@@ -108,8 +104,10 @@ def get_window_rect(window_id: int):
     if SYSTEM == "Darwin":
         options = Quartz.kCGWindowListOptionIncludingWindow
         items = Quartz.CGWindowListCopyWindowInfo(options, window_id)
-        for item in items:
+        for item in items or []:
             if int(item.get("kCGWindowNumber", -1)) == int(window_id):
+                if not item.get("kCGWindowIsOnscreen", True):
+                    return None
                 bounds = item.get("kCGWindowBounds") or {}
                 return (
                     int(bounds.get("X", 0)),
@@ -118,6 +116,20 @@ def get_window_rect(window_id: int):
                     int(bounds.get("Height", 0)),
                 )
     return None
+
+
+def find_window(windows, source_id="", label=""):
+    """Resolve an explicit identity, or an unambiguous legacy label."""
+    identity = str(source_id or "").strip()
+    if identity:
+        return next((window for window in windows if str(window.window_id) == identity), None)
+    label = str(label or "").strip()
+    if not label:
+        return None
+    matches = [window for window in windows if window.label == label]
+    if not matches:
+        matches = [window for window in windows if label.lower() in window.label.lower()]
+    return matches[0] if len(matches) == 1 else None
 
 
 def _capture_windows_printwindow(hwnd: int):
@@ -141,9 +153,11 @@ def _capture_windows_printwindow(hwnd: int):
         save_dc.SelectObject(bitmap)
 
         # PW_RENDERFULLCONTENT = 2. Funciona mejor con ventanas modernas.
-        result = ctypes.windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 2)
+        result = _print_window(hwnd, save_dc.GetSafeHdc(), 2)
         if not result:
-            save_dc.BitBlt((0, 0), (width, height), mfc_dc, (0, 0), win32con.SRCCOPY)
+            result = _print_window(hwnd, save_dc.GetSafeHdc(), 0)
+        if not result:
+            return None
 
         info = bitmap.GetInfo()
         bits = bitmap.GetBitmapBits(True)
@@ -187,52 +201,34 @@ def _capture_macos_quartz(window_id: int):
         if image is None:
             return None
 
-        width = int(Quartz.CGImageGetWidth(image))
-        height = int(Quartz.CGImageGetHeight(image))
-        bytes_per_row = int(Quartz.CGImageGetBytesPerRow(image))
-        if width <= 0 or height <= 0:
-            return None
-
-        provider = Quartz.CGImageGetDataProvider(image)
-        data = Quartz.CGDataProviderCopyData(provider)
-        raw = np.frombuffer(data, dtype=np.uint8)
-        expected = height * bytes_per_row
-        if raw.size < expected:
-            return None
-        raw = raw[:expected].reshape((height, bytes_per_row))
-        pixels = raw[:, : width * 4].reshape((height, width, 4))
-
-        # Quartz suele entregar BGRA premultiplicado en macOS. Se descarta alfa.
-        return pixels[:, :, :3].copy()
+        return _cgimage_to_bgr(image)
     except Exception:
         return None
 
 
-_sct = None
-
-
-def _screen():
-    global _sct
-    if _sct is None:
-        _sct = mss.mss()
-    return _sct
-
-
-def capture_rect(rect):
-    left, top, width, height = rect
+def _cgimage_to_bgr(image):
+    """Normalize color layout rather than assuming every CGImage is BGRA."""
+    width, height = int(Quartz.CGImageGetWidth(image)), int(Quartz.CGImageGetHeight(image))
     if width <= 0 or height <= 0:
         return None
-    shot = _screen().grab({
-        "left": int(left),
-        "top": int(top),
-        "width": int(width),
-        "height": int(height),
-    })
-    return np.array(shot)[:, :, :3].copy()
+    pixels = np.zeros((height, width, 4), dtype=np.uint8)
+    context = Quartz.CGBitmapContextCreate(pixels, width, height, 8, width * 4,
+        Quartz.CGColorSpaceCreateDeviceRGB(),
+        Quartz.kCGImageAlphaPremultipliedFirst | Quartz.kCGBitmapByteOrder32Little)
+    if context is None:
+        raise WindowCaptureError("No se pudo convertir la imagen de la ventana.")
+    Quartz.CGContextDrawImage(context, Quartz.CGRectMake(0, 0, width, height), image)
+    return pixels[:, :, :3].copy()
 
 
 def capture_window(window_id: int):
     """Devuelve (frame_bgr, rect) o (None, None)."""
+    try:
+        window_id = int(window_id)
+    except (TypeError, ValueError):
+        return None, None
+    if window_id <= 0:
+        return None, None
     if SYSTEM == "Windows":
         frame = _capture_windows_printwindow(window_id)
         if frame is None:
@@ -241,15 +237,14 @@ def capture_window(window_id: int):
 
     if SYSTEM == "Darwin":
         rect = get_window_rect(window_id)
-        frame = _capture_macos_quartz(window_id)
-        if frame is not None:
-            return frame, rect
-        # Respaldo para versiones/ventanas que no permitan CGWindowListCreateImage.
         if rect is None:
-            return None, None
-        return capture_rect(rect), rect
-
-    rect = get_window_rect(window_id)
-    if rect is None:
-        return None, None
-    return capture_rect(rect), rect
+            raise WindowCaptureError("La ventana seleccionada ya no está disponible. Selecciónala de nuevo.")
+        if int(platform.mac_ver()[0].split('.')[0]) >= 14:
+            from secretariat_core.macos_window_capture import capture
+            frame = _cgimage_to_bgr(capture.capture_image(window_id, bounds=rect))
+        else:
+            frame = _capture_macos_quartz(window_id)
+        if frame is None:
+            raise WindowCaptureError("No se pudo capturar la ventana. Comprueba el permiso de Grabación de pantalla de SecretariatPro.")
+        return frame, rect
+    raise NotImplementedError(f"Window capture not implemented for {SYSTEM}")

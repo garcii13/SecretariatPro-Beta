@@ -55,7 +55,7 @@ for product, port in (('Live', 18765), ('Manager', 18766)):
                     raise RuntimeError(f'{product} exited after opening: {log.read_text()}')
                 if product == 'Live':
                     worker = executable.parent / 'SecretariatPro_OCR'
-                    for option, expected in (('--diagnose-camera', 'camera_runtime_ok'), ('--diagnose-ocr', 'ocr_runtime_ok')):
+                    for option, expected in (('--diagnose-camera', 'camera_runtime_ok'), ('--diagnose-window', 'window_runtime_ok'), ('--diagnose-ocr', 'ocr_runtime_ok')):
                         result = subprocess.run([str(worker), option], capture_output=True, text=True, timeout=180)
                         print(result.stdout)
                         if result.returncode or f'"type": "{expected}"' not in result.stdout:

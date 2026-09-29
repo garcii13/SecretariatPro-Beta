@@ -86,23 +86,6 @@ class OCRRuntimeManager:
                 payload["phase"] = "stopped"
             return payload
 
-    def _window_for_label(self, label: str):
-        import window_capture
-
-        windows = window_capture.list_windows()
-        exact = next((window for window in windows if window.label == label), None)
-        if exact is not None:
-            return exact
-        lowered = label.strip().lower()
-        return next(
-            (
-                window
-                for window in windows
-                if lowered and lowered in window.label.lower()
-            ),
-            None,
-        )
-
     def start(self) -> dict[str, Any]:
         with self._lock:
             self._desired_running = True
@@ -125,12 +108,8 @@ class OCRRuntimeManager:
 
             window = None
             if source_type == "window":
-                if source_id:
-                    import window_capture
-                    rows = window_capture.list_windows()
-                    window = next((row for row in rows if str(row.window_id) == source_id), None)
-                if window is None and source_label:
-                    window = self._window_for_label(source_label)
+                import window_capture
+                window = window_capture.find_window(window_capture.list_windows(), source_id, source_label)
                 if window is None:
                     raise RuntimeError("La ventana OCR configurada ya no está disponible")
                 source_id = str(window.window_id)

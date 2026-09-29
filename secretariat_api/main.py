@@ -1048,7 +1048,11 @@ def _projector_frames(initial_label: str):
             time.sleep(0.25)
             continue
         missing_cycles = 0
-        frame = obs_projector_video.capture_window(window)
+        try:
+            frame = obs_projector_video.capture_window(window)
+        except obs_projector_video.WindowCaptureError:
+            time.sleep(0.5)
+            continue
         if frame is None or not getattr(frame, "size", 0):
             time.sleep(0.25)
             continue
@@ -1510,11 +1514,7 @@ async def ocr_preview(
         else:
             import window_capture
             windows = await run_in_threadpool(window_capture.list_windows)
-            window = None
-            if str(source_id).strip():
-                window = next((row for row in windows if str(row.window_id) == str(source_id)), None)
-            if window is None and str(window_title).strip():
-                window = next((row for row in windows if row.label == window_title), None)
+            window = window_capture.find_window(windows, source_id, window_title)
             if window is None:
                 raise HTTPException(404, "La ventana seleccionada ya no está disponible")
             frame, _ = await run_in_threadpool(window_capture.capture_window, window.window_id)

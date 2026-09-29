@@ -4,7 +4,7 @@ import platform
 import subprocess
 import sys
 import importlib.util
-from PyInstaller.utils.hooks import collect_all, copy_metadata
+from PyInstaller.utils.hooks import collect_all, collect_submodules, copy_metadata
 base = Path(SPECPATH)
 datas = [(str(base / 'models'), 'models')]
 if sys.platform == 'darwin':
@@ -21,6 +21,7 @@ if sys.platform == 'darwin':
     # Legacy modules derive sys.path and resource paths from __file__.
     # Preserve source trees at their unprefixed import locations as well.
     datas += [(str(ocr_package / name), name) for name in ('ppocr', 'tools', 'ppstructure')]
+    hidden += collect_submodules('ScreenCaptureKit')
     hidden += ['ppocr.postprocess', 'ppocr.data', 'tools.infer.predict_system', 'ppstructure.predict_system']
 for package in ('paddle', 'paddleocr', 'sklearn', 'joblib'):
     d, b, h = collect_all(package)

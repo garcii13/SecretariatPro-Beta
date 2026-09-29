@@ -24,12 +24,9 @@ def test_macos_projector_capture_targets_window_not_visible_rectangle():
     exact = np.full((4, 5, 3), 77, dtype=np.uint8)
     window_capture = Mock()
     window_capture.capture_window.return_value = (exact, window.rect)
-    with patch.object(obs_projector_video, "SYSTEM", "Darwin"), \
-            patch.dict(sys.modules, {"window_capture": window_capture}), \
-            patch.object(obs_projector_video, "_screen_capture") as screen_capture:
+    with patch.dict(sys.modules, {"window_capture": window_capture}):
         result = obs_projector_video.capture_window(window)
     window_capture.capture_window.assert_called_once_with(202)
-    screen_capture.assert_not_called()
     assert np.array_equal(result, exact)
 
 

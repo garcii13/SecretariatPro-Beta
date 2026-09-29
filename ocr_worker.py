@@ -97,7 +97,12 @@ def main(config_path):
         while True:
             started = time.monotonic()
             emit({"type": "heartbeat", "phase": "capture", "ts": time.time()})
-            img = capture_source()
+            try:
+                img = capture_source()
+            except window_capture.WindowCaptureError as exc:
+                emit({"type": "error", "key": "capture", "message": str(exc)})
+                time.sleep(max(0.5, poll_s))
+                continue
             if img is None:
                 emit({"type": "error", "key": "capture", "message": "captura vacía"})
                 time.sleep(min(1.0, poll_s))
@@ -107,7 +112,11 @@ def main(config_path):
             for _ in range(phase_frames - 1):
                 if phase_gap_s:
                     time.sleep(phase_gap_s)
-                extra = capture_source(wait_s=0.07)
+                try:
+                    extra = capture_source(wait_s=0.07)
+                except window_capture.WindowCaptureError as exc:
+                    emit({"type": "error", "key": "capture", "message": str(exc)})
+                    break
                 if extra is not None:
                     phase_images.append(apply_perspective(extra, perspective))
             img = phase_images[0]
@@ -190,6 +199,16 @@ if __name__ == "__main__":
             import cv2
             emit({"type": "camera_runtime_ok", "architecture": platform.machine(),
                   "numpy": numpy.__version__, "opencv": cv2.__version__})
+        elif sys.argv[1] == "--diagnose-window":
+            import platform
+            import window_capture
+            if sys.platform == "darwin" and int(platform.mac_ver()[0].split('.')[0]) >= 14:
+                import ScreenCaptureKit
+                assert hasattr(ScreenCaptureKit.SCScreenshotManager, "captureImageWithFilter_configuration_completionHandler_")
+            emit({"type": "window_runtime_ok", "platform": platform.system()})
+        elif sys.argv[1] == "--test-window-capture":
+            from secretariat_core.window_capture_diagnostic import diagnose
+            emit(diagnose())
         elif sys.argv[1] == "--diagnose-ocr":
             import ocr_engine
             import paddle

@@ -2,7 +2,7 @@
   #error Product must be Live or Manager
 #endif
 #ifndef Version
-  #define Version "1.0.0-beta.6"
+  #define Version "1.0.0-beta.7"
 #endif
 #if Product != "Live" && Product != "Manager"
   #error Unsupported product
@@ -15,7 +15,7 @@ AppName={#ProductName}
 AppVersion={#Version}
 AppPublisher=SecretariatPro
 AppPublisherURL=https://secretariatproapp.com
-VersionInfoVersion=1.0.0.6
+VersionInfoVersion=1.0.0.7
 VersionInfoProductName={#ProductName}
 DefaultDirName={localappdata}\Programs\SecretariatPro\{#Product}
 DefaultGroupName={#ProductName}

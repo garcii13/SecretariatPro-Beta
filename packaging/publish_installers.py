@@ -14,7 +14,7 @@ platforms = {'windows-2022': 'WINDOWS_RUN', 'macos-15': 'MACOS_ARM_RUN', 'macos-
 # requirements, models, UI and every other application file must be unchanged.
 allowed_changes = {'SecretariatPro_App.spec', 'SecretariatPro_OCR.spec',
                    '.github/workflows/publish-installers.yml', 'packaging/publish_installers.py',
-                   'docs/RELEASE_BETA6.md', '.github/workflows/beta-installers.yml',
+                   'docs/RELEASE_BETA7.md', '.github/workflows/beta-installers.yml',
                    'packaging/smoke_macos.py'}
 evidence = []
 for platform, variable in platforms.items():
@@ -37,7 +37,7 @@ for platform, variable in platforms.items():
 
 root = Path('installers')
 installers = sorted(p for p in root.rglob('*') if p.suffix in ('.exe', '.dmg'))
-expected = {f'SecretariatPro-{product}-1.0.0-beta.6-{platform}'
+expected = {f'SecretariatPro-{product}-1.0.0-beta.7-{platform}'
             for product in ('Live', 'Manager')
             for platform in ('windows-x64-setup.exe', 'macos-arm64.dmg', 'macos-x86_64.dmg')}
 if {p.name for p in installers} != expected or len(installers) != 6:
@@ -53,10 +53,10 @@ for product in ('Live', 'Manager'):
     for path in installers:
         if path.name.startswith(f'SecretariatPro-{product}-'):
             files += [str(path), str(path.with_suffix(path.suffix + '.sha256'))]
-    tag = f'{product.lower()}-v1.0.0-beta.6'
+    tag = f'{product.lower()}-v1.0.0-beta.7'
     notes = Path(f'release-notes-{product}.md')
     notes.write_text(f'Release independiente de SecretariatPro {product}.\n\n' +
-                     Path('docs/RELEASE_BETA6.md').read_text() + '\n\nCompilaciones verificadas:\n\n' + '\n'.join(evidence))
+                     Path('docs/RELEASE_BETA7.md').read_text() + '\n\nCompilaciones verificadas:\n\n' + '\n'.join(evidence))
     existing = subprocess.run(['gh', 'release', 'view', tag, '--json', 'isDraft'], capture_output=True, text=True)
     if existing.returncode == 0:
         if not json.loads(existing.stdout)['isDraft']:
@@ -64,6 +64,6 @@ for product in ('Live', 'Manager'):
         gh('release', 'upload', tag, '--clobber', *files)
     else:
         gh('release', 'create', tag, '--target', os.environ['GITHUB_SHA'], '--draft', '--prerelease',
-           '--title', f'SecretariatPro {product} 1.0.0 beta 6', '--notes-file', str(notes), *files)
+           '--title', f'SecretariatPro {product} 1.0.0 beta 7', '--notes-file', str(notes), *files)
     gh('release', 'edit', tag, '--draft=false', '--prerelease')
     print(gh('release', 'view', tag, '--json', 'url', '--jq', '.url'))

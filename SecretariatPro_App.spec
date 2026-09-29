@@ -34,7 +34,7 @@ if sys.platform == 'darwin':
     hiddenimports += ['ppocr.postprocess', 'ppocr.data', 'tools.infer.predict_system', 'ppstructure.predict_system']
 if (ROOT / "public_config.json").exists():
     datas.append((str(ROOT / "public_config.json"), "."))
-for package in ("uvicorn", "fastapi", "webview", "supabase", "paddleocr", "sklearn", "joblib", "imageio_ffmpeg", "AVFoundation"):
+for package in ("uvicorn", "fastapi", "webview", "supabase", "paddleocr", "sklearn", "joblib", "imageio_ffmpeg", "AVFoundation", "ScreenCaptureKit"):
     try:
         hiddenimports += collect_submodules(package)
     except Exception:
