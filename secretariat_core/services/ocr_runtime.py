@@ -216,17 +216,48 @@ class OCRRuntimeManager:
             thread.start()
             return self.status()
 
+    def apply_configuration(self, config: dict[str, Any]) -> dict[str, Any]:
+        """Apply saved regions to the active reader, not only to the preview."""
+        with self._lock:
+            previous = self.config_store.load()
+            self.config_store.save(config)
+            changed = previous != self.config_store.load()
+            running = self._process is not None and self._process.poll() is None
+            if changed and running:
+                self.stop()
+                if any((config.get("regions") or {}).get(key)
+                       for key in ("time", "team1_score", "team2_score")):
+                    return self.start()
+            return self.status()
+
     def stop(self) -> dict[str, Any]:
         with self._lock:
             self._desired_running = False
             process = self._process
             self._process = None
             if process is not None and process.poll() is None:
+                # PyInstaller one-file workers have a bootloader parent and
+                # an inference child. Terminating only the parent leaves the
+                # old regions active in an orphaned reader.
+                children = []
+                if sys.platform == "win32":
+                    import psutil
+                    try:
+                        children = psutil.Process(process.pid).children(recursive=True)
+                    except psutil.NoSuchProcess:
+                        pass
+                    for child in children:
+                        try:
+                            child.terminate()
+                        except psutil.NoSuchProcess:
+                            pass
                 process.terminate()
                 try:
                     process.wait(timeout=2.0)
                 except subprocess.TimeoutExpired:
                     process.kill()
+                if children:
+                    psutil.wait_procs(children, timeout=2)
             self._status.update(
                 {
                     "running": False,
@@ -246,6 +277,9 @@ class OCRRuntimeManager:
         if log_path.exists() and log_path.stat().st_size > 2_000_000:
             log_path.replace(log_path.with_suffix(".previous.log"))
         for line in output:
+            with self._lock:
+                if self._process is not process:
+                    return
             line = line.strip()
             if not line:
                 continue
@@ -253,23 +287,26 @@ class OCRRuntimeManager:
                 with log_path.open("a", encoding="utf-8") as log:
                     log.write(line + "\n")
                 with self._lock:
-                    self._status["error"] = line[-400:]
+                    if self._process is process:
+                        self._status["error"] = line[-400:]
                 continue
             try:
                 payload = json.loads(line[len(PREFIX):])
             except json.JSONDecodeError:
                 continue
             try:
-                self.handle_payload(payload)
+                self.handle_payload(payload, process=process)
             except Exception as exc:
                 with self._lock:
-                    self._status["error"] = f"No se pudo procesar la lectura OCR: {exc}"
+                    if self._process is process:
+                        self._status["error"] = f"No se pudo procesar la lectura OCR: {exc}"
 
         exit_code = process.wait()
         restart_native = False
         with self._lock:
-            if self._process is process:
-                self._process = None
+            if self._process is not process:
+                return
+            self._process = None
             self._status.update(
                 {
                     "running": False,
@@ -325,11 +362,13 @@ class OCRRuntimeManager:
             # affect OCR, the score files or the live production.
             return
 
-    def handle_payload(self, payload: dict[str, Any]) -> None:
+    def handle_payload(self, payload: dict[str, Any], *, process=None) -> None:
         """Apply one worker message. Public to support deterministic tests."""
         message_type = str(payload.get("type") or "")
         now = float(payload.get("ts") or time.time())
         with self._lock:
+            if process is not None and self._process is not process:
+                return
             if message_type == "heartbeat":
                 self._status["last_heartbeat"] = now
                 self._status["phase"] = str(payload.get("phase") or "running")

@@ -15,6 +15,7 @@ En macOS se requiere permiso de Grabación de pantalla.
 from __future__ import annotations
 
 import platform
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import numpy as np
@@ -120,7 +121,29 @@ def get_window_rect(window_id: int):
     return None
 
 
+@contextmanager
+def _physical_pixel_coordinates():
+    # The preview runs in Live's GUI process; OCR runs in a separate worker.
+    # Their inherited DPI awareness can differ. Keep *all* Win32 geometry and
+    # bitmap operations in physical pixels, then restore this pooled thread.
+    setter = ctypes.windll.user32.SetThreadDpiAwarenessContext
+    setter.argtypes = [ctypes.c_void_p]
+    setter.restype = ctypes.c_void_p
+    previous = setter(ctypes.c_void_p(-4))  # PER_MONITOR_AWARE_V2 (Windows 10)
+    if not previous:
+        raise RuntimeError("No se pudo establecer el contexto DPI de captura")
+    try:
+        yield
+    finally:
+        setter(previous)
+
+
 def _capture_windows_printwindow(hwnd: int):
+    with _physical_pixel_coordinates():
+        return _capture_windows_physical(hwnd)
+
+
+def _capture_windows_physical(hwnd: int):
     if not hwnd or not win32gui.IsWindow(hwnd) or win32gui.IsIconic(hwnd):
         return None
 
