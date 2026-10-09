@@ -198,6 +198,15 @@ if __name__ == "__main__":
                 raise RuntimeError(ocr_engine._spocr_error)
             if ocr_engine._get_spscore() is None:
                 raise RuntimeError(ocr_engine._spscore_error)
+            if sys.platform == "win32":
+                import cv2
+                import numpy as np
+                image = np.full((96, 320, 3), 255, dtype=np.uint8)
+                cv2.putText(image, "12:34", (12, 72), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 0), 3)
+                raw, confidence = ocr_engine._recognize(image)
+                if ocr_engine.clean_time(raw) != "12:34" or confidence < ocr_engine.MIN_CONFIDENCE:
+                    raise RuntimeError(f"PaddleOCR inference failed: {raw!r}, confidence={confidence}")
+                emit({"type": "ocr_inference_ok", "value": "12:34", "confidence": confidence})
             emit({"type": "ocr_runtime_ok", "clock": ocr_engine.SPOCR_MODEL_NAME,
                   "scores": ocr_engine.SPSCORE_MODEL_NAME, "paddle": paddle.__version__})
         elif sys.argv[1] == "--camera":

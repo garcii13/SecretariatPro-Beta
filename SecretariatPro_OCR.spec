@@ -4,11 +4,25 @@ import platform
 import subprocess
 import sys
 import importlib.util
+import importlib.metadata
 from PyInstaller.utils.hooks import collect_all, copy_metadata
 base = Path(SPECPATH)
 datas = [(str(base / 'models'), 'models')]
 if sys.platform == 'darwin':
     datas += copy_metadata('paddleocr', recursive=True)
+if sys.platform == 'win32':
+    from packaging.requirements import Requirement
+    # PaddleX gates predictors/readers on distribution metadata, even when
+    # their modules and DLLs are present. Recursive metadata collection does
+    # not select extras, so include the active ocr-core requirements explicitly.
+    datas += copy_metadata('paddleocr', recursive=True)
+    for dependency in importlib.metadata.requires('paddlex') or []:
+        requirement = Requirement(dependency)
+        if requirement.marker is None or requirement.marker.evaluate({'extra': 'ocr-core'}):
+            datas += copy_metadata(requirement.name, recursive=True)
+    model_dir = base / 'models' / 'en_PP-OCRv4_mobile_rec'
+    if not (model_dir / 'inference.pdiparams').is_file():
+        raise RuntimeError('Run python packaging/prepare_windows_ocr.py before building Windows OCR')
 binaries = []
 hidden = []
 search_paths = [str(base)]

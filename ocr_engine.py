@@ -193,6 +193,11 @@ def get_ocr():
 
     # Other platforms retain the current recognition API, but inference is
     # intentionally single-threaded for deterministic live operation.
+    windows_options = {}
+    if sys.platform == "win32":
+        from secretariat_core.windows_ocr import recognition_options
+        windows_options = recognition_options(Path(__file__).resolve().parent,
+                                               frozen=getattr(sys, "frozen", False))
     try:
         from paddleocr import TextRecognition
         _engine = TextRecognition(
@@ -200,10 +205,13 @@ def get_ocr():
             device="cpu",
             cpu_threads=1,
             enable_mkldnn=False,
+            **windows_options,
         )
         _engine_kind = "v3_text_recognition"
         return _engine
     except (ImportError, TypeError, ValueError):
+        if sys.platform == "win32" and getattr(sys, "frozen", False):
+            raise
         pass
 
     from paddleocr import PaddleOCR

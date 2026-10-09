@@ -16,9 +16,12 @@ pydantic>=2.8.0
 # Captura, vídeo y procesamiento
 mss>=9.0.1
 numpy==1.26.4 ; sys_platform == "darwin"
-numpy>=1.24 ; sys_platform != "darwin"
+numpy==2.3.5 ; sys_platform == "win32"
+numpy>=1.24 ; sys_platform != "darwin" and sys_platform != "win32"
 # PaddleOCR 2.7.3 arrastra opencv-python/opencv-contrib-python <=4.6.0.66 en macOS.
-opencv-python>=4.9.0 ; sys_platform != "darwin"
+opencv-python>=4.9.0 ; sys_platform != "darwin" and sys_platform != "win32"
+# One cv2 provider on Windows, matching PaddleX and the tested worker.
+opencv-contrib-python==4.10.0.84 ; sys_platform == "win32"
 
 # Windows: captura nativa y localización de ventanas
 pywin32>=306 ; sys_platform == "win32"
@@ -37,9 +40,13 @@ scikit-learn==1.8.0
 paddlepaddle==2.6.2 ; sys_platform == "darwin"
 paddleocr==2.7.3 ; sys_platform == "darwin"
 
+# Windows: versions exercised by real inference and the frozen-worker check.
+paddlepaddle==3.3.1 ; sys_platform == "win32"
+paddleocr==3.7.0 ; sys_platform == "win32"
+paddlex==3.7.2 ; sys_platform == "win32"
 # Other platforms keep the compatible range used by SecretariatPro.
-paddlepaddle>=2.6.0 ; sys_platform != "darwin"
-paddleocr>=2.7.3 ; sys_platform != "darwin"
+paddlepaddle>=2.6.0 ; sys_platform != "darwin" and sys_platform != "win32"
+paddleocr>=2.7.3 ; sys_platform != "darwin" and sys_platform != "win32"
 
 # Supabase y configuración
 supabase>=2.0.0

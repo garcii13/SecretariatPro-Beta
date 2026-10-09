@@ -9,6 +9,10 @@ foreach ($product in @('Live', 'Manager')) {
     $installLog = Join-Path $root "release\smoke-install-$product.log"
     $setup = Start-Process $installer[0].FullName -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$target`"", "/LOG=`"$installLog`"") -Wait -PassThru
     if ($setup.ExitCode -notin @(0, 3010)) { throw "Installer failed: $($setup.ExitCode)" }
+    if ($product -eq 'Live') {
+        & python "$root\packaging\check_worker.py" --worker (Join-Path $target 'SecretariatPro_OCR.exe') *> "$root\release\smoke-ocr-Live.log"
+        if ($LASTEXITCODE -ne 0) { throw 'Installed Live OCR failed real inference' }
+    }
     $port = if ($product -eq 'Live') { 18765 } else { 18766 }
     $arguments = @('--port', "$port")
     if ($product -eq 'Live') { $arguments += @('--host', '127.0.0.1', '--windowed') }

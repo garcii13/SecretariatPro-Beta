@@ -20,6 +20,7 @@ build/
 dist/
 release/
 models/*.joblib
+models/en_PP-OCRv4_mobile_rec/
 .pytest_cache/
 .publish-repo/
 .coverage
