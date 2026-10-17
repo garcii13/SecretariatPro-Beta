@@ -4,6 +4,9 @@
 #ifndef Version
   #define Version "1.0.0-beta.7"
 #endif
+#ifndef FileVersion
+  #define FileVersion "1.0.0.6"
+#endif
 #if Product != "Live" && Product != "Manager"
   #error Unsupported product
 #endif
@@ -15,7 +18,7 @@ AppName={#ProductName}
 AppVersion={#Version}
 AppPublisher=SecretariatPro
 AppPublisherURL=https://secretariatproapp.com
-VersionInfoVersion=1.0.0.7
+VersionInfoVersion={#FileVersion}
 VersionInfoProductName={#ProductName}
 DefaultDirName={localappdata}\Programs\SecretariatPro\{#Product}
 DefaultGroupName={#ProductName}

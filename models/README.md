@@ -14,3 +14,17 @@ aplicación continúa automáticamente con PaddleOCR.
 Los usuarios finales no entrenan ni instalan modelos. El entrenamiento,
 benchmark y aprobación se realizan exclusivamente en **SecretariatPro OCR
 Lab**.
+
+## Instalador Windows
+
+El ZIP del release contiene los dos especialistas `.joblib`. El reconocedor
+base de PaddleOCR se prepara aparte con `python packaging/prepare_windows_ocr.py`
+antes de compilar. Sus archivos se incluyen en
+`models/en_PP-OCRv4_mobile_rec/`, y el worker instalado los usa directamente,
+sin descargar modelos en el ordenador del realizador.
+
+La especificación Windows incluye los metadatos de todas las dependencias de
+`ocr-core` que PaddleX exige al crear el reconocedor, incluidos `python-bidi`,
+`pypdfium2` y `opencv-contrib-python`. `python packaging/check_worker.py` comprueba
+también una lectura real del ejecutable, no solo la importación de librerías
+y la carga de los especialistas.

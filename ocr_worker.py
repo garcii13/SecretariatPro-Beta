@@ -145,7 +145,9 @@ def main(config_path):
                     now = time.time()
                     confidence = float(detail.get("confidence") or 0.0)
                     ocr_pass = str(detail.get("pass") or "normal")
-                    confirmed_value = consensus.observe(key, value) if value else None
+                    confirmed_value = consensus.observe(
+                        key, value, captured_at=started, confidence=confidence
+                    )
                     if confirmed_value:
                         emit({
                             "type": "reading", "key": key, "value": confirmed_value,
@@ -213,10 +215,21 @@ if __name__ == "__main__":
             import ocr_engine
             import paddle
             import paddleocr
+            import cv2
+            import numpy as np
+            # Imports alone miss missing PaddleX resources, model downloads,
+            # unsupported inference backends and frozen-runtime failures.
+            fixture = np.full((80, 280, 3), 255, dtype=np.uint8)
+            cv2.putText(fixture, "12:34", (12, 58), cv2.FONT_HERSHEY_SIMPLEX,
+                        1.7, (0, 0, 0), 3, cv2.LINE_AA)
+            text, confidence = ocr_engine._recognize(fixture)
+            if ocr_engine.clean_time(text) != "12:34" or confidence < ocr_engine.MIN_CONFIDENCE:
+                raise RuntimeError(f"OCR inference self-test failed: {text!r} ({confidence:.3f})")
             if ocr_engine._get_spocr() is None:
                 raise RuntimeError(ocr_engine._spocr_error)
             if ocr_engine._get_spscore() is None:
                 raise RuntimeError(ocr_engine._spscore_error)
+            emit({"type": "ocr_inference_ok", "value": text, "confidence": confidence})
             emit({"type": "ocr_runtime_ok", "clock": ocr_engine.SPOCR_MODEL_NAME,
                   "scores": ocr_engine.SPSCORE_MODEL_NAME, "paddle": paddle.__version__})
         elif sys.argv[1] == "--camera":

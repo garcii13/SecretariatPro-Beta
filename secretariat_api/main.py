@@ -1584,7 +1584,7 @@ async def put_ocr_config(payload: OCRConfigPayload) -> dict[str, Any]:
             await run_in_threadpool(runtime.camera_service.activate, int(config.get("source_id") or ""))
         except Exception as exc:
             raise HTTPException(409, str(exc)) from exc
-    await run_in_threadpool(runtime.ocr_store.save, config)
+    await run_in_threadpool(runtime.ocr_runtime.apply_configuration, config)
     return await broadcast_state()
 
 
