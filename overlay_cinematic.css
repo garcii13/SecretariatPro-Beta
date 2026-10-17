@@ -1,7 +1,7 @@
 /* Cinematic finish. Geometry, team identities and all Manager palette hooks survive. */
 :root {
-  --sp-motion-enter: cubic-bezier(.16,1,.3,1);
-  --sp-motion-exit: cubic-bezier(.4,0,.8,.2);
+  --sp-motion-enter: cubic-bezier(.22,.68,.24,1);
+  --sp-motion-exit: cubic-bezier(.4,0,.2,1);
   --sp-hairline: rgba(255,255,255,.12);
   --sp-panel-shadow: 0 24px 64px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.14), inset 0 -1px rgba(0,0,0,.28);
 }
@@ -83,7 +83,7 @@ body :is(.lineups-modal,.stats-modal,#prematch-modal,.intermission-modal,#penalt
 }
 body .intermission-modal[data-sp-motion] {transform:translate(-50%,-50%) !important;}
 body :is(#prematch-modal,.stats-modal,.lineups-modal)[data-sp-motion] :is(.prematch-panel,.stats-panel,.lineups-panel) {
-  transform:none !important;transition:height 600ms var(--sp-motion-enter),width 600ms var(--sp-motion-enter) !important;
+  transform:none !important;transition:height 760ms var(--sp-motion-enter),width 760ms var(--sp-motion-enter) !important;
 }
 body .lineups-modal[data-sp-motion="exiting"] .lineups-panel.team-lineup-panel {
   opacity:1 !important;visibility:visible !important;
@@ -94,7 +94,7 @@ body :is(#prematch-modal,.stats-modal,.lineups-modal,#penalties-modal)[data-sp-m
   background:transparent !important;background-image:none !important;backdrop-filter:none !important;
 }
 body .lineups-modal .starting-formation,
-body .lineups-modal .team-only-list {transition:opacity 340ms ease,transform 540ms var(--sp-motion-enter),max-height 600ms var(--sp-motion-enter) !important;}
+body .lineups-modal .team-only-list {transition:opacity 480ms ease,transform 620ms var(--sp-motion-enter),max-height 760ms var(--sp-motion-enter) !important;}
 /* Flag images keep square corners and their existing common-width contract. */
 body.international-teams .scoreboard :is(.team1-bar,.team2-bar) {border-radius:0 !important;}
 @media(prefers-reduced-motion:reduce) {
@@ -112,3 +112,79 @@ body #scoreboard-wrapper[data-sp-motion="on"] .scoreboard::after {
 }
 @keyframes sp-cinematic-reflection {0% {background-position:120% 0;opacity:0;} 30% {opacity:1;} 100% {background-position:-20% 0;opacity:0;}}
 @media(prefers-reduced-motion:reduce) {body #scoreboard-wrapper[data-sp-motion="on"] .scoreboard::after {animation:none;display:none!important;}}
+
+/* Goal ceremony: arrival, hold, then one continuous wipe into the scorer. */
+body #bottom-bar.goal-intro > .bottom-goal-intro {
+  display:flex !important;align-items:center;justify-content:center;
+  isolation:isolate;clip-path:inset(0 0 0 0);
+  background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 42%,rgba(0,0,0,.18)),var(--bottom-team-color) !important;
+  box-shadow:inset 0 -4px var(--goal-intro-accent,white),inset 0 1px rgba(255,255,255,.22) !important;
+}
+body #bottom-bar.goal-intro .bottom-goal-intro::before {
+  content:attr(data-word);position:absolute;inset:-35% -8%;z-index:-1;
+  display:grid;place-items:center;font-size:clamp(130px,14vw,210px);font-weight:950;font-style:italic;
+  letter-spacing:.14em;color:transparent;-webkit-text-stroke:1px currentColor;
+  -webkit-text-stroke-color:var(--goal-intro-text,white);white-space:nowrap;opacity:.12;
+  animation:sp-goal-echo var(--goal-phase-duration,2.2s) cubic-bezier(.22,.68,.24,1) both;
+  animation-delay:var(--goal-phase-offset,0s);
+}
+body #bottom-bar.goal-intro .bottom-goal-intro::after {
+  content:"";position:absolute;inset:-50% -10%;z-index:2;pointer-events:none;
+  background:linear-gradient(112deg,transparent 37%,rgba(255,255,255,.16) 48%,rgba(255,255,255,.02) 57%,transparent 66%);
+  translate:80% 0;opacity:0;
+  animation:sp-goal-light var(--goal-phase-duration,2.2s) cubic-bezier(.4,0,.2,1) both;
+  animation-delay:var(--goal-phase-offset,0s);
+}
+body #bottom-bar .goal-intro-lockup {
+  display:flex;align-items:center;justify-content:center;gap:clamp(16px,3vw,48px);
+  width:min(88%,800px);position:relative;z-index:1;
+}
+body #bottom-bar .goal-intro-rule {
+  display:block;flex:1;max-width:140px;height:3px;background:currentColor;
+  opacity:.72;transform-origin:center;
+  animation:sp-goal-rule var(--goal-phase-duration,2.2s) cubic-bezier(.22,.68,.24,1) both;
+  animation-delay:var(--goal-phase-offset,0s);
+}
+body #bottom-bar.goal-intro #bottom-goal-word {
+  flex:0 0 auto;width:auto;white-space:nowrap;line-height:1;
+  font-size:clamp(48px,5.6vw,86px);letter-spacing:.14em;font-weight:950;font-style:italic;
+  text-shadow:0 4px 18px rgba(0,0,0,.12);
+  animation:sp-goal-hero var(--goal-phase-duration,2.2s) cubic-bezier(.22,.68,.24,1) both;
+  animation-delay:var(--goal-phase-offset,0s);
+}
+body #bottom-bar.goal-reveal > .bottom-goal-intro {
+  animation:sp-goal-curtain var(--goal-phase-duration,.64s) cubic-bezier(.4,0,.2,1) both;
+  animation-delay:var(--goal-phase-offset,0s);
+}
+body #bottom-bar.goal-reveal .bottom-event-copy {visibility:visible !important;}
+body #bottom-bar.goal-reveal .goal-intro-lockup {
+  animation:sp-goal-handoff var(--goal-phase-duration,.64s) cubic-bezier(.4,0,.2,1) both;
+  animation-delay:var(--goal-phase-offset,0s);
+}
+body #bottom-bar.goal-reveal :is(#bottom-goal-word,.goal-intro-rule) {
+  animation:none;transform:none;
+}
+@keyframes sp-goal-hero {
+  0% {opacity:0;transform:translateX(64px) scale(.94);}
+  30% {opacity:1;transform:translateX(0) scale(1);}
+  76% {opacity:1;transform:translateX(-8px) scale(1.012);}
+  100% {opacity:1;transform:translateX(0) scale(1);}
+}
+@keyframes sp-goal-rule {
+  0%,12% {opacity:0;transform:scaleX(0);}
+  38%,100% {opacity:.72;transform:scaleX(1);}
+}
+@keyframes sp-goal-echo {from {translate:6% 0;opacity:0;} 30% {opacity:.12;} to {translate:-8% 0;opacity:.08;}}
+@keyframes sp-goal-light {0%,16% {translate:75% 0;opacity:0;} 40% {opacity:1;} 88%,100% {translate:-75% 0;opacity:0;}}
+@keyframes sp-goal-curtain {from {clip-path:inset(0 0 0 0);} to {clip-path:inset(0 100% 0 0);}}
+@keyframes sp-goal-handoff {from {translate:0 0;opacity:1;} to {translate:-44px 0;opacity:0;}}
+@keyframes sp-goal-soft-out {from {opacity:1;} to {opacity:0;}}
+@media(prefers-reduced-motion:reduce) {
+  body #bottom-bar.goal-intro .bottom-goal-intro::before,
+  body #bottom-bar.goal-intro .bottom-goal-intro::after,
+  body #bottom-bar.goal-intro :is(#bottom-goal-word,.goal-intro-rule,.goal-intro-lockup) {animation:none !important;transform:none;translate:none;}
+  body #bottom-bar.goal-reveal > .bottom-goal-intro {animation-name:sp-goal-soft-out;clip-path:none;}
+}
+
+body #bottom-bar.goal-reveal .bottom-goal-intro::before {animation:none;translate:-8% 0;opacity:.08;}
+body #bottom-bar.goal-reveal .bottom-goal-intro::after {animation:none;opacity:0;}

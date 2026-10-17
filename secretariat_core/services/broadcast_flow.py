@@ -6,7 +6,8 @@ import time
 from typing import Any, Callable
 from .overlay import set_panel
 
-GOAL_INTRO_SECONDS = 1.6
+GOAL_INTRO_SECONDS = 2.2
+GOAL_REVEAL_SECONDS = 0.64
 
 
 class BroadcastFlow:
@@ -16,12 +17,14 @@ class BroadcastFlow:
         self.task: asyncio.Task | None = None
         self.generation = 0
 
-    async def _state(self, phase: str, *, scoreboard: bool = False, bottom: bool = False, generation: int | None = None) -> None:
+    async def _state(self, phase: str, *, scoreboard: bool = False, bottom: bool = False, generation: int | None = None, duration_seconds: float | None = None) -> None:
         token = self.generation if generation is None else generation
         def mutate(state):
             if token != self.generation:
                 return
             state["broadcast_flow"] = {"phase": phase, "generation": token, "started_at": time.time()}
+            if duration_seconds is not None:
+                state["broadcast_flow"]["duration_seconds"] = duration_seconds
             set_panel(state, "scoreboard", scoreboard)
             set_panel(state, "bottom_bar", bottom)
         await asyncio.to_thread(self.runtime.mutate_state, mutate)
@@ -54,8 +57,10 @@ class BroadcastFlow:
                     if token != self.generation: return
                     state.setdefault("bottombar", {}).update(state.pop("pending_goal_celebration", {}))
                 await asyncio.to_thread(self.runtime.mutate_state, show)
-                await self._state("GOAL_INTRO", bottom=True, generation=token)
+                await self._state("GOAL_INTRO", bottom=True, generation=token, duration_seconds=GOAL_INTRO_SECONDS)
                 await asyncio.sleep(GOAL_INTRO_SECONDS)
+                await self._state("GOAL_REVEAL", bottom=True, generation=token, duration_seconds=GOAL_REVEAL_SECONDS)
+                await asyncio.sleep(GOAL_REVEAL_SECONDS)
                 await self._state("GOAL_BOTTOM", bottom=True, generation=token)
                 config = self.runtime.safe_settings()["appearance"]["goal_celebration"]
                 await asyncio.sleep(float(config["duration_seconds"]))

@@ -20,9 +20,9 @@ publicada. Las proporciones se conservan y no se recorta ninguna imagen. Si
 una bandera es cuadrada o vertical, se reduce el ancho de ambas para respetar
 la altura. El límite se calcula con las dos imágenes cargadas.
 
-Los goles incorporan una animación de 1,6 segundos de derecha a izquierda con
-el color del equipo: GOL / GOAL / MÅL / GÓL / MAALI / TOR según el idioma de Live.
-Se muestra tras la vuelta confirmada del replay o la espera configurada. Luego
+Los goles incorporan una ceremonia de 2,2 segundos con tipografía en capas,
+líneas de acento y barrido de luz con los colores del equipo: GOL / GOAL / MÅL / GÓL / MAALI / TOR según el idioma de Live.
+Se muestra tras la vuelta confirmada del replay o la espera configurada. Una transición de 640 ms retira la capa de color y descubre los nombres. Luego
 el goleador y la asistencia permanecen todo el tiempo configurado en Manager;
 al retirar el bottom vuelve el marcador. Limpiar emisión cancela la secuencia.
 

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scoreboard</title>
-  <link rel="stylesheet" href="styles.css?v=phase57-coach-tag12-beta11-cinema1">
-  <link rel="stylesheet" href="overlay_cinematic.css?v=beta11-cinema1">
+  <link rel="stylesheet" href="styles.css?v=phase57-coach-tag12-beta11-cinema2">
+  <link rel="stylesheet" href="overlay_cinematic.css?v=beta11-cinema2">
 </head>
 <body>
 
@@ -54,7 +54,9 @@
     <div class="bottom-match-time" id="bottom-match-time">00:00</div>
     <div class="bottom-current-score" id="bottom-current-score">0–0</div>
   </div>
-  <div class="bottom-goal-intro" id="bottom-goal-intro" aria-hidden="true"><span id="bottom-goal-word">GOL</span></div>
+  <div class="bottom-goal-intro" id="bottom-goal-intro" data-word="GOL" aria-hidden="true">
+    <div class="goal-intro-lockup"><span class="goal-intro-rule"></span><span id="bottom-goal-word">GOL</span><span class="goal-intro-rule"></span></div>
+  </div>
   <div class="bottom-event-copy">
     <div class="bottom-person-row bottom-scorer-row">
       <span class="bottom-person-number" id="bottom-scorer-number"></span>
@@ -313,7 +315,7 @@
   </div>
 </div>
 
-<script src="overlay_motion.js?v=beta11-cinema1"></script>
-<script src="script.js?v=phase57-coach-tag12-beta11-cinema1"></script>
+<script src="overlay_motion.js?v=beta11-cinema2"></script>
+<script src="script.js?v=phase57-coach-tag12-beta11-cinema2"></script>
 </body>
 </html>

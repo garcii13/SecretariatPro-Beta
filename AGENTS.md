@@ -26,5 +26,5 @@ flag requires more height, reduce the common width of both. Keep the scoreboard
 height unchanged. Preserve club crests separately in all competition modes.
 
 Goal presentation belongs to BroadcastFlow: replay/confirmed live (or configured
-delay), goal intro, full configured scorer duration, bottom hidden, scoreboard
+delay), goal intro, GOAL_REVEAL handoff, full configured scorer duration, bottom hidden, scoreboard
 restored. Cancellation must prevent stale graphics from returning.

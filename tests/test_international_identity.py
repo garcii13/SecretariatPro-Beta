@@ -47,3 +47,14 @@ class InternationalIdentityTests(unittest.TestCase):
             state = runtime.read_state()
             self.assertEqual(state["bottombar"]["status"], "show")
             self.assertEqual(state["animation"]["status"], "hide")
+
+    def test_real_runtime_keeps_bottom_visible_through_reveal(self):
+        with tempfile.TemporaryDirectory() as folder:
+            runtime = ApplicationRuntime(folder)
+            def reveal(state):
+                state["broadcast_flow"] = {"phase": "GOAL_REVEAL"}
+                state["bottombar"]["status"] = "show"
+                state["animation"]["status"] = "show"
+            runtime.mutate_state(reveal)
+            self.assertEqual(runtime.read_state()["bottombar"]["status"], "show")
+            self.assertEqual(runtime.read_state()["animation"]["status"], "hide")

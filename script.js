@@ -3,6 +3,17 @@ const OverlayPresentation = {
   goalWord(language) {
     return ({es: "GOL", en: "GOAL", sv: "MÅL", cs: "GÓL", fi: "MAALI", de: "TOR"})[language] || "GOAL";
   },
+  goalPhase(flow = {}, visible = false, now = Date.now() / 1000) {
+    flow = flow && typeof flow === "object" ? flow : {};
+    const phase = visible ? flow.phase || "" : "";
+    const overlay = phase === "GOAL_INTRO" || phase === "GOAL_REVEAL";
+    const fallback = phase === "GOAL_REVEAL" ? .64 : 2.2;
+    const requested = Number(flow.duration_seconds);
+    const duration = Number.isFinite(requested) && requested > 0 ? requested : fallback;
+    const started = Number(flow.started_at);
+    const elapsed = Number.isFinite(started) && started > 0 ? Math.max(0, Math.min(duration, now - started)) : 0;
+    return {phase, overlay, reveal: phase === "GOAL_REVEAL", duration, elapsed, key: `${flow.generation || 0}:${phase}`};
+  },
   flagWidth(height, ratios, maximum = height * 1.5) {
     const valid = ratios.filter(value => Number.isFinite(value) && value > 0);
     return Math.min(maximum, height * Math.min(1.5, ...valid));
@@ -747,8 +758,8 @@ document.addEventListener("DOMContentLoaded", () => {
       { opacity: 0, transform: `translateX(${statusSlideOffset(teamKey)})` },
       { opacity: 1, transform: "translateX(0px)" },
     ], {
-      duration: 380,
-      easing: "cubic-bezier(.16,1,.3,1)",
+      duration: 460,
+      easing: "cubic-bezier(.22,.68,.24,1)",
       fill: "none",
     });
     animation.finished.catch(() => {});
@@ -771,8 +782,8 @@ document.addEventListener("DOMContentLoaded", () => {
       { opacity: 1, transform: "translateX(0px)", height: "44px", maxHeight: "44px" },
       { opacity: 0, transform: `translateX(${statusSlideOffset(teamKey)})`, height: "0px", maxHeight: "0px" },
     ], {
-      duration: 220,
-      easing: "cubic-bezier(.4,0,.8,.2)",
+      duration: 300,
+      easing: "cubic-bezier(.4,0,.2,1)",
       fill: "forwards",
     });
     animation.finished.then(done).catch(done);
@@ -1202,17 +1213,36 @@ document.addEventListener("DOMContentLoaded", () => {
       if (intermissionTeam1Score) setTextIfChanged(intermissionTeam1Score, graphicScores?.team1_score ?? prevTxt.home);
       if (intermissionTeam2Score) setTextIfChanged(intermissionTeam2Score, graphicScores?.team2_score ?? prevTxt.away);
       bottomBar.classList.toggle("show", bar.status === "show");
-      const intro = bar.status === "show" && data.broadcast_flow?.phase === "GOAL_INTRO";
+      const goal = OverlayPresentation.goalPhase(data.broadcast_flow, bar.status === "show");
+      const previousPhase = bottomBar.dataset.goalPhase || "";
+      const changed = bottomBar.dataset.goalKey !== goal.key;
       const goalWord = safeGet("bottom-goal-word");
-      if (goalWord) setTextIfChanged(goalWord, OverlayPresentation.goalWord(overlayLanguage));
-      if (intro && !bottomBar.classList.contains("goal-intro")) {
-        const elapsed = Math.max(0, Math.min(1.6, Date.now() / 1000 - Number(data.broadcast_flow.started_at || Date.now() / 1000)));
-        bottomBar.style.setProperty("--goal-intro-offset", `-${elapsed}s`);
+      const word = OverlayPresentation.goalWord(overlayLanguage);
+      if (goalWord) setTextIfChanged(goalWord, word);
+      const goalSurface = safeGet("bottom-goal-intro");
+      if (goalSurface) goalSurface.dataset.word = word;
+      if (bar.status === "show") {
+        if (changed && goal.overlay) {
+          if (previousPhase === goal.phase) {
+            bottomBar.classList.remove("goal-intro", "goal-reveal");
+            void bottomBar.offsetWidth;
+          }
+          bottomBar.style.setProperty("--goal-phase-offset", `-${goal.elapsed}s`);
+          bottomBar.style.setProperty("--goal-phase-duration", `${goal.duration}s`);
+        }
+        bottomBar.dataset.goalPhase = goal.phase;
+        bottomBar.dataset.goalKey = goal.key;
+        bottomBar.classList.toggle("goal-intro", goal.overlay);
+        bottomBar.classList.toggle("goal-reveal", goal.reveal);
       }
-      const wasIntro = bottomBar.classList.contains("goal-intro");
-      bottomBar.classList.toggle("goal-intro", intro);
+      // Keep the existing curtain during an outro so cancelling a goal cannot
+      // briefly uncover the scorer that was waiting underneath it.
       motion?.setVisible(bottomBar, bar.status === "show", "bottom");
-      if (wasIntro && !intro && bar.status === "show") motion?.revealDetails(bottomBar, "bottom");
+      // Names come through under the outgoing colour curtain. Their complete
+      // configured reading duration starts only once GOAL_REVEAL has finished.
+      if (bar.status === "show" && changed && (goal.reveal || (goal.phase === "GOAL_BOTTOM" && previousPhase !== "GOAL_REVEAL"))) {
+        motion?.revealDetails(bottomBar, "bottom", ".bottom-team-block img,.bottom-match-state,.bottom-scorer-row,.bottom-assistant-row", {duration: 480, start: 20 - (goal.reveal ? goal.elapsed * 1000 : 0), stagger: 40, distance: 7});
+      }
       const stateTeamColor = bar.team_key === "team2"
         ? data.team2?.stripe_color
         : bar.team_key === "team1" ? data.team1?.stripe_color : "";

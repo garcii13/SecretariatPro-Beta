@@ -41,7 +41,7 @@ test('a hidden graphic settles after its short exit', async () => {
   const node=element(),motion=new Motion({schedule:fn=>fn()});
   motion.setVisible(node,true,'prematch');
   motion.setVisible(node,false,'prematch');
-  assert.equal(node.animations.at(-1).options.duration,220);
+  assert.equal(node.animations.at(-1).options.duration,320);
   node.animations.at(-1).finish();
   await drain();
   assert.equal(node.dataset.spMotion,'off');
@@ -52,7 +52,8 @@ test('queued stale entrances cannot run after hiding or clearing', () => {
   motion.setVisible(node,false,'scoreboard');
   frames[0]();
   assert.equal(node.animations.length,0);
-  motion.settle();frames[1]();
+  assert.equal(frames.length,1);
+  motion.settle();
   assert.equal(node.animations.length,0);
   assert.equal(node.dataset.spMotion,'off');
 });
@@ -109,4 +110,25 @@ test('a cancelled penalty exit cannot remove a penalty that has reappeared', asy
   node.dataset.spExiting='0';node.animations[0].cancel();
   await drain();
   assert.equal(removed,0);
+});
+
+
+test('reversing a transition starts at its current visible position', () => {
+  const node=element();
+  const sampled={filter:'opacity(0.37)',translate:'0px 9px'};
+  const motion=new Motion({schedule:fn=>fn(),sample:()=>sampled});
+  motion.setVisible(node,true,'bottom');
+  motion.setVisible(node,false,'bottom');
+  assert.deepEqual(node.animations.at(-1).frames[0],sampled);
+  motion.setVisible(node,true,'bottom');
+  assert.deepEqual(node.animations.at(-1).frames[0],sampled);
+});
+test('the goal handoff can seek its detail reveal for a late phase update', () => {
+  const node=element(),child=element();node.querySelectorAll=()=>[child];
+  const motion=new Motion({schedule:fn=>fn()});
+  node.classes.add('goal-intro');
+  motion.setVisible(node,true,'bottom');
+  motion.revealDetails(node,'bottom','.bottom-scorer-row',{duration:480,start:-180,stagger:40,distance:7});
+  assert.equal(child.animations[0].options.delay,-180);
+  assert.equal(child.animations[0].options.duration,480);
 });

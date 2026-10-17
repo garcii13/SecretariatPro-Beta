@@ -66,6 +66,9 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         intro = patch("secretariat_core.services.broadcast_flow.GOAL_INTRO_SECONDS", .02)
         intro.start()
         self.addCleanup(intro.stop)
+        reveal = patch("secretariat_core.services.broadcast_flow.GOAL_REVEAL_SECONDS", .02)
+        reveal.start()
+        self.addCleanup(reveal.stop)
         self.runtime = FakeRuntime()
         self.frames = []
         async def broadcast():
@@ -89,7 +92,7 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         self.runtime.plugin['playing'] = False
         await self.until('IDLE')
         phases = [f['broadcast_flow']['phase'] for f in self.frames]
-        self.assertEqual(phases, ['BUILDING','REPLAY','LIVE','GOAL_INTRO','GOAL_BOTTOM','IDLE'])
+        self.assertEqual(phases, ['BUILDING','REPLAY','LIVE','GOAL_INTRO','GOAL_REVEAL','GOAL_BOTTOM','IDLE'])
         bottom = self.frames[-2]
         self.assertFalse(panel_visible(bottom,'scoreboard'))
         self.assertTrue(panel_visible(bottom,'bottom_bar'))
@@ -108,6 +111,17 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(panel_visible(self.runtime.state, 'bottom_bar'))
         self.assertNotIn('GOAL_BOTTOM', [f['broadcast_flow']['phase'] for f in self.frames])
 
+    async def test_reveal_cancellation_cannot_restore_an_old_goal(self):
+        await self.flow.begin({'scorer': 'old'})
+        self.runtime.plugin['playing'] = False
+        await self.flow.without_replay()
+        await self.until('GOAL_REVEAL')
+        await self.flow.begin({'scorer': 'new'})
+        await asyncio.sleep(.06)
+        self.assertEqual(self.runtime.state['broadcast_flow']['phase'], 'BUILDING')
+        self.assertFalse(panel_visible(self.runtime.state, 'bottom_bar'))
+        self.assertNotIn('GOAL_BOTTOM', [f['broadcast_flow']['phase'] for f in self.frames])
+
     async def test_intro_does_not_shorten_scorer_duration(self):
         await self.flow.begin({'scorer': 'Garcia'})
         self.runtime.plugin['playing'] = False
@@ -115,9 +129,13 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         await self.until('IDLE')
         phases = {f['broadcast_flow']['phase']: f for f in self.frames}
         intro = phases['GOAL_INTRO']['broadcast_flow']['started_at']
+        reveal = phases['GOAL_REVEAL']['broadcast_flow']['started_at']
         bottom = phases['GOAL_BOTTOM']['broadcast_flow']['started_at']
         end = phases['IDLE']['broadcast_flow']['started_at']
-        self.assertGreaterEqual(bottom - intro, .019)
+        self.assertGreaterEqual(reveal - intro, .019)
+        self.assertGreaterEqual(bottom - reveal, .019)
+        self.assertEqual(phases["GOAL_INTRO"]["broadcast_flow"]["duration_seconds"], .02)
+        self.assertEqual(phases["GOAL_REVEAL"]["broadcast_flow"]["duration_seconds"], .02)
         self.assertGreaterEqual(end - bottom, .019)
         self.assertTrue(panel_visible(phases['GOAL_INTRO'], 'bottom_bar'))
         self.assertFalse(panel_visible(phases['GOAL_INTRO'], 'scoreboard'))

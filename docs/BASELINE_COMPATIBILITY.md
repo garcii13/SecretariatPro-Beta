@@ -21,7 +21,7 @@ Fecha: 17 de octubre de 2026. Rama: `feature/unified-international-goals`.
 | OBS y replay | Vuelta confirmada a directo, cancelación, multicámara, velocidades, secuencias, biblioteca, miniaturas y exportación | `test_replay_workflow.py`, `test_beta6_replay_sequences.py`; sesión real con OBS y cámaras |
 | Manager | Cuentas, invitaciones, ámbitos, equipos, jugadores, rosters, importación y publicación visual | Pruebas de identidad, permisos, importaciones y perfiles |
 | Banderas | Subida original por selección; publicación por identidad; escudos conservados; ancho común limitado y altura dentro del marcador | `test_international_identity.py`, `overlay_presentation.test.cjs`, `manager_identity.test.cjs` |
-| Gol animado | Idioma de Live, color del equipo, 1,6 s antes del goleador; duración del goleador intacta; cancelación segura | Pruebas BroadcastFlow y presentación JavaScript |
+| Gol animado | Idioma de Live, color del equipo, ceremonia de 2,2 s y transición de 640 ms al goleador; duración del goleador intacta; cancelación segura | Pruebas BroadcastFlow y presentación JavaScript |
 
 ## Comprobación de cada cambio
 
@@ -66,3 +66,10 @@ sin fallos (dos Win32 omitidas) y 20 pruebas JavaScript correctas. El navegador
 integrado mantiene bloqueado el origen de prueba por un permiso persistente,
 aunque el usuario autorizó de nuevo su apertura. La revisión visual sigue
 pendiente y no se han lanzado compilaciones ni publicado la nueva versión.
+
+## Suavizado y transición de gol
+
+435 pruebas Python sin fallos (dos Win32 omitidas) y 25 pruebas JavaScript. Se
+comprueba la fase GOAL_REVEAL, su cancelación, el tiempo completo del goleador,
+la continuidad al invertir una animación, goles consecutivos y la sincronización
+de clientes que reciben tarde una fase. La revisión visual permanece pendiente.

@@ -4972,13 +4972,13 @@ body.international-teams :is(.prematch-team-logo,.team-logo,.lineups-team-logo,.
 #bottom-bar.goal-intro #bottom-goal-word {
   width: 100%; text-align: center; font-weight: 950; font-style: italic;
   font-size: clamp(48px,5vw,76px); line-height: 1; letter-spacing: .12em;
-  animation: goal-word-sweep 1.6s cubic-bezier(.2,.65,.3,1) both;
-  animation-delay: var(--goal-intro-offset,0s);
+  animation: goal-word-sweep var(--goal-phase-duration,2.2s) cubic-bezier(.22,.68,.24,1) both;
+  animation-delay: var(--goal-phase-offset,0s);
 }
 @keyframes goal-word-sweep {
   0% { transform: translateX(110%); opacity: 0; }
   22%,65% { transform: translateX(0); opacity: 1; }
-  100% { transform: translateX(-110%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   #bottom-bar.goal-intro #bottom-goal-word { animation-name: goal-word-fade; }
@@ -4996,3 +4996,8 @@ body.international-teams .player-profile-team-block img,
 body.international-teams .penalties-team-logo-box .penalties-team-logo {
   position: absolute !important; inset: 0 !important; box-sizing: border-box !important;
 }
+
+/* Fallback handoff when only the base overlay stylesheet is available. */
+#bottom-bar.goal-reveal .bottom-event-copy {visibility:visible !important;}
+#bottom-bar.goal-reveal > .bottom-goal-intro {animation:goal-handoff-fade var(--goal-phase-duration,.64s) ease both;animation-delay:var(--goal-phase-offset,0s);}
+@keyframes goal-handoff-fade {from {opacity:1;} to {opacity:0;}}

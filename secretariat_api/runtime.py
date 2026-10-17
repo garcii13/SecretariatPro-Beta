@@ -301,7 +301,7 @@ class ApplicationRuntime:
             phase = (state.get("broadcast_flow") or {}).get("phase", "IDLE")
             if phase != "IDLE":
                 set_panel(state, "scoreboard", False)
-                if phase not in {"GOAL_INTRO", "GOAL_BOTTOM"}:
+                if phase not in {"GOAL_INTRO", "GOAL_REVEAL", "GOAL_BOTTOM"}:
                     set_panel(state, "bottom_bar", False)
             self.state_store.save(state)
             return state, result
