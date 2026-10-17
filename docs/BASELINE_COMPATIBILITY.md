@@ -27,10 +27,11 @@ Fecha: 17 de octubre de 2026. Rama: `feature/unified-international-goals`.
 
 ```sh
 python packaging/run_regressions.py
+node --check overlay_motion.js
 node --check script.js
 node --check webapp/app.js
 node --check manager_app/app.js
-node --test tests/ocr_preview.test.cjs tests/overlay_presentation.test.cjs tests/manager_identity.test.cjs
+node --test tests/ocr_preview.test.cjs tests/overlay_presentation.test.cjs tests/manager_identity.test.cjs tests/overlay_motion.test.cjs
 ```
 
 `Shared feature regressions` prepara la ejecución en Windows x64, Mac arm64 y
@@ -55,3 +56,13 @@ reparación de acceso a partidos; no se ejecutó ninguna migración.
 La apertura de la vista de prueba en el navegador integrado no recibió permiso
 de acceso al servidor local. No se realizó la comprobación visual ni se intentó
 otra vía de navegador tras ese bloqueo.
+
+## Actualización de movimiento
+
+El acabado cinematográfico se describe en `CINEMATIC_OVERLAY_BETA11.md`. Se
+conservan las fases de BroadcastFlow y la duración del goleador. La entrega
+añade cobertura de interrupciones y de recursos estáticos: 433 pruebas Python
+sin fallos (dos Win32 omitidas) y 20 pruebas JavaScript correctas. El navegador
+integrado mantiene bloqueado el origen de prueba por un permiso persistente,
+aunque el usuario autorizó de nuevo su apertura. La revisión visual sigue
+pendiente y no se han lanzado compilaciones ni publicado la nueva versión.

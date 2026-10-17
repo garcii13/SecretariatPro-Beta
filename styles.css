@@ -4787,9 +4787,9 @@ textarea {
   justify-content: center !important;
   flex: 0 0 auto !important;
   width: 100% !important;
-  height: 44px !important;
+  height: 44px;
   min-height: 0 !important;
-  max-height: 44px !important;
+  max-height: 44px;
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box !important;

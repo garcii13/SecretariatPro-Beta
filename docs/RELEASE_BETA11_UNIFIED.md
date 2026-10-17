@@ -29,3 +29,9 @@ al retirar el bottom vuelve el marcador. Limpiar emisión cancela la secuencia.
 Estado de esta entrega: implementación de código local y pruebas automatizadas.
 No se han generado ni publicado instaladores nuevos. Pendientes la validación
 nativa en Windows, la revisión visual y la prueba real con OBS/cámaras.
+
+La presentación incorpora un acabado de luz y profundidad basado en el diseño
+actual, con entradas por capas, datos escalonados y salidas breves en todos los
+gráficos. Se conservan las paletas, tamaños y fuentes de Manager. La vista
+previa de Identidad visual incluye «Reproducir animación». Véase
+`CINEMATIC_OVERLAY_BETA11.md` para el detalle y las comprobaciones pendientes.

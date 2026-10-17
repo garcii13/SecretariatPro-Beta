@@ -14,7 +14,7 @@ export. See `docs/BASELINE_COMPATIBILITY.md` for the acceptance matrix.
 
 For application changes run `python packaging/run_regressions.py`, JavaScript
 syntax checks for `script.js`, `webapp/app.js` and `manager_app/app.js`, and
-`node --test tests/ocr_preview.test.cjs tests/overlay_presentation.test.cjs tests/manager_identity.test.cjs`.
+`node --test tests/ocr_preview.test.cjs tests/overlay_presentation.test.cjs tests/manager_identity.test.cjs tests/overlay_motion.test.cjs`.
 Do not remove existing coverage to make a change pass. Keep platform-specific
 requirements separate. Windows-only tests must run on Windows before calling a
 cross-platform release validated. Installed application checks and an OBS/camera

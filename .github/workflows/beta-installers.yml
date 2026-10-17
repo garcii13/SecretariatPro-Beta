@@ -48,9 +48,10 @@ jobs:
         run: python packaging/run_regressions.py
       - name: Check JavaScript
         run: |
+          node --check overlay_motion.js
           node --check script.js
           node --check webapp/app.js
-          node --test tests/ocr_preview.test.cjs tests/overlay_presentation.test.cjs tests/manager_identity.test.cjs
+          node --test tests/ocr_preview.test.cjs tests/overlay_presentation.test.cjs tests/manager_identity.test.cjs tests/overlay_motion.test.cjs
           node --check manager_app/app.js
       - name: Record resolved dependencies
         run: python -m pip freeze > resolved-dependencies.txt

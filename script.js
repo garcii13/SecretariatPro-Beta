@@ -36,6 +36,9 @@ const OverlayPresentation = {
 
 document.addEventListener("DOMContentLoaded", () => {
   // -------------------- Helpers --------------------
+  const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const motion = globalThis.SPBroadcastMotion ? new globalThis.SPBroadcastMotion({reduced: () => motionPreference.matches}) : null;
+  motionPreference.addEventListener?.("change", () => motion?.settle());
   const safeGet = id => document.getElementById(id);
   const safeQ = sel => document.querySelector(sel);
   const cueId = new URLSearchParams(location.search).get("cue");
@@ -313,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const height = team1Bar?.clientHeight || 94;
     const ratios = [team1Logo, team2Logo].filter(img => img?.naturalHeight > 0).map(img => img.naturalWidth / img.naturalHeight);
-    scoreboard.style.setProperty("--logo-width", `${OverlayPresentation.flagWidth(height, ratios)}px`);
+    scoreboard.style.setProperty("--logo-width", `${OverlayPresentation.flagWidth(height, ratios)}px`, "important");
   }
   [team1Logo, team2Logo].forEach(img => img?.addEventListener("load", syncFlagWidth));
   window.addEventListener("resize", syncFlagWidth);
@@ -391,11 +394,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const lineupSequenceTimers = new WeakMap();
   const LINEUP_STARTING_DURATION_MS = 6500;
 
-  function clearLineupSequence(modal) {
+  function clearLineupSequence(modal, preservePhase = false) {
     const timers = lineupSequenceTimers.get(modal) || [];
     timers.forEach(clearTimeout);
     lineupSequenceTimers.delete(modal);
-    if (modal) modal.classList.remove("phase-starting", "phase-squad");
+    if (modal && !preservePhase) modal.classList.remove("phase-starting", "phase-squad");
   }
 
   function startLineupSequence(modal) {
@@ -405,6 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toSquad = setTimeout(() => {
       modal.classList.remove("phase-starting");
       modal.classList.add("phase-squad");
+      motion?.revealDetails(modal, "lineups", ".lineup-row,.lineups-coach");
     }, LINEUP_STARTING_DURATION_MS);
     lineupSequenceTimers.set(modal, [toSquad]);
   }
@@ -691,6 +695,8 @@ document.addEventListener("DOMContentLoaded", () => {
     el.classList.remove("show", "hide", "visible", "hidden");
     void el.offsetWidth; // reflow
     el.classList.add(className);
+    const kinds = {"scoreboard-wrapper": "scoreboard", "prematch-modal": "prematch", "intermission-modal": "intermission", "top-scorers-modal": "top_scorers", "standings-modal": "standings", "penalties-modal": "penalties", "lineups-team1-modal": "lineups", "lineups-team2-modal": "lineups"};
+    motion?.setVisible(el, className === "show" || className === "visible", kinds[el.id]);
   }
 
   // El contador de expulsión lo calcula Python usando el reloj OCR ascendente.
@@ -736,13 +742,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function animateStatusEntry(node, teamKey) {
-    if (!node || typeof node.animate !== "function") return;
+    if (!node || typeof node.animate !== "function" || motionPreference.matches) return;
     const animation = node.animate([
       { opacity: 0, transform: `translateX(${statusSlideOffset(teamKey)})` },
       { opacity: 1, transform: "translateX(0px)" },
     ], {
-      duration: 230,
-      easing: "cubic-bezier(.2,.8,.2,1)",
+      duration: 380,
+      easing: "cubic-bezier(.16,1,.3,1)",
       fill: "none",
     });
     animation.finished.catch(() => {});
@@ -753,11 +759,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (node.dataset.spExiting === "1") return;
     node.dataset.spExiting = "1";
     const done = () => {
-      if (!node.isConnected) return;
+      if (!node.isConnected || node.dataset.spExiting !== "1") return;
       node.remove();
       if (typeof onDone === "function") onDone();
     };
-    if (typeof node.animate !== "function") {
+    if (typeof node.animate !== "function" || motionPreference.matches) {
       done();
       return;
     }
@@ -765,8 +771,8 @@ document.addEventListener("DOMContentLoaded", () => {
       { opacity: 1, transform: "translateX(0px)", height: "44px", maxHeight: "44px" },
       { opacity: 0, transform: `translateX(${statusSlideOffset(teamKey)})`, height: "0px", maxHeight: "0px" },
     ], {
-      duration: 300,
-      easing: "cubic-bezier(.45,.05,.55,.95)",
+      duration: 220,
+      easing: "cubic-bezier(.4,0,.8,.2)",
       fill: "forwards",
     });
     animation.finished.then(done).catch(done);
@@ -1109,13 +1115,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (team1Now !== prevStatus.lineupsTeam1) {
       triggerAnimation(lineupsTeam1Modal, team1Now ? "show" : "hide");
       if (team1Now) startLineupSequence(lineupsTeam1Modal);
-      else clearLineupSequence(lineupsTeam1Modal);
+      else clearLineupSequence(lineupsTeam1Modal, true);
       prevStatus.lineupsTeam1 = team1Now;
     }
     if (team2Now !== prevStatus.lineupsTeam2) {
       triggerAnimation(lineupsTeam2Modal, team2Now ? "show" : "hide");
       if (team2Now) startLineupSequence(lineupsTeam2Modal);
-      else clearLineupSequence(lineupsTeam2Modal);
+      else clearLineupSequence(lineupsTeam2Modal, true);
       prevStatus.lineupsTeam2 = team2Now;
     }
     if (lineupsTitle1) setTextIfChanged(lineupsTitle1, lineups.title || t("ALINEACIONES", "LINEUPS"));
@@ -1203,7 +1209,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const elapsed = Math.max(0, Math.min(1.6, Date.now() / 1000 - Number(data.broadcast_flow.started_at || Date.now() / 1000)));
         bottomBar.style.setProperty("--goal-intro-offset", `-${elapsed}s`);
       }
+      const wasIntro = bottomBar.classList.contains("goal-intro");
       bottomBar.classList.toggle("goal-intro", intro);
+      motion?.setVisible(bottomBar, bar.status === "show", "bottom");
+      if (wasIntro && !intro && bar.status === "show") motion?.revealDetails(bottomBar, "bottom");
       const stateTeamColor = bar.team_key === "team2"
         ? data.team2?.stripe_color
         : bar.team_key === "team1" ? data.team1?.stripe_color : "";
@@ -1240,6 +1249,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const profileShow = profile.status === true || profile.status === "true" || profile.status === 1;
     if (playerProfileBar && profileShow !== prevStatus.playerProfile) {
       playerProfileBar.classList.toggle("show", profileShow);
+      motion?.setVisible(playerProfileBar, profileShow, "profile");
       prevStatus.playerProfile = profileShow;
     }
     if (playerProfileBar) {
@@ -1490,11 +1500,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Only update DOM when actual data changed (prevents flicker)
       if (prevTxt.home !== homeScore) {
+        motion?.scoreChanged(team1Score, prevTxt.home, homeScore);
         if (team1Score && document.activeElement !== team1Score) team1Score.value = homeScore;
         if (intermissionTeam1Score) setTextIfChanged(intermissionTeam1Score, graphicScores?.team1_score ?? homeScore);
         prevTxt.home = homeScore;
       }
       if (prevTxt.away !== awayScore) {
+        motion?.scoreChanged(team2Score, prevTxt.away, awayScore);
         if (team2Score && document.activeElement !== team2Score) team2Score.value = awayScore;
         if (intermissionTeam2Score) setTextIfChanged(intermissionTeam2Score, graphicScores?.team2_score ?? awayScore);
         prevTxt.away = awayScore;

@@ -13,6 +13,8 @@ datas = [
     (str(ROOT / "overlay.html"), "."),
     (str(ROOT / "script.js"), "."),
     (str(ROOT / "styles.css"), "."),
+    (str(ROOT / "overlay_cinematic.css"), "."),
+    (str(ROOT / "overlay_motion.js"), "."),
     (str(ROOT / "tablet"), "tablet"),
     (str(ROOT / "animations.json"), "."),
 

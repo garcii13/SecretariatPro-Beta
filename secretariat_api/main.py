@@ -348,6 +348,16 @@ async def overlay_styles() -> FileResponse:
     return FileResponse(BASE_DIR / "styles.css", media_type="text/css")
 
 
+@app.get("/overlay_motion.js")
+async def overlay_motion() -> FileResponse:
+    return FileResponse(BASE_DIR / "overlay_motion.js", media_type="application/javascript")
+
+
+@app.get("/overlay_cinematic.css")
+async def overlay_cinematic() -> FileResponse:
+    return FileResponse(BASE_DIR / "overlay_cinematic.css", media_type="text/css")
+
+
 @app.get("/data.json")
 async def overlay_data() -> JSONResponse:
     """Serve an immutable in-memory state snapshot.
