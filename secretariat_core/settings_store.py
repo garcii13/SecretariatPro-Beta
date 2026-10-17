@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from .json_store import JSONStore
-from .visual_identity import normalize_elements
+from .visual_identity import normalize_elements, normalize_team_identity
 
 
 DEFAULT_APPEARANCE = {
+    "team_identity": {"international": False, "flags": {}},
     "app_theme": "system",
     "elements": normalize_elements({}),
     "scoreboard": {
@@ -149,6 +150,7 @@ def normalize_settings(raw: Any) -> dict[str, Any]:
     result["appearance"].pop("app", None)      # app colours are fixed by the selected theme
     result["appearance"].pop("deck", None)     # Realización is part of the app, not the overlay palette
     result["appearance"]["app_theme"] = theme if theme in {"dark", "light", "system"} else "system"
+    result["appearance"]["team_identity"] = normalize_team_identity(result["appearance"].get("team_identity"))
     result["appearance"]["elements"] = normalize_elements(result["appearance"].get("elements"))
     return result
 

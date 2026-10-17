@@ -22,7 +22,7 @@
     })();
   </script>
   <!-- Compatibility: styles.css?v=phase42 -->
-  <link rel="stylesheet" href="/manager/styles.css?v=phase56-scoped-import5">
+  <link rel="stylesheet" href="/manager/styles.css?v=phase56-international-goals-scoped-import5">
 </head>
 <body data-compat-build="phase38" data-manager-release="phase56">
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -184,12 +184,13 @@
               <label>Control de realizadores<select name="locked"><option value="true">Bloqueada</option></select></label>
               <label>Al guardar<select name="published"><option value="false">Guardar borrador</option><option value="true">Publicar ahora</option></select></label>
             </div>
+            <div class="palette-section"><h3>Competiciones de selecciones</h3><label class="check-field"><input id="identity-international" type="checkbox"> Competición internacional · usar banderas</label><p>Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.</p><div id="identity-flags" hidden></div></div>
             <div class="palette-section"><div><span class="eyebrow">MARCADOR</span><h3>Marcador principal</h3></div><div class="color-fields" data-palette-section="scoreboard"></div></div>
             <div class="palette-section"><div><span class="eyebrow">BOTTOM BAR</span><h3>Goles y avisos</h3></div><div class="color-fields" data-palette-section="bottom_bar"></div></div>
             <div class="palette-section"><div><span class="eyebrow">PANELES</span><h3>Prematch, descanso y estadísticas</h3></div><div class="color-fields" data-palette-section="panels"></div></div>
             <div class="palette-section"><h3>Tamaño y tipografía por elemento</h3><p>50–150 %. Se aplica a la identidad seleccionada al publicarla. Solo editable desde el Manager.</p><div id="element-controls" class="form-grid compact"></div></div>
             <div class="palette-section period-strip-editor"><div><span class="eyebrow">PERIODO</span><h3>Indicador bajo el reloj</h3><p>El realizador selecciona el periodo activo; aquí decides si se muestra y cuántas secciones tiene.</p></div><div class="form-grid compact"><label class="check-field full"><input id="period-strip-enabled" type="checkbox"> Mostrar indicador de periodo</label><label class="check-field full"><input id="period-clock-number" type="checkbox"> Mostrar número dentro del reloj</label><label>Número de secciones<input id="period-strip-segments" type="number" min="1" max="12" value="3"></label><label>Etiquetas separadas por comas<input id="period-strip-labels" value="1, 2, 3" maxlength="100"></label><label>Color de encendido<input id="period-strip-active-color" type="color" value="#8cff00"></label><label>Color del texto de los periodos<input id="period-strip-text-color" type="color" value="#102000"></label></div></div>
-            <div class="palette-section"><div><span class="eyebrow">GOLES</span><h3>Cartel del goleador tras la repetición</h3><p>El marcador vuelve después de retirar el bottom del gol.</p></div><div class="form-grid compact"><label>Espera sin plugin (segundos)<input id="goal-celebration-delay" type="number" min="0" max="30" value="4"></label><label>Tiempo en pantalla (segundos)<input id="goal-celebration-duration" type="number" min="1" max="30" value="6"></label></div></div>
+            <div class="palette-section"><div><span class="eyebrow">GOLES</span><h3>Cartel del goleador tras la repetición</h3><p>Animación de gol de 1,6 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.</p></div><div class="form-grid compact"><label>Espera sin plugin (segundos)<input id="goal-celebration-delay" type="number" min="0" max="30" value="4"></label><label>Tiempo en pantalla (segundos)<input id="goal-celebration-duration" type="number" min="1" max="30" value="6"></label></div></div>
             <div class="modal-message" id="identity-message"></div>
             <div class="identity-actions"><button type="reset" class="secondary" id="identity-reset">Restablecer</button><button type="submit" id="identity-save">Guardar versión</button></div>
           </form>
@@ -316,6 +317,6 @@
 
   <div class="toast" id="toast" hidden></div>
   <!-- Compatibility: app.js?v=phase42 -->
-  <script src="/manager/app.js?v=phase56-scoped-import5"></script>
+  <script src="/manager/app.js?v=phase56-international-goals-scoped-import5"></script>
 </body>
 </html>

@@ -4934,3 +4934,65 @@ textarea {
 .manual-score-mode .time-box.has-period-strip:has(#clock-period[hidden]) { bottom:-9px !important; min-height:9px !important; height:9px !important; padding-top:0 !important; padding-bottom:0 !important; }
 
 .manual-score-mode #bottom-match-time {display:none !important;}
+
+/* International identities: complete flag image in the existing crest drawer. */
+body.international-teams .scoreboard :is(.team1-bar,.team2-bar),
+body.international-teams .penalties-team-logo-box,
+body.international-teams .player-profile-team-block {
+  padding: 0 !important; border-radius: 0 !important; clip-path: none !important;
+}
+body.international-teams .scoreboard :is(.team1-bar,.team2-bar)::before,
+body.international-teams #bottom-team-block::before { display: none !important; }
+body.international-teams .scoreboard :is(.team1-bar,.team2-bar) img,
+body.international-teams #bottom-bar #bottom-team-block #bottom-team-logo,
+body.international-teams .player-profile-team-block img,
+body.international-teams .penalties-team-logo-box .penalties-team-logo {
+  width: 100% !important; height: 100% !important;
+  min-width: 0 !important; min-height: 0 !important;
+  max-width: 100% !important; max-height: 100% !important;
+  padding: 0 !important; margin: 0 !important; border-radius: 0 !important;
+  clip-path: none !important; object-fit: contain !important; filter: none !important;
+}
+body.international-teams #bottom-bar #bottom-team-block { grid-template-columns: minmax(0,1fr) !important; }
+body.international-teams #bottom-bar #bottom-team-block #bottom-team-logo { grid-column: 1 !important; }
+body.international-teams #bottom-team-block .bottom-team-accent { display: none !important; }
+body.international-teams :is(.prematch-team-logo,.team-logo,.lineups-team-logo,.scorer-team-logo) {
+  object-fit: contain !important; border-radius: 0 !important; clip-path: none !important; filter: none !important;
+}
+/* Server-owned phase: the full scorer duration starts after this intro. */
+#bottom-bar > .bottom-goal-intro { display: none !important; }
+#bottom-bar.goal-intro > .bottom-goal-intro {
+  display: grid !important; position: absolute !important; inset: 0 !important;
+  z-index: 10 !important; place-items: center !important; overflow: hidden !important;
+  background: var(--bottom-team-color) !important; color: var(--goal-intro-text,white) !important;
+  box-shadow: inset 0 -7px var(--goal-intro-accent,white) !important;
+  pointer-events: none;
+}
+#bottom-bar.goal-intro .bottom-event-copy { visibility: hidden !important; }
+#bottom-bar.goal-intro #bottom-goal-word {
+  width: 100%; text-align: center; font-weight: 950; font-style: italic;
+  font-size: clamp(48px,5vw,76px); line-height: 1; letter-spacing: .12em;
+  animation: goal-word-sweep 1.6s cubic-bezier(.2,.65,.3,1) both;
+  animation-delay: var(--goal-intro-offset,0s);
+}
+@keyframes goal-word-sweep {
+  0% { transform: translateX(110%); opacity: 0; }
+  22%,65% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-110%); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #bottom-bar.goal-intro #bottom-goal-word { animation-name: goal-word-fade; }
+}
+@keyframes goal-word-fade { 0%,100% {opacity:0;} 20%,80% {opacity:1;} }
+
+/* Both flag columns share one capped width; their height stays inside the scoreboard. */
+body.international-teams .scoreboard :is(.team1-bar,.team2-bar) {
+  width: var(--logo-width) !important; max-width: var(--logo-width) !important;
+  min-width: 0 !important; overflow: hidden !important;
+}
+body.international-teams .scoreboard :is(.team1-bar,.team2-bar) img,
+body.international-teams #bottom-bar #bottom-team-block #bottom-team-logo,
+body.international-teams .player-profile-team-block img,
+body.international-teams .penalties-team-logo-box .penalties-team-logo {
+  position: absolute !important; inset: 0 !important; box-sizing: border-box !important;
+}

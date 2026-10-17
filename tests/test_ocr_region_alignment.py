@@ -44,7 +44,7 @@ class WindowsRegionAlignmentTests(unittest.TestCase):
             for context in (-1, -2, -4):
                 setter(context)
                 before = getter()
-                with patch.object(ctypes.windll.user32, "PrintWindow", side_effect=paint):
+                with patch.object(window_capture, "_print_window", side_effect=paint):
                     frame, _ = window_capture.capture_window(hwnd)
                 self.assertIsNotNone(frame)
                 self.assertEqual(getter(), before, "Capture must restore pooled thread DPI")

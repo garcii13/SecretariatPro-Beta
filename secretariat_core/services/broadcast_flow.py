@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any, Callable
 from .overlay import set_panel
+
+GOAL_INTRO_SECONDS = 1.6
 
 
 class BroadcastFlow:
@@ -18,7 +21,7 @@ class BroadcastFlow:
         def mutate(state):
             if token != self.generation:
                 return
-            state["broadcast_flow"] = {"phase": phase, "generation": token}
+            state["broadcast_flow"] = {"phase": phase, "generation": token, "started_at": time.time()}
             set_panel(state, "scoreboard", scoreboard)
             set_panel(state, "bottom_bar", bottom)
         await asyncio.to_thread(self.runtime.mutate_state, mutate)
@@ -51,6 +54,8 @@ class BroadcastFlow:
                     if token != self.generation: return
                     state.setdefault("bottombar", {}).update(state.pop("pending_goal_celebration", {}))
                 await asyncio.to_thread(self.runtime.mutate_state, show)
+                await self._state("GOAL_INTRO", bottom=True, generation=token)
+                await asyncio.sleep(GOAL_INTRO_SECONDS)
                 await self._state("GOAL_BOTTOM", bottom=True, generation=token)
                 config = self.runtime.safe_settings()["appearance"]["goal_celebration"]
                 await asyncio.sleep(float(config["duration_seconds"]))

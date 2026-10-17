@@ -1,7 +1,8 @@
 # Install, launch and uninstall the actual installers on the disposable CI runner.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-foreach ($product in @('Live', 'Manager')) {
+$products = if ($env:SP_BUILD_PRODUCT -eq 'Live') { @('Live') } else { @('Live', 'Manager') }
+foreach ($product in $products) {
     $name = "SecretariatPro $product"
     $target = Join-Path $env:RUNNER_TEMP "Installed-$product"
     $installer = @(Get-ChildItem "$root\release\SecretariatPro-$product-*-windows-x64-setup.exe")

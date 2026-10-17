@@ -7,5 +7,7 @@
 # Compatibility test marker: MANAGER_RELEASE = "phase55"
 
 MANAGER_APPLICATION = "SecretariatPro Manager"
-MANAGER_VERSION = "4.0.4-beta-rc"
+from secretariat_core.release import RELEASE_VERSION
+
+MANAGER_VERSION = RELEASE_VERSION
 MANAGER_RELEASE = "phase56"

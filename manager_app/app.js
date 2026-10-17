@@ -51,6 +51,7 @@
     return tr(positionLabels[key] || key || "Sin posición");
   }
   const DEFAULT_APPEARANCE = {
+    team_identity: {international: false, flags: {}},
     scoreboard: { background: "#2a2d34", name_box: "#3b3f47", text: "#ffffff" },
     bottom_bar: { body: "#24272e", middle: "#30333b", text: "#ffffff", secondary_text: "#c6cad2" },
     panels: { background: "#171c25", surface: "#232a35", accent: "#59606c", text: "#ffffff" },
@@ -146,6 +147,11 @@
   Object.assign(UI_TRANSLATIONS.cs, {"Mostrar número dentro del reloj": "Zobrazit číslo periody v hodinách", "El marcador vuelve después de retirar el bottom del gol.": "Ukazatel skóre se vrátí po skrytí gólové grafiky."});
   Object.assign(UI_TRANSLATIONS.fi, {"Mostrar número dentro del reloj": "Näytä erän numero kellossa", "El marcador vuelve después de retirar el bottom del gol.": "Tulostaulu palaa maaligrafiikan poistuttua."});
   Object.assign(UI_TRANSLATIONS.de, {"Mostrar número dentro del reloj": "Spielabschnitt in der Uhr anzeigen", "El marcador vuelve después de retirar el bottom del gol.": "Die Anzeigetafel erscheint nach dem Ausblenden der Torgrafik."});
+  Object.assign(UI_TRANSLATIONS.en, {"Competiciones de selecciones": "National team competitions", "Competición internacional · usar banderas": "International competition · use flags", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Attach a flag for each national team. Both share the same width, up to 1.5 times the scoreboard height, without cropping or distortion. If one is taller, both shrink equally.", "Adjuntar bandera": "Attach flag", "Quitar bandera": "Remove flag", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Create national teams in Teams to attach their flags.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Use PNG, JPG, WEBP or SVG up to 10 MB.", "Animación de gol de 1,6 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "A 1.6-second goal animation in Live’s language and the team colour precedes the scorer. The scoreboard returns after the goal lower third clears."});
+  Object.assign(UI_TRANSLATIONS.sv, {"Competiciones de selecciones": "Landslagstävlingar", "Competición internacional · usar banderas": "Internationell tävling · använd flaggor", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Bifoga en flagga per landslag. Båda har samma bredd, högst 1,5 gånger resultattavlans höjd, utan beskärning eller förvrängning. Om en är högre minskas båda lika mycket.", "Adjuntar bandera": "Bifoga flagga", "Quitar bandera": "Ta bort flagga", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Skapa landslagen under Lag för att bifoga deras flaggor.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Använd PNG, JPG, WEBP eller SVG på högst 10 MB.", "Animación de gol de 1,6 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "En 1,6 sekunder lång målanimation på Lives språk och i lagets färg visas före målskytten. Resultattavlan återkommer efter målgrafiken."});
+  Object.assign(UI_TRANSLATIONS.cs, {"Competiciones de selecciones": "Soutěže národních týmů", "Competición internacional · usar banderas": "Mezinárodní soutěž · použít vlajky", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Připojte vlajku pro každý národní tým. Obě mají stejnou šířku, nejvýše 1,5násobek výšky ukazatele skóre, bez ořezu či deformace. Je-li jedna vyšší, obě se stejně zmenší.", "Adjuntar bandera": "Připojit vlajku", "Quitar bandera": "Odebrat vlajku", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Vytvořte národní týmy v sekci Týmy a připojte jejich vlajky.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Použijte PNG, JPG, WEBP nebo SVG do 10 MB.", "Animación de gol de 1,6 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Před střelcem se zobrazí animace gólu na 1,6 sekundy v jazyce Live a barvě týmu. Ukazatel skóre se vrátí po skrytí gólové grafiky."});
+  Object.assign(UI_TRANSLATIONS.fi, {"Competiciones de selecciones": "Maajoukkuekilpailut", "Competición internacional · usar banderas": "Kansainvälinen kilpailu · käytä lippuja", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Liitä lippu kullekin maajoukkueelle. Molemmilla on sama leveys, enintään 1,5 kertaa tulostaulun korkeus, ilman rajausta tai vääristymistä. Jos toinen on korkeampi, molempia pienennetään yhtä paljon.", "Adjuntar bandera": "Liitä lippu", "Quitar bandera": "Poista lippu", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Luo maajoukkueet Joukkueet-osiossa ja liitä niiden liput.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Käytä PNG-, JPG-, WEBP- tai SVG-tiedostoja, enintään 10 Mt.", "Animación de gol de 1,6 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Ennen maalintekijää näkyy 1,6 sekunnin maalianimaatio Liven kielellä ja joukkueen värillä. Tulostaulu palaa maaligrafiikan poistuttua."});
+  Object.assign(UI_TRANSLATIONS.de, {"Competiciones de selecciones": "Nationalmannschaftswettbewerbe", "Competición internacional · usar banderas": "Internationaler Wettbewerb · Flaggen verwenden", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Füge für jede Nationalmannschaft eine Flagge hinzu. Beide sind gleich breit, höchstens 1,5-mal so breit wie die Anzeigetafel hoch ist, ohne Zuschnitt oder Verzerrung. Ist eine höher, werden beide gleich verkleinert.", "Adjuntar bandera": "Flagge hinzufügen", "Quitar bandera": "Flagge entfernen", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Erstelle die Nationalmannschaften unter Teams, um ihre Flaggen hinzuzufügen.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Verwende PNG, JPG, WEBP oder SVG bis 10 MB.", "Animación de gol de 1,6 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Vor dem Torschützen erscheint eine 1,6 Sekunden lange Toranimation in der Sprache von Live und der Teamfarbe. Die Anzeigetafel kehrt nach der Torgrafik zurück."});
   const translatedTextNodes = new WeakMap();
   const translationExclusions = ".row-title,.row-subtitle,.match-teams,.profile,.workspace-control,.team-card h3,.player-card h3,.theme-card h3,.account-profile-copy,.logo-placeholder,#workspace-name,#profile-name,#profile-email";
 
@@ -312,6 +318,10 @@
   }
 
   function renderSession(next) {
+    if ((state.session.workspace?.id || "") !== (next?.workspace?.id || "")) {
+      $("#identity-international").checked = false;
+      resetIdentityFlags();
+    }
     state.session = next || {};
     const connected = !!state.session.connected;
     $("#login-layer").hidden = connected;
@@ -871,6 +881,7 @@
   function mergedAppearance(input = {}) {
     const result = JSON.parse(JSON.stringify(DEFAULT_APPEARANCE));
     Object.entries(PALETTE_FIELDS).forEach(([section]) => Object.assign(result[section], input?.[section] || {}));
+    result.team_identity = {international: input.team_identity?.international === true, flags: {...input.team_identity?.flags}};
     result.elements = Object.fromEntries(Object.keys(ELEMENT_LABELS).map((key) => [key, {scale: 1, font: "default", ...(input.elements?.[key] || {})}]));
     const segments = state.session?.workspace?.sport_mode === "handball" ? 2 : Math.max(1, Math.min(12, Number(input.period_strip?.segments || 3)));
     const labels = Array.from({length: segments}, (_, index) => String(input.period_strip?.labels?.[index] || index + 1).slice(0, 8));
@@ -881,16 +892,73 @@
 
   async function loadThemes(force = false) {
     if (force) delete state.cache.themes;
-    if (!state.cache.themes || !state.cache.competitions) {
-      const [themes, competitions] = await Promise.all([
+    if (!state.cache.themes || !state.cache.competitions || !state.cache.teams) {
+      const [themes, competitions, teams] = await Promise.all([
         state.cache.themes ? Promise.resolve(state.cache.themes) : api("/api/themes"),
         state.cache.competitions ? Promise.resolve(state.cache.competitions) : api("/api/competitions"),
+        state.cache.teams ? Promise.resolve(state.cache.teams) : api("/api/teams"),
       ]);
       state.cache.themes = themes;
       state.cache.competitions = competitions;
+      state.cache.teams = teams;
     }
     renderIdentityCompetitionOptions();
+    renderIdentityFlags();
     renderThemes();
+  }
+
+  let identityFlags = {};
+  let identityFlagFiles = {};
+  let identityFlagPreviews = {};
+
+  function resetIdentityFlags(flags = {}) {
+    Object.values(identityFlagPreviews).forEach(url => URL.revokeObjectURL(url));
+    identityFlags = {...flags};
+    identityFlagFiles = {};
+    identityFlagPreviews = {};
+    renderIdentityFlags();
+  }
+
+  function renderIdentityFlags() {
+    const host = $("#identity-flags");
+    if (!host) return;
+    host.hidden = !$("#identity-international").checked;
+    host.innerHTML = (state.cache.teams || []).map(team => {
+      const id = String(team.id);
+      const src = identityFlagPreviews[id] || identityFlags[id] || "";
+      return `<div class="identity-flag-row"><div class="identity-flag-preview">${src ? `<img src="${escapeHtml(src)}" alt="">` : "⚑"}</div><label><span class="row-title">${escapeHtml(team.name)}</span><input type="file" data-identity-flag="${escapeHtml(id)}" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="${escapeHtml(tr("Adjuntar bandera"))}: ${escapeHtml(team.name)}"></label><button type="button" class="secondary" data-remove-flag="${escapeHtml(id)}">${escapeHtml(tr("Quitar bandera"))}</button></div>`;
+    }).join("") || `<p>${escapeHtml(tr("Crea las selecciones en Equipos para adjuntar sus banderas."))}</p>`;
+    $$('[data-identity-flag]', host).forEach(input => input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
+        showToast(tr("Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB."), true);
+        input.value = "";
+        return;
+      }
+      const id = input.dataset.identityFlag;
+      if (identityFlagPreviews[id]) URL.revokeObjectURL(identityFlagPreviews[id]);
+      identityFlagFiles[id] = file;
+      identityFlagPreviews[id] = URL.createObjectURL(file);
+      renderIdentityFlags();
+      updateVisualPreview();
+    }));
+    $$('[data-remove-flag]', host).forEach(button => button.addEventListener("click", () => {
+      const id = button.dataset.removeFlag;
+      if (identityFlagPreviews[id]) URL.revokeObjectURL(identityFlagPreviews[id]);
+      delete identityFlags[id]; delete identityFlagFiles[id]; delete identityFlagPreviews[id];
+      renderIdentityFlags(); updateVisualPreview();
+    }));
+  }
+
+  async function uploadIdentityFlags() {
+    for (const [id, file] of Object.entries(identityFlagFiles)) {
+      const body = new FormData();
+      body.append("file", file);
+      const result = await api("/api/assets/upload?asset_kind=team-flags", {method: "POST", body, timeout: 45000});
+      identityFlags[id] = result.url;
+      delete identityFlagFiles[id];
+    }
   }
 
   function renderIdentityCompetitionOptions() {
@@ -929,6 +997,7 @@
   function renderPaletteFields() {
     $("#element-controls").innerHTML = Object.entries(ELEMENT_LABELS).map(([key, label]) => `<label>${label} · tamaño (%)<input type="number" min="50" max="150" step="1" required value="100" data-element-scale="${key}"></label><label>${label} · tipografía<select data-element-font="${key}">${ELEMENT_FONTS.map(font => `<option value="${font}">${font === "default" ? "Original del diseño" : font}</option>`).join("")}</select></label>`).join("");
     $$("[data-element-scale], [data-element-font]").forEach(field => field.addEventListener("input", updateVisualPreview));
+    $("#identity-international").addEventListener("change", () => { renderIdentityFlags(); updateVisualPreview(); });
     [$("#period-clock-number"), $("#period-strip-enabled"), $("#period-strip-segments"), $("#period-strip-labels"), $("#period-strip-active-color"), $("#period-strip-text-color"), $("#goal-celebration-delay"), $("#goal-celebration-duration")].forEach(field => field?.addEventListener("input", updateVisualPreview));
     Object.entries(PALETTE_FIELDS).forEach(([section, fields]) => {
       const host = $(`[data-palette-section="${section}"]`);
@@ -954,7 +1023,7 @@
   }
 
   function identityFormAppearance() {
-    const result = {};
+    const result = {team_identity: {international: $("#identity-international").checked, flags: {...identityFlags}}};
     Object.entries(PALETTE_FIELDS).forEach(([section, fields]) => {
       result[section] = {};
       fields.forEach(([key]) => {
@@ -980,6 +1049,21 @@
       el.style.scale = String(config.scale);
       el.style.fontFamily = config.font === "default" ? "" : `"${config.font}"`;
     });
+    const international = appearance.team_identity.international;
+    $("#visual-preview").classList.toggle("is-international", international);
+    const previewTeams = (state.cache.teams || []).filter(team => identityFlagPreviews[team.id] || identityFlags[team.id]);
+    const syncPreviewFlagWidth = () => {
+      const images = $$(".preview-scoreboard .preview-logo img");
+      const ratios = images.filter(img => img.naturalHeight > 0).map(img => img.naturalWidth / img.naturalHeight);
+      $(".preview-scoreboard").style.setProperty("--preview-flag-width", `${Math.min(96,64 * Math.min(1.5,...ratios))}px`);
+    };
+    $$(".preview-scoreboard .preview-logo").forEach((el, index) => {
+      const id = previewTeams[index]?.id;
+      const flag = identityFlagPreviews[id] || identityFlags[id];
+      el.innerHTML = international && flag ? `<img src="${escapeHtml(flag)}" alt="">` : (index ? "VS" : "SP");
+      el.querySelector("img")?.addEventListener("load", syncPreviewFlagWidth);
+    });
+    syncPreviewFlagWidth();
     const style = $("#visual-preview").style;
     style.setProperty("--sb-bg", appearance.scoreboard.background);
     style.setProperty("--sb-name", appearance.scoreboard.name_box);
@@ -1006,6 +1090,8 @@
   function loadThemeIntoEditor(theme = null) {
     const form = $("#identity-form");
     const appearance = mergedAppearance(themeAppearance(theme || {}));
+    $("#identity-international").checked = appearance.team_identity.international;
+    resetIdentityFlags(appearance.team_identity.flags);
     form.elements.name.value = theme ? theme.name : "Nueva personalización";
     form.elements.competition_id.value = theme?.competition_id || "";
     form.elements.locked.value = "true";
@@ -1043,6 +1129,7 @@
     button.disabled = true;
     $("#identity-message").textContent = "";
     try {
+      await uploadIdentityFlags();
       const data = {
         name: form.elements.name.value.trim(),
         competition_id: form.elements.competition_id.value || null,

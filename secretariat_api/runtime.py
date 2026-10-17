@@ -191,7 +191,7 @@ class ApplicationRuntime:
             return {}
         source = config.get("appearance") if isinstance(config.get("appearance"), dict) else config
         clean: dict[str, Any] = {}
-        for section in ("scoreboard", "bottom_bar", "panels", "elements", "period_strip", "goal_celebration"):
+        for section in ("scoreboard", "bottom_bar", "panels", "elements", "period_strip", "goal_celebration", "team_identity"):
             values = source.get(section)
             if isinstance(values, dict):
                 clean[section] = copy.deepcopy(values)
@@ -301,7 +301,7 @@ class ApplicationRuntime:
             phase = (state.get("broadcast_flow") or {}).get("phase", "IDLE")
             if phase != "IDLE":
                 set_panel(state, "scoreboard", False)
-                if phase != "GOAL_BOTTOM":
+                if phase not in {"GOAL_INTRO", "GOAL_BOTTOM"}:
                     set_panel(state, "bottom_bar", False)
             self.state_store.save(state)
             return state, result

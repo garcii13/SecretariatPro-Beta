@@ -43,3 +43,14 @@ npm run build
 La aplicación usa SP-OCR v0.7 y SP-SCORE v0.2. Los binarios verificados viven en el release privado `ocr-models-v0.7-v0.2`; GitHub Actions los descarga, comprueba sus SHA-256 contra `models/MANIFEST_SP_OCR.json` y después compila.
 
 El workflow **Beta installers** produce `.exe` para Windows y `.dmg` para ambas arquitecturas de macOS, además de SHA-256 y dependencias resueltas. **Website** compila la web Astro y publica una copia estática verificable. Los instaladores de beta todavía no tienen firma de editor ni notarización. Consultar [la auditoría](docs/BETA_AUDIT.md) y el [protocolo de aceptación](docs/BETA_VALIDATION.md) antes de distribuirlos.
+
+## Base común y nuevas funciones
+
+El código 1.0.0-beta.11 integra Mac beta 8 y Windows beta 10, manteniendo las
+correcciones OCR locales posteriores. Consultar la [matriz de conservación](docs/BASELINE_COMPATIBILITY.md).
+
+En Manager → Identidad visual se puede activar una competición internacional
+y adjuntar banderas por selección sin reemplazar sus escudos. Ambas banderas
+comparten ancho, con un máximo de 1,5 veces la altura del marcador y sin recortes.
+Los goles muestran una animación breve en el idioma de Live antes del goleador.
+Detalles y validaciones pendientes en [las notas de beta 11](docs/RELEASE_BETA11_UNIFIED.md).

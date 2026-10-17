@@ -1206,3 +1206,15 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 
 .import-scope-panel { margin-bottom:18px; }
 #import-analysis .notice { display:flex;flex-wrap:wrap;gap:10px;align-items:center; }
+
+#identity-flags[hidden] { display: none !important; }
+.identity-flag-row {display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:12px;align-items:center;margin-top:14px;}
+.identity-flag-row input {max-width:100%;}
+.identity-flag-preview {width:92px;height:64px;display:grid;place-items:center;background:var(--surface,#232a35);overflow:hidden;}
+.identity-flag-preview img,.preview-logo img {width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;border-radius:0;}
+.preview-logo {min-width:0;overflow:hidden;}
+.preview-logo img {position:absolute;inset:0;}
+.preview-scoreboard .preview-logo {position:relative;}
+@media(max-width:650px) {.identity-flag-row {grid-template-columns:64px minmax(0,1fr);}.identity-flag-preview {width:64px;height:48px;}.identity-flag-row button {grid-column:2;justify-self:start;}}
+
+.is-international .preview-scoreboard {grid-template-columns:var(--preview-flag-width,96px) minmax(70px,1fr) 47px 66px 47px minmax(70px,1fr) var(--preview-flag-width,96px);}

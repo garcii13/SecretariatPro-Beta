@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from secretariat_core.ocr_store import ScoreFileStore
 from secretariat_core.services.broadcast_flow import BroadcastFlow
@@ -63,6 +63,9 @@ class FakeRuntime:
 
 class BroadcastTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        intro = patch("secretariat_core.services.broadcast_flow.GOAL_INTRO_SECONDS", .02)
+        intro.start()
+        self.addCleanup(intro.stop)
         self.runtime = FakeRuntime()
         self.frames = []
         async def broadcast():
@@ -86,7 +89,7 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         self.runtime.plugin['playing'] = False
         await self.until('IDLE')
         phases = [f['broadcast_flow']['phase'] for f in self.frames]
-        self.assertEqual(phases, ['BUILDING','REPLAY','LIVE','GOAL_BOTTOM','IDLE'])
+        self.assertEqual(phases, ['BUILDING','REPLAY','LIVE','GOAL_INTRO','GOAL_BOTTOM','IDLE'])
         bottom = self.frames[-2]
         self.assertFalse(panel_visible(bottom,'scoreboard'))
         self.assertTrue(panel_visible(bottom,'bottom_bar'))
@@ -94,6 +97,31 @@ class BroadcastTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(panel_visible(self.frames[-1],'scoreboard'))
         self.assertFalse(panel_visible(self.frames[-1],'bottom_bar'))
         self.assertEqual(self.runtime.state['match']['period'],3)
+    async def test_intro_cancellation_cannot_reveal_old_scorer(self):
+        await self.flow.begin({'scorer': 'old'})
+        self.runtime.plugin['playing'] = False
+        await self.flow.without_replay()
+        await self.until('GOAL_INTRO')
+        await self.flow.begin({'scorer': 'new'})
+        await asyncio.sleep(.06)
+        self.assertEqual(self.runtime.state['broadcast_flow']['phase'], 'BUILDING')
+        self.assertFalse(panel_visible(self.runtime.state, 'bottom_bar'))
+        self.assertNotIn('GOAL_BOTTOM', [f['broadcast_flow']['phase'] for f in self.frames])
+
+    async def test_intro_does_not_shorten_scorer_duration(self):
+        await self.flow.begin({'scorer': 'Garcia'})
+        self.runtime.plugin['playing'] = False
+        await self.flow.without_replay()
+        await self.until('IDLE')
+        phases = {f['broadcast_flow']['phase']: f for f in self.frames}
+        intro = phases['GOAL_INTRO']['broadcast_flow']['started_at']
+        bottom = phases['GOAL_BOTTOM']['broadcast_flow']['started_at']
+        end = phases['IDLE']['broadcast_flow']['started_at']
+        self.assertGreaterEqual(bottom - intro, .019)
+        self.assertGreaterEqual(end - bottom, .019)
+        self.assertTrue(panel_visible(phases['GOAL_INTRO'], 'bottom_bar'))
+        self.assertFalse(panel_visible(phases['GOAL_INTRO'], 'scoreboard'))
+
     async def test_no_replay_delay_and_library_replay_has_no_goal_bottom(self):
         await self.flow.begin({'scorer':'Garcia'})
         self.runtime.plugin['playing'] = False

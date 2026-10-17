@@ -5,7 +5,7 @@ on:
       scope:
         description: Release scope
         type: choice
-        default: macos-live
+        default: all
         options: [macos-live, all]
       windows_run:
         description: Successful Windows installer run (only for all platforms)

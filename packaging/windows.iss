@@ -2,10 +2,10 @@
   #error Product must be Live or Manager
 #endif
 #ifndef Version
-  #define Version "1.0.0-beta.7"
+  #define Version "1.0.0-beta.11"
 #endif
 #ifndef FileVersion
-  #define FileVersion "1.0.0.6"
+  #define FileVersion "1.0.0.11"
 #endif
 #if Product != "Live" && Product != "Manager"
   #error Unsupported product

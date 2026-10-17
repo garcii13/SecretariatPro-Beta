@@ -1,3 +1,39 @@
+// Presentation helpers do not mutate the saved match or its club crests.
+const OverlayPresentation = {
+  goalWord(language) {
+    return ({es: "GOL", en: "GOAL", sv: "MÅL", cs: "GÓL", fi: "MAALI", de: "TOR"})[language] || "GOAL";
+  },
+  flagWidth(height, ratios, maximum = height * 1.5) {
+    const valid = ratios.filter(value => Number.isFinite(value) && value > 0);
+    return Math.min(maximum, height * Math.min(1.5, ...valid));
+  },
+  withFlags(data, identity = {}) {
+    if (!identity.international) return data;
+    const flags = identity.flags || {};
+    const result = {...data, statistics: {...data.statistics}};
+    const lineups = {...data.statistics?.lineups};
+    const top = {...data.statistics?.top_scorers};
+    for (const key of ["team1", "team2"]) {
+      const flag = flags[data[key]?.id];
+      result[key] = {...data[key], logo: flag || data[key]?.logo || ""};
+      if (flag) {
+        lineups[`${key}_logo`] = flag;
+        top[key] = {...top[key], team_logo: flag};
+      }
+    }
+    result.statistics.lineups = lineups;
+    result.statistics.top_scorers = top;
+    for (const [section, source] of [["bottombar", data.bottombar], ["profile", data.statistics?.player_profile]]) {
+      const flag = flags[data[source?.team_key]?.id];
+      if (flag) {
+        if (section === "bottombar") result.bottombar = {...source, team_logo: flag};
+        else result.statistics.player_profile = {...source, team_logo: flag};
+      }
+    }
+    return result;
+  },
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   // -------------------- Helpers --------------------
   const safeGet = id => document.getElementById(id);
@@ -50,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "Goles en contra":"Gegentore","Posición":"Platz","Puntos":"Punkte","Victorias":"Siege"
     }
   };
+  let teamIdentity = {international: false, flags: {}};
   let overlayAppearanceSignature = "";
   let periodStripConfig = { enabled: false, segments: 3, labels: ["1", "2", "3"] };
   const t = (es, en) => overlayLanguage === "es" ? es : overlayLanguage === "en" ? en : (OVERLAY_TRANSLATIONS[overlayLanguage]?.[es] || en || es);
@@ -139,6 +176,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const signature = JSON.stringify({ language: settings.language || "es", appearance });
     if (signature === overlayAppearanceSignature) return;
     overlayAppearanceSignature = signature;
+    teamIdentity = appearance.team_identity || {international: false, flags: {}};
+    document.body.classList.toggle("international-teams", teamIdentity.international === true);
     const scoreboardRaw = { ...overlayAppearanceDefaults.scoreboard, ...(appearance.scoreboard || {}) };
     const bottomRaw = { ...overlayAppearanceDefaults.bottom_bar, ...(appearance.bottom_bar || {}) };
     const panelsRaw = { ...overlayAppearanceDefaults.panels, ...(appearance.panels || {}) };
@@ -265,6 +304,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const team2Logo = safeGet("team2-logo");
   const team1Bar = team1Logo ? team1Logo.parentElement : null;
   const team2Bar = team2Logo ? team2Logo.parentElement : null;
+  function syncFlagWidth() {
+    const scoreboard = safeGet("scoreboard");
+    if (!scoreboard) return;
+    if (!teamIdentity.international) {
+      scoreboard.style.removeProperty("--logo-width");
+      return;
+    }
+    const height = team1Bar?.clientHeight || 94;
+    const ratios = [team1Logo, team2Logo].filter(img => img?.naturalHeight > 0).map(img => img.naturalWidth / img.naturalHeight);
+    scoreboard.style.setProperty("--logo-width", `${OverlayPresentation.flagWidth(height, ratios)}px`);
+  }
+  [team1Logo, team2Logo].forEach(img => img?.addEventListener("load", syncFlagWidth));
+  window.addEventListener("resize", syncFlagWidth);
+
   const leagueLogo = safeGet('scoreboard-league-logo');
   const bottomBar = safeGet("bottom-bar");
   const bottomTeamBlock = safeGet("bottom-team-block");
@@ -1049,6 +1102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       data.overlay_settings.sport_mode = data.match?.sport_mode || data.overlay_settings.sport_mode;
       applyOverlayAppearance(data.overlay_settings);
     }
+    data = OverlayPresentation.withFlags(data, teamIdentity);
     const lineups = data.statistics?.lineups || {};
     const team1Now = lineups.team1_status === true || lineups.team1_status === "true" || lineups.team1_status === 1;
     const team2Now = lineups.team2_status === true || lineups.team2_status === "true" || lineups.team2_status === 1;
@@ -1114,6 +1168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (team2Name) team2Name.style.color = data.team2?.text_color || "white";
     if (team1Logo) setSrcIfChanged(team1Logo, data.team1?.logo || "");
     if (team2Logo) setSrcIfChanged(team2Logo, data.team2?.logo || "");
+    syncFlagWidth();
     if (team1Bar) team1Bar.style.backgroundColor = data.team1?.stripe_color || "#000";
     if (team2Bar) team2Bar.style.backgroundColor = data.team2?.stripe_color || "#000";
     if (leagueLogo) setSrcIfChanged(leagueLogo, data.match?.logo || "");
@@ -1141,6 +1196,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (intermissionTeam1Score) setTextIfChanged(intermissionTeam1Score, graphicScores?.team1_score ?? prevTxt.home);
       if (intermissionTeam2Score) setTextIfChanged(intermissionTeam2Score, graphicScores?.team2_score ?? prevTxt.away);
       bottomBar.classList.toggle("show", bar.status === "show");
+      const intro = bar.status === "show" && data.broadcast_flow?.phase === "GOAL_INTRO";
+      const goalWord = safeGet("bottom-goal-word");
+      if (goalWord) setTextIfChanged(goalWord, OverlayPresentation.goalWord(overlayLanguage));
+      if (intro && !bottomBar.classList.contains("goal-intro")) {
+        const elapsed = Math.max(0, Math.min(1.6, Date.now() / 1000 - Number(data.broadcast_flow.started_at || Date.now() / 1000)));
+        bottomBar.style.setProperty("--goal-intro-offset", `-${elapsed}s`);
+      }
+      bottomBar.classList.toggle("goal-intro", intro);
       const stateTeamColor = bar.team_key === "team2"
         ? data.team2?.stripe_color
         : bar.team_key === "team1" ? data.team1?.stripe_color : "";
@@ -1149,6 +1212,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const teamColor = bar.team_color || stateTeamColor || "#555b66";
       bottomBar.dataset.team = bar.team_key || "";
       bottomBar.style.setProperty("--bottom-team-color", teamColor);
+      const hex = safeColour(teamColor, "#555b66").slice(1);
+      const light = .299 * parseInt(hex.slice(0, 2), 16) + .587 * parseInt(hex.slice(2, 4), 16) + .114 * parseInt(hex.slice(4, 6), 16);
+      bottomBar.style.setProperty("--goal-intro-text", light > 155 ? "#101318" : "#ffffff");
+      bottomBar.style.setProperty("--goal-intro-accent", safeColour(data[bar.team_key]?.alternate_text_color, light > 155 ? "#101318" : "#ffffff"));
       if (bottomTeamBlock) bottomTeamBlock.style.setProperty("--bottom-team-color", teamColor);
       if (bottomTeamLogo) setSrcIfChanged(bottomTeamLogo, bar.team_logo || "");
       // Formato fijo: #DORSAL APELLIDOS (GOLES EN EL PARTIDO).

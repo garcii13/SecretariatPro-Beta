@@ -10,7 +10,7 @@ repo = os.environ['GH_REPO']
 version = runpy.run_path('secretariat_core/release.py')['RELEASE_VERSION']
 mac_live_only = os.environ.get('SP_RELEASE_SCOPE') == 'macos-live'
 products = ('Live',) if mac_live_only else ('Live', 'Manager')
-notes_path = 'docs/RELEASE_BETA8_MAC_LIVE.md'
+notes_path = 'docs/RELEASE_BETA11_UNIFIED.md'
 def gh(*args):
     return subprocess.check_output(['gh', *args], text=True)
 
