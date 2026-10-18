@@ -61,7 +61,7 @@ a = Analysis(
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath=[str(ROOT / 'packaging/hooks')] if sys.platform == 'win32' else [],
     hooksconfig={},
     runtime_hooks=[str(ROOT / "packaging/rthook_paddle.py")],
     excludes=[],

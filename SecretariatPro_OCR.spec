@@ -56,6 +56,7 @@ if sys.platform == 'darwin':
     binaries = native_binaries
 
 a = Analysis([str(base/'ocr_worker.py')], pathex=search_paths, datas=datas, binaries=binaries, hiddenimports=hidden,
+             hookspath=[str(base/'packaging/hooks')] if sys.platform == 'win32' else [],
              runtime_hooks=[str(base/'packaging/rthook_paddle.py')])
 # collect_all also returns .dylib files as data, which Analysis reclassifies.
 # Replace any remaining foreign-architecture helpers with the matching native
