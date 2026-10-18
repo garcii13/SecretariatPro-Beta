@@ -1,4 +1,5 @@
 import { createClient, type User } from '@supabase/supabase-js';
+import { accountFlow, errorMessage, hasAuthLinkError, retrySessionRequest } from '../lib/account-flow.mjs';
 
 const roots = document.querySelectorAll<HTMLElement>('[data-account-portal]');
 
@@ -23,10 +24,10 @@ for (const root of roots) {
   const memberships = one<HTMLElement>('[data-memberships]');
   const avatar = one<HTMLElement>('[data-avatar]');
   let currentUser: User | null = null;
-  let resetFlow = new URLSearchParams(location.search).get('type') === 'recovery'
-    || new URLSearchParams(location.search).get('type') === 'invite'
-    || new URLSearchParams(location.hash.replace(/^#/, '')).get('type') === 'recovery'
-    || new URLSearchParams(location.hash.replace(/^#/, '')).get('type') === 'invite';
+  let flow = accountFlow(location);
+  let linkError = hasAuthLinkError(location);
+  let renderRevision = 0;
+  let sessionKey: string | null = null;
 
   const text = {
     unexpected: es ? 'No se pudo completar la operación.' : 'The operation could not be completed.',
@@ -39,6 +40,11 @@ for (const root of roots) {
     signedOut: es ? 'Sesión cerrada.' : 'Signed out.',
     noMemberships: es ? 'Todavía no perteneces a ningún espacio de trabajo.' : 'You do not belong to a workspace yet.',
     inviteAccepted: es ? 'Invitación aceptada. Ya puedes usar SecretariatPro.' : 'Invitation accepted. You can now use SecretariatPro.',
+    recoveryReady: es ? 'Sesión activa. Guarda tu nueva contraseña para completar la recuperación.' : 'Signed in. Save your new password to complete recovery.',
+    recoveryTitle: es ? 'Recupera tu contraseña' : 'Reset your password',
+    recoveryHelp: es ? 'Elige una nueva contraseña de al menos 8 caracteres.' : 'Choose a new password with at least 8 characters.',
+    workspaceError: es ? 'No se pudieron cargar tus espacios de trabajo: ' : 'Your workspaces could not be loaded: ',
+    linkError: es ? 'No se ha podido validar el enlace. Puede haber caducado o haberse utilizado. Solicita otro enlace; si ya tienes una sesión activa, puedes cambiar tu contraseña desde este formulario.' : 'The link could not be verified. It may have expired or already been used. Request another link; if you already have an active session, you can change your password using this form.',
     createPassword: es ? 'Crea tu contraseña' : 'Create your password',
     createPasswordHelp: es ? 'Elige una contraseña de al menos 8 caracteres para completar la invitación.' : 'Choose a password of at least 8 characters to complete your invitation.'
   };
@@ -83,28 +89,29 @@ for (const root of roots) {
   }
 
   async function acceptInvitations() {
-    const { data, error } = await client.rpc('sp_accept_my_invitations');
+    const { data, error } = await retrySessionRequest(client.auth, () => client.rpc('sp_accept_my_invitations'));
     if (error) throw error;
     return Number(data || 0);
   }
 
-  async function renderMemberships(user: User) {
+  async function renderMemberships(user: User, revision = renderRevision) {
     if (!memberships) return;
     memberships.replaceChildren();
-    const { data: memberRows, error: memberError } = await client
+    const { data: memberRows, error: memberError } = await retrySessionRequest(client.auth, () => client
       .from('sp_workspace_members')
       .select('workspace_id,role,status,joined_at')
       .eq('user_id', user.id)
-      .order('joined_at', { ascending: true });
+      .order('joined_at', { ascending: true }));
     if (memberError) throw memberError;
 
     const ids = (memberRows ?? []).map((row) => String(row.workspace_id));
     let workspaces: Array<{ id: string; name: string }> = [];
     if (ids.length) {
-      const { data, error } = await client.from('sp_workspaces').select('id,name').in('id', ids).order('name');
+      const { data, error } = await retrySessionRequest(client.auth, () => client.from('sp_workspaces').select('id,name').in('id', ids).order('name'));
       if (error) throw error;
       workspaces = data ?? [];
     }
+    if (revision !== renderRevision || currentUser?.id !== user.id) return;
     const nameById = new Map(workspaces.map((workspace) => [String(workspace.id), workspace.name]));
 
     if (!memberRows?.length) {
@@ -138,11 +145,14 @@ for (const root of roots) {
     memberships.append(list);
   }
 
-  async function renderSession(user: User | null, announceInvite = false) {
+  async function renderSession(user: User | null) {
+    const revision = ++renderRevision;
     currentUser = user;
+    memberships?.replaceChildren();
     if (loading) loading.hidden = true;
     if (signedOut) signedOut.hidden = Boolean(user);
     if (signedIn) signedIn.hidden = !user;
+    if (linkError) showMessage(text.linkError, 'error');
     if (!user) return;
 
     one<HTMLElement>('[data-profile-name]')!.textContent = profileName(user);
@@ -151,17 +161,21 @@ for (const root of roots) {
     if (displayName) displayName.value = profileName(user);
     renderAvatar(user);
 
-    if (resetFlow) {
-      one<HTMLElement>('[data-password-title]')!.textContent = text.createPassword;
-      one<HTMLElement>('[data-password-help]')!.textContent = text.createPasswordHelp;
-    }
+    one<HTMLElement>('[data-password-title]')!.textContent = flow === 'recovery' ? text.recoveryTitle : flow === 'invite' ? text.createPassword : (es ? 'Cambiar contraseña' : 'Change password');
+    one<HTMLElement>('[data-password-help]')!.textContent = flow === 'recovery' ? text.recoveryHelp : flow === 'invite' ? text.createPasswordHelp : (es ? 'Usa al menos 8 caracteres.' : 'Use at least 8 characters.');
+    if (flow === 'recovery' && !linkError) showMessage(text.recoveryReady);
 
     try {
-      const accepted = await acceptInvitations();
-      await renderMemberships(user);
-      if (accepted > 0 || announceInvite) showMessage(text.inviteAccepted);
+      const accepted = flow === 'recovery' ? 0 : await acceptInvitations();
+      if (revision !== renderRevision) return;
+      await renderMemberships(user, revision);
+      if (accepted > 0 && revision === renderRevision && !linkError) showMessage(text.inviteAccepted);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : text.unexpected, 'error');
+      if (revision !== renderRevision || !memberships) return;
+      const message = document.createElement('p');
+      message.setAttribute('role', 'status');
+      message.textContent = text.workspaceError + errorMessage(error, text.unexpected);
+      memberships.replaceChildren(message);
     }
   }
 
@@ -174,11 +188,12 @@ for (const root of roots) {
       const password = (loginForm.elements.namedItem('password') as HTMLInputElement).value;
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      resetFlow = false;
+      flow = null;
+      linkError = false;
       await renderSession(data.user);
       showMessage(text.loginOk);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : text.unexpected, 'error');
+      showMessage(errorMessage(error, text.unexpected), 'error');
     } finally {
       setBusy(loginForm, false);
     }
@@ -195,7 +210,7 @@ for (const root of roots) {
       if (error) throw error;
       showMessage(text.resetSent);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : text.unexpected, 'error');
+      showMessage(errorMessage(error, text.unexpected), 'error');
     } finally {
       setBusy(resetForm, false);
     }
@@ -233,7 +248,7 @@ for (const root of roots) {
       showMessage(text.profileSaved);
       (profileForm.elements.namedItem('avatar') as HTMLInputElement).value = '';
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : text.unexpected, 'error');
+      showMessage(errorMessage(error, text.unexpected), 'error');
     } finally {
       setBusy(profileForm, false);
     }
@@ -253,7 +268,7 @@ for (const root of roots) {
       await renderSession(currentUser);
       showMessage(text.profileSaved);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : text.unexpected, 'error');
+      showMessage(errorMessage(error, text.unexpected), 'error');
     }
   });
 
@@ -267,14 +282,15 @@ for (const root of roots) {
       if (password !== confirmation) throw new Error(text.mismatch);
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
-      const accepted = await acceptInvitations();
-      resetFlow = false;
+      flow = null;
+      linkError = false;
       history.replaceState({}, '', lang === 'en' ? '/en/account' : '/cuenta');
       passwordForm.reset();
-      if (currentUser) await renderMemberships(currentUser);
-      showMessage(accepted > 0 ? text.inviteAccepted : text.passwordSaved);
+      showMessage(text.passwordSaved);
+      // Workspace failures must not turn an already saved password into a failed operation.
+      if (currentUser) void renderSession(currentUser);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : text.unexpected, 'error');
+      showMessage(errorMessage(error, text.unexpected), 'error');
     } finally {
       setBusy(passwordForm, false);
     }
@@ -288,12 +304,14 @@ for (const root of roots) {
   });
 
   client.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') resetFlow = true;
-    window.setTimeout(() => void renderSession(session?.user ?? null, event === 'SIGNED_IN' && resetFlow), 0);
-  });
-
-  void client.auth.getSession().then(({ data, error }) => {
-    if (error) showMessage(error.message, 'error');
-    return renderSession(data.session?.user ?? null);
+    if (event === 'PASSWORD_RECOVERY') flow = 'recovery';
+    if (event === 'TOKEN_REFRESHED' && currentUser?.id === session?.user.id) return;
+    const key = session ? `${session.user.id}:${session.access_token}` : '';
+    if (key === sessionKey && event !== 'PASSWORD_RECOVERY' && event !== 'USER_UPDATED') return;
+    sessionKey = key;
+    // Run outside Supabase's auth lock. INITIAL_SESSION also covers persisted sessions.
+    window.setTimeout(() => {
+      if (sessionKey === key) void renderSession(session?.user ?? null);
+    }, 0);
   });
 }

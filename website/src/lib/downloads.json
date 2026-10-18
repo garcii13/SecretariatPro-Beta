@@ -1,0 +1,62 @@
+[
+  {
+    "product": "live",
+    "platform": "windows-x64",
+    "version": "1.0.0-beta.10",
+    "file": "SecretariatPro-Live-1.0.0-beta.10-windows-x64-setup.exe",
+    "url": "https://github.com/garcii13/SecretariatPro-Beta/releases/download/live-v1.0.0-beta.10/SecretariatPro-Live-1.0.0-beta.10-windows-x64-setup.exe",
+    "bytes": 844214662,
+    "sha256": "5ab406d3d6887f68ba0529715d6ac723e1fb37ba5fe86ceb5a8e03c66120ec59",
+    "path": "/download/live/windows-x64"
+  },
+  {
+    "product": "live",
+    "platform": "macos-arm64",
+    "version": "1.0.0-beta.8",
+    "file": "SecretariatPro-Live-1.0.0-beta.8-macos-arm64.dmg",
+    "url": "https://github.com/garcii13/SecretariatPro-Beta/releases/download/live-v1.0.0-beta.8/SecretariatPro-Live-1.0.0-beta.8-macos-arm64.dmg",
+    "bytes": 833882627,
+    "sha256": "c8cd92a24f9fd69a4e9a6679c8ff1041758248fef24497cc1f92659e79740717",
+    "path": "/download/live/macos-arm64"
+  },
+  {
+    "product": "live",
+    "platform": "macos-x86_64",
+    "version": "1.0.0-beta.8",
+    "file": "SecretariatPro-Live-1.0.0-beta.8-macos-x86_64.dmg",
+    "url": "https://github.com/garcii13/SecretariatPro-Beta/releases/download/live-v1.0.0-beta.8/SecretariatPro-Live-1.0.0-beta.8-macos-x86_64.dmg",
+    "bytes": 952511492,
+    "sha256": "572c60f08bc9a703a043b749f72ac2dad2d610132b92108f54bfc086afe45681",
+    "path": "/download/live/macos-x86_64"
+  },
+  {
+    "product": "manager",
+    "platform": "windows-x64",
+    "version": "1.0.0-beta.6",
+    "file": "SecretariatPro-Manager-1.0.0-beta.6-windows-x64-setup.exe",
+    "url": "https://github.com/garcii13/SecretariatPro-Beta/releases/download/manager-v1.0.0-beta.6/SecretariatPro-Manager-1.0.0-beta.6-windows-x64-setup.exe",
+    "bytes": 284954335,
+    "sha256": "70ce21667863b543d39be8dcd0594f7b0c64fb7601dd80a437468ab49f8eaac9",
+    "path": "/download/manager/windows-x64"
+  },
+  {
+    "product": "manager",
+    "platform": "macos-arm64",
+    "version": "1.0.0-beta.6",
+    "file": "SecretariatPro-Manager-1.0.0-beta.6-macos-arm64.dmg",
+    "url": "https://github.com/garcii13/SecretariatPro-Beta/releases/download/manager-v1.0.0-beta.6/SecretariatPro-Manager-1.0.0-beta.6-macos-arm64.dmg",
+    "bytes": 97557728,
+    "sha256": "53a460aea2f507feb0051366294b9278b0d6196adfa0927449b638aab0c53241",
+    "path": "/download/manager/macos-arm64"
+  },
+  {
+    "product": "manager",
+    "platform": "macos-x86_64",
+    "version": "1.0.0-beta.6",
+    "file": "SecretariatPro-Manager-1.0.0-beta.6-macos-x86_64.dmg",
+    "url": "https://github.com/garcii13/SecretariatPro-Beta/releases/download/manager-v1.0.0-beta.6/SecretariatPro-Manager-1.0.0-beta.6-macos-x86_64.dmg",
+    "bytes": 124639390,
+    "sha256": "54c3dcd12137406e1ba87555b171c7d4cc1ebb8a7673921477de12e6ab1de7dd",
+    "path": "/download/manager/macos-x86_64"
+  }
+]

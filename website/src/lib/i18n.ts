@@ -4,6 +4,7 @@ const esToEn: Record<string, string> = {
   '/': '/en/',
   '/live': '/en/live',
   '/manager': '/en/manager',
+  '/descargas': '/en/downloads',
   '/cuenta': '/en/account',
   '/aviso-legal': '/en/legal-notice',
   '/privacidad': '/en/privacy',
