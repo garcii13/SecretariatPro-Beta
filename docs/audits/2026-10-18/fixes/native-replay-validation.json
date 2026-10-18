@@ -1,0 +1,55 @@
+{
+  "kind": "synthetic_native_replay",
+  "physical_camera_acceptance": false,
+  "plugin_version": "0.6.0",
+  "clips": [
+    {
+      "bytes": 19112695,
+      "width": 1920,
+      "height": 1080,
+      "frames": 398,
+      "mean_bgr": [
+        3.0,
+        0.0,
+        233.0
+      ]
+    },
+    {
+      "bytes": 19062675,
+      "width": 1920,
+      "height": 1080,
+      "frames": 398,
+      "mean_bgr": [
+        245.0,
+        0.0,
+        3.0
+      ]
+    }
+  ],
+  "playing": true,
+  "camera_switch": 1,
+  "returned_live": true,
+  "buffers_stopped": true,
+  "streaming": false,
+  "recording": false,
+  "passed": true,
+  "date": "2026-10-18",
+  "live_source_commit": "f98ef984013a13bf6c73084748392b833e6750da",
+  "obs_version": "32.2.2",
+  "websocket_version": "5.7.4",
+  "original_scene_collection_restored": true,
+  "original_plugin_source_selection_restored": true,
+  "core_tests": {
+    "source_commit": "0b289db0d7e9159a99e37886922d724a2cf51454",
+    "installed_binary_same_commit_verified": false,
+    "tests": [
+      "timeline",
+      "layout",
+      "encoder-policy"
+    ],
+    "result": "passed",
+    "compiler": "Xcode clang++ C++17 -Wall -Wextra -Wpedantic -Werror"
+  },
+  "obs_closed_after_test": true,
+  "test_media_retained": false
+}

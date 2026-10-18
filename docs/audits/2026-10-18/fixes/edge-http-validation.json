@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "sent_emails": 0,
+  "checks": [
+    {
+      "case": "missing_jwt",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "case": "invalid_jwt",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "case": "get",
+      "status": 405,
+      "expected": 405
+    }
+  ]
+}

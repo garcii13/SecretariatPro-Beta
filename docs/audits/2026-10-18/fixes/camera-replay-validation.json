@@ -1,0 +1,41 @@
+{
+  "kind": "internal_and_virtual_native_replay",
+  "two_physical_cameras": false,
+  "real_scoreboard_ocr": false,
+  "plugin_version": "0.6.0",
+  "clips": [
+    {
+      "bytes": 18962623,
+      "width": 1920,
+      "height": 1080,
+      "frames": 394,
+      "pixel_std": 81.57,
+      "mean": 66.09
+    },
+    {
+      "bytes": 18912591,
+      "width": 1920,
+      "height": 1080,
+      "frames": 394,
+      "pixel_std": 114.79,
+      "mean": 82.67
+    }
+  ],
+  "playing": true,
+  "camera_switch": 1,
+  "returned_live": true,
+  "library_playback": true,
+  "library_returned_live": true,
+  "no_stale_playback": true,
+  "streaming": false,
+  "recording": false,
+  "virtual_feed": "OBS program output of a synthetic blue source",
+  "passed": true,
+  "date": "2026-10-18",
+  "live_source_commit": "f98ef984013a13bf6c73084748392b833e6750da",
+  "original_scene_collection_restored": true,
+  "original_plugin_source_selection_restored": true,
+  "virtual_camera_stopped": true,
+  "obs_closed_after_test": true,
+  "test_media_retained": false
+}

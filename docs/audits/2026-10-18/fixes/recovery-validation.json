@@ -1,0 +1,14 @@
+{
+  "requested_emails": 1,
+  "http_status": 200,
+  "redirect_to": "https://secretariatproapp.com/cuenta?type=recovery",
+  "accepted": true,
+  "delivery_confirmed": true,
+  "password_changed": false,
+  "recipient_stored_in_evidence": false,
+  "user_reported_active_session": true,
+  "user_reported_generic_warning": true,
+  "deployed_account_bundle_matches_previous_local": true,
+  "observed_web_rpc_error": "HTTP 401 / PGRST303",
+  "website_fix_deployed": false
+}

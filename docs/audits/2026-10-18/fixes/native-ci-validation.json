@@ -1,0 +1,646 @@
+{
+  "date": "2026-10-18",
+  "application_commit": "f98ef984013a13bf6c73084748392b833e6750da",
+  "database_fix_commit": "0a391d4f813f81a9522187cb0b91db179f86487f",
+  "runs": [
+    {
+      "headSha": "f98ef984013a13bf6c73084748392b833e6750da",
+      "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39112885674",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "installers (macos-15-intel)",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39112885674/job/117632559626",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Download released OCR models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore verified OCR models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Update build tooling",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies (macOS)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit Python build dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and verify Svelte broadcast renderer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify invitation database boundary",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit and regression tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check JavaScript",
+              "conclusion": "success"
+            },
+            {
+              "name": "Record resolved dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build Live and OCR",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build Manager",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify packaged camera and OCR runtimes",
+              "conclusion": "success"
+            },
+            {
+              "name": "Assemble installer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke test applications from DMG (macOS)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/upload-artifact@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "installers (windows-2022)",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39112885674/job/117632559715",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Download released OCR models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore verified OCR models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Update build tooling",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies (Windows)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit Python build dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and verify Svelte broadcast renderer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify invitation database boundary",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit and regression tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check JavaScript",
+              "conclusion": "success"
+            },
+            {
+              "name": "Record resolved dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Prepare offline base recognizer (Windows)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build Live and OCR",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build Manager",
+              "conclusion": "success"
+            },
+            {
+              "name": "Prepare Windows installer prerequisites",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify packaged camera and OCR runtimes",
+              "conclusion": "success"
+            },
+            {
+              "name": "Assemble installer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke test installed applications (Windows)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/upload-artifact@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "installers (macos-15)",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39112885674/job/117632559723",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Download released OCR models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore verified OCR models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Update build tooling",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies (macOS)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit Python build dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and verify Svelte broadcast renderer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify invitation database boundary",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit and regression tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check JavaScript",
+              "conclusion": "success"
+            },
+            {
+              "name": "Record resolved dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build Live and OCR",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build Manager",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify packaged camera and OCR runtimes",
+              "conclusion": "success"
+            },
+            {
+              "name": "Assemble installer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Smoke test applications from DMG (macOS)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/upload-artifact@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "headSha": "0a391d4f813f81a9522187cb0b91db179f86487f",
+      "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39113549463",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "invitation-function",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39113549463/job/117634568427",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run denoland/setup-deno@v2",
+              "conclusion": "success"
+            },
+            {
+              "name": "Typecheck the deployed invitation handler",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run denoland/setup-deno@v2",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "regressions (windows-2022)",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39113549463/job/117634568533",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore verified specialist models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Update build tooling",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies (Windows)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit Python build dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and verify Svelte broadcast renderer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify invitation database boundary",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run all Python feature regressions",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate interface code and presentation behaviour",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "regressions (macos-15-intel)",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39113549463/job/117634568572",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore verified specialist models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Update build tooling",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies (macOS)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit Python build dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and verify Svelte broadcast renderer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify invitation database boundary",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run all Python feature regressions",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate interface code and presentation behaviour",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "regressions (macos-15)",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39113549463/job/117634568610",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore verified specialist models",
+              "conclusion": "success"
+            },
+            {
+              "name": "Update build tooling",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies (macOS)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit Python build dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and verify Svelte broadcast renderer",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify invitation database boundary",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run all Python feature regressions",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate interface code and presentation behaviour",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-python@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "headSha": "8d3d2747e7f529dac4869878fdb45a57da26fe28",
+      "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39111883056",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "build",
+          "url": "https://github.com/garcii13/SecretariatPro-Beta/actions/runs/39111883056/job/117629572064",
+          "conclusion": "success",
+          "checks": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Security audit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build static website",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/upload-artifact@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "release_published": false,
+  "visual_acceptance": false,
+  "real_scoreboard_ocr_acceptance": false
+}

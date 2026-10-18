@@ -1,0 +1,48 @@
+{
+  "published_release_headers": [
+    {
+      "path": "/download/live/windows-x64",
+      "file": "SecretariatPro-Live-1.0.0-beta.10-windows-x64-setup.exe",
+      "status": 200,
+      "content_length": 844214662,
+      "attachment": true
+    },
+    {
+      "path": "/download/live/macos-arm64",
+      "file": "SecretariatPro-Live-1.0.0-beta.8-macos-arm64.dmg",
+      "status": 200,
+      "content_length": 833882627,
+      "attachment": true
+    },
+    {
+      "path": "/download/live/macos-x86_64",
+      "file": "SecretariatPro-Live-1.0.0-beta.8-macos-x86_64.dmg",
+      "status": 200,
+      "content_length": 952511492,
+      "attachment": true
+    },
+    {
+      "path": "/download/manager/windows-x64",
+      "file": "SecretariatPro-Manager-1.0.0-beta.6-windows-x64-setup.exe",
+      "status": 200,
+      "content_length": 284954335,
+      "attachment": true
+    },
+    {
+      "path": "/download/manager/macos-arm64",
+      "file": "SecretariatPro-Manager-1.0.0-beta.6-macos-arm64.dmg",
+      "status": 200,
+      "content_length": 97557728,
+      "attachment": true
+    },
+    {
+      "path": "/download/manager/macos-x86_64",
+      "file": "SecretariatPro-Manager-1.0.0-beta.6-macos-x86_64.dmg",
+      "status": 200,
+      "content_length": 124639390,
+      "attachment": true
+    }
+  ],
+  "site_routes_deployed": false,
+  "full_installer_downloaded": false
+}

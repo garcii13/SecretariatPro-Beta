@@ -2,6 +2,8 @@
 
 Fecha: 18 de octubre de 2026 · Revisión de código, pruebas locales y metadatos remotos.
 
+Este documento conserva los hallazgos originales. El estado posterior de las correcciones y las verificaciones reales de Supabase/CI está en [AUDIT_FIXES_BETA11.md](AUDIT_FIXES_BETA11.md).
+
 **Dictamen: la base funcional tiene buena cobertura automática, pero la beta 11 actual todavía no está preparada para distribuirse.** Hay un fallo reproducible de orden de respuestas en emisión, una carencia reproducible de validación del origen del WebSocket, dependencias con avisos y validación instalada/Windows/OBS pendiente.
 
 No se ha modificado código de aplicación, publicado instaladores, enviado correos, ejecutado migraciones ni accedido a datos de clientes. Se han generado este informe y sus evidencias. Las compilaciones de comprobación solo han escrito resultados locales ignorados por Git. El análisis de dependencias Python se hizo con una herramienta instalada en un entorno temporal separado.

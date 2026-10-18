@@ -159,3 +159,26 @@ SQL de invitación probado en PostgreSQL local. Svelte sin errores/avisos,
 auditorías Python/web/renderer sin avisos y Astro compila 16 páginas. Pendientes
 Windows/Intel nativos, instalación/OBS/cámaras, revisión visual y despliegue cloud;
 la publicación exige evidencias para esos recorridos, vinculadas a commit y hash.
+
+
+## 18-10-2026 · cierre de correcciones y verificación nativa
+
+La aplicación de `f98ef98` supera 451 casos Python, 27 Node y 24 del renderer en
+las tres plataformas nativas. Los instaladores Live y Manager se construyen y
+abren correctamente en Windows x64, Mac ARM64 e Intel, con inferencia real del
+OCR empaquetado. Se corrigieron temporización Windows, lectura UTF-8/rutas de
+las pruebas, módulos mypyc de chardet y confirmación asíncrona de replay ante
+un error anterior del plugin.
+
+Supabase tiene tres migraciones de corrección y Edge invite-member v4; pasan
+12 controles reales de RLS/roles/invitación y se restaura un propietario
+históricamente rebajado, sin reactivar miembros ni cambiar ownership. La
+publicación secuencial conserva una identidad activa; no acredita concurrencia.
+OBS real supera guardar, componer, reproducir, cambiar ángulo, volver al directo
+y reproducir biblioteca con cámara interna y virtual. Se restauró la
+configuración original y no quedan clips temporales.
+
+La revisión visual sigue bloqueada por el permiso del navegador. No se declara
+aceptado OCR sobre marcador real, DPI físico, concurrencia real ni restauración
+de copias. No se han publicado instaladores. Véanse AUDIT_FIXES_BETA11.md y las
+evidencias de docs/audits/2026-10-18/fixes/. El Lab continúa excluido.

@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-18",
+  "project": "SecretariatPRO",
+  "project_id": "yjiegitbskiolwkglcfl",
+  "source_commit": "0a391d4f813f81a9522187cb0b91db179f86487f",
+  "migrations": [
+    {
+      "version": "20261018081649",
+      "name": "audit_idempotent_workspace_invitations"
+    },
+    {
+      "version": "20261018082205",
+      "name": "audit_membership_guards_and_legacy_rpc"
+    },
+    {
+      "version": "20261018085458",
+      "name": "audit_restore_canonical_owner_roles"
+    }
+  ],
+  "edge": {
+    "name": "invite-member",
+    "version": 4,
+    "status": "ACTIVE",
+    "verify_jwt": false,
+    "authentication": "caller JWT validated using auth.getUser, role checked; RPC uses caller JWT",
+    "deployed_source_matches": true
+  },
+  "membership_probe": {
+    "file": "packaging/cloud_membership_probe.sql",
+    "passed": true,
+    "checks": 12,
+    "transaction": "ROLLBACK",
+    "remaining_fixture_users": 0,
+    "sent_emails": 0
+  },
+  "theme_probe": {
+    "sessions": 2,
+    "versions": [
+      1,
+      2
+    ],
+    "published_count": 1,
+    "locked": true,
+    "concurrency_proven": false,
+    "reason": "Connector executed SQL requests sequentially despite parallel client dispatch. Database transaction timestamps did not overlap.",
+    "remaining_users": 0,
+    "remaining_workspaces": 0,
+    "remaining_themes": 0
+  },
+  "security_advisors": {
+    "non_lab_mutable_search_paths": 0,
+    "non_lab_anonymous_security_definer_endpoints": 0,
+    "lab_excluded": true,
+    "authenticated_security_definer_endpoints": "Expected signed-in RPCs with internal role/workspace checks remain callable; advisory remains.",
+    "leaked_password_protection": "disabled; unchanged"
+  },
+  "obs": {
+    "version": "32.2.2",
+    "plugin_panel_loaded": true,
+    "two_physical_camera_session_verified": false,
+    "stream_started": false,
+    "recording_started": false,
+    "internal_and_virtual_replay_verified": true,
+    "physical_cameras_used": 1
+  },
+  "unverified": [
+    "real concurrent publication",
+    "Auth HTTP login and SMTP recovery",
+    "backup restore",
+    "real scoreboard OCR and high-DPI window capture",
+    "visual geometry and fluency"
+  ],
+  "installer_distribution": false,
+  "owner_integrity": {
+    "historical_canonical_owner_role_mismatches_before": 1,
+    "repaired_active_canonical_owner_roles": 1,
+    "mismatches_after": 0,
+    "noncanonical_owner_memberships": 0,
+    "owner_user_id_changed": false,
+    "membership_status_changed": false,
+    "invited_or_suspended_reactivated": false
+  },
+  "cleanup": {
+    "remaining_audit_users": 0,
+    "remaining_audit_operators": 0,
+    "remaining_audit_workspaces": 0
+  }
+}
