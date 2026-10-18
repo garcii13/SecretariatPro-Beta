@@ -167,7 +167,7 @@ def get_ocr():
 
     _force_cpu_runtime()
 
-    # macOS / Apple Silicon normally runs the pinned PaddleOCR 2.x stack.
+    # macOS / Apple Silicon retains the pinned PaddleOCR 2.x API (2.10).
     # If the user launches the project with a different interpreter and a
     # PaddleOCR 3.x installation is found, do NOT pass legacy `use_gpu` args:
     # switch to TextRecognition(device="cpu") instead. This compatibility path

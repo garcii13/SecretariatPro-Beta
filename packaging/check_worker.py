@@ -24,6 +24,6 @@ for option, expected in (("--diagnose-camera", "camera_runtime_ok"), ("--diagnos
             pass
     if not any(isinstance(message, dict) and message.get("type") == expected for message in messages):
         raise SystemExit(f"Packaged worker did not confirm {expected}")
-    if sys.platform == "win32" and option == "--diagnose-ocr":
+    if option == "--diagnose-ocr":
         if not any(isinstance(message, dict) and message.get("type") == "ocr_inference_ok" for message in messages):
-            raise SystemExit("Packaged Windows worker did not perform real OCR inference")
+            raise SystemExit("Packaged worker did not perform real OCR inference")

@@ -7,8 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class Phase61MacOCRStabilityTests(unittest.TestCase):
     def test_macos_pins_legacy_paddle_stack(self):
         req = (ROOT / "requirements.txt").read_text(encoding="utf-8")
-        self.assertIn('paddlepaddle==2.6.2 ; sys_platform == "darwin"', req)
-        self.assertIn('paddleocr==2.7.3 ; sys_platform == "darwin"', req)
+        self.assertIn('paddlepaddle==3.0.0 ; sys_platform == "darwin"', req)
+        self.assertIn('paddleocr==2.10.0 ; sys_platform == "darwin"', req)
 
     def test_mac_uses_legacy_pipeline_and_one_cpu_thread(self):
         engine = (ROOT / "ocr_engine.py").read_text(encoding="utf-8")

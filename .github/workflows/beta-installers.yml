@@ -32,18 +32,35 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
       - name: Download released OCR models
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release download ocr-models-v0.7-v0.2 --pattern "secretariatpro-ocr-models-v0.7-v0.2.zip" --dir .
       - name: Restore verified OCR models
         run: python packaging/unpack_models.py secretariatpro-ocr-models-v0.7-v0.2.zip
+      - name: Update build tooling
+        run: python -m pip install --upgrade "pip>=26.2.1" setuptools wheel
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: python -m pip install -r requirements.txt -r requirements-test.txt -c constraints-macos.txt
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Audit Python build dependencies
+        run: python packaging/audit_dependencies.py
+      - name: Build and verify Svelte broadcast renderer
+        run: |
+          npm ci --prefix broadcast_renderer --no-fund --no-audit
+          npm run verify --prefix broadcast_renderer
+          npm audit --prefix broadcast_renderer --audit-level=high
+      - name: Verify invitation database boundary
+        run: |
+          npm ci --prefix security_tests --no-fund --no-audit
+          npm audit --prefix security_tests --audit-level=high
+          npm test --prefix security_tests
       - name: Audit and regression tests
         run: python packaging/run_regressions.py
       - name: Check JavaScript

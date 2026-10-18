@@ -1,0 +1,36 @@
+{
+  "python_registered": 445,
+  "python_skipped_windows": 2,
+  "node_tests": 27,
+  "compiled_renderer_tests": 24,
+  "sql_postgres_test_scenarios": 1,
+  "ocr": {
+    "fixtures": 67,
+    "changed_readings": 0,
+    "synthetic_correct_before": 60,
+    "synthetic_correct_after": 60,
+    "synthetic_total": 64,
+    "before": {
+      "paddlepaddle": "2.6.2",
+      "paddleocr": "2.7.3",
+      "numpy": "1.26.4",
+      "opencv-python": "4.6.0.66",
+      "scikit-learn": "1.8.0"
+    },
+    "after": {
+      "paddlepaddle": "3.0.0",
+      "paddleocr": "2.10.0",
+      "numpy": "1.26.4",
+      "opencv-python": "4.10.0.84",
+      "scikit-learn": "1.8.0"
+    },
+    "note": "Synthetic/public reference comparison, not real match accuracy or a performance certification"
+  },
+  "cloud_deployed": false,
+  "lab_changed": false,
+  "windows_native_tested": false,
+  "obs_camera_session_tested": false,
+  "deno_typecheck": true,
+  "python_packages_audited": 147,
+  "python_known_vulnerabilities": 0
+}

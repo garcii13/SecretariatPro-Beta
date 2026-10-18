@@ -86,6 +86,7 @@ def _apply_team(state: dict[str, Any], team_key: str, team: dict[str, Any]) -> N
     state[team_key].update({
         "id": str(team.get("id") or ""),
         "name": team.get("short_name") or team.get("name") or "",
+        "full_name": str(team.get("name") or "").strip() or str(team.get("short_name") or "").strip(),
         "stripe_color": color,
         "alternate_text_color": alternate,
         "logo": logo,

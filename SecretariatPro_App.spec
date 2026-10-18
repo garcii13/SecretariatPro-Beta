@@ -11,6 +11,8 @@ release_version = runpy.run_path(str(ROOT / 'secretariat_core/release.py'))['REL
 datas = [
     (str(ROOT / "webapp"), "webapp"),
     (str(ROOT / "overlay.html"), "."),
+    (str(ROOT / "overlay-studio.html"), "."),
+    (str(ROOT / "overlay_studio"), "overlay_studio"),
     (str(ROOT / "script.js"), "."),
     (str(ROOT / "styles.css"), "."),
     (str(ROOT / "overlay_cinematic.css"), "."),

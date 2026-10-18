@@ -1,0 +1,545 @@
+{
+  "runtime": {
+    "paddlepaddle": "3.0.0",
+    "paddleocr": "2.10.0",
+    "numpy": "1.26.4",
+    "opencv-python": "4.10.0.84",
+    "scikit-learn": "1.8.0"
+  },
+  "engine": "v2_pipeline_mac_stable",
+  "rows": [
+    {
+      "kind": "time",
+      "expected": "00:00",
+      "variation": 0,
+      "value": "00:00",
+      "confidence": 0.9804395437240601,
+      "ms": 4776.2884170078905
+    },
+    {
+      "kind": "time",
+      "expected": "00:00",
+      "variation": 1,
+      "value": "00:00",
+      "confidence": 0.9816931486129761,
+      "ms": 96.03274999244604
+    },
+    {
+      "kind": "time",
+      "expected": "00:00",
+      "variation": 2,
+      "value": "00:00",
+      "confidence": 0.9848841428756714,
+      "ms": 98.87320800044108
+    },
+    {
+      "kind": "time",
+      "expected": "00:00",
+      "variation": 3,
+      "value": "00:00",
+      "confidence": 0.9792128801345825,
+      "ms": 99.49787499499507
+    },
+    {
+      "kind": "time",
+      "expected": "01:23",
+      "variation": 0,
+      "value": "01:23",
+      "confidence": 0.9510901570320129,
+      "ms": 106.11516700009815
+    },
+    {
+      "kind": "time",
+      "expected": "01:23",
+      "variation": 1,
+      "value": "01:23",
+      "confidence": 0.9608211517333984,
+      "ms": 117.707415993209
+    },
+    {
+      "kind": "time",
+      "expected": "01:23",
+      "variation": 2,
+      "value": "01:23",
+      "confidence": 0.9425530433654785,
+      "ms": 121.79962500522379
+    },
+    {
+      "kind": "time",
+      "expected": "01:23",
+      "variation": 3,
+      "value": "01:23",
+      "confidence": 0.9403583407402039,
+      "ms": 135.59241699113045
+    },
+    {
+      "kind": "time",
+      "expected": "09:59",
+      "variation": 0,
+      "value": "09:59",
+      "confidence": 0.9851310849189758,
+      "ms": 173.8574589980999
+    },
+    {
+      "kind": "time",
+      "expected": "09:59",
+      "variation": 1,
+      "value": "09:59",
+      "confidence": 0.9781924486160278,
+      "ms": 161.99041600339115
+    },
+    {
+      "kind": "time",
+      "expected": "09:59",
+      "variation": 2,
+      "value": "09:59",
+      "confidence": 0.9873459935188293,
+      "ms": 144.9592080025468
+    },
+    {
+      "kind": "time",
+      "expected": "09:59",
+      "variation": 3,
+      "value": "09:59",
+      "confidence": 0.939486026763916,
+      "ms": 143.98454201000277
+    },
+    {
+      "kind": "time",
+      "expected": "12:34",
+      "variation": 0,
+      "value": "12:34",
+      "confidence": 0.9673067927360535,
+      "ms": 156.86354199715424
+    },
+    {
+      "kind": "time",
+      "expected": "12:34",
+      "variation": 1,
+      "value": "12:34",
+      "confidence": 0.9690580368041992,
+      "ms": 134.5817499968689
+    },
+    {
+      "kind": "time",
+      "expected": "12:34",
+      "variation": 2,
+      "value": "12:34",
+      "confidence": 0.9627493023872375,
+      "ms": 107.75720799574628
+    },
+    {
+      "kind": "time",
+      "expected": "12:34",
+      "variation": 3,
+      "value": "12:34",
+      "confidence": 0.9600385427474976,
+      "ms": 104.64345800573938
+    },
+    {
+      "kind": "time",
+      "expected": "18:07",
+      "variation": 0,
+      "value": "18:07",
+      "confidence": 0.9717690348625183,
+      "ms": 92.75512500607874
+    },
+    {
+      "kind": "time",
+      "expected": "18:07",
+      "variation": 1,
+      "value": "18:07",
+      "confidence": 0.9608003497123718,
+      "ms": 92.73179199954029
+    },
+    {
+      "kind": "time",
+      "expected": "18:07",
+      "variation": 2,
+      "value": "18:07",
+      "confidence": 0.9611902236938477,
+      "ms": 91.68737501022406
+    },
+    {
+      "kind": "time",
+      "expected": "18:07",
+      "variation": 3,
+      "value": "18:07",
+      "confidence": 0.9694716334342957,
+      "ms": 91.93799999775365
+    },
+    {
+      "kind": "time",
+      "expected": "20:00",
+      "variation": 0,
+      "value": "20:00",
+      "confidence": 0.9780707359313965,
+      "ms": 92.46195800369605
+    },
+    {
+      "kind": "time",
+      "expected": "20:00",
+      "variation": 1,
+      "value": "20:00",
+      "confidence": 0.9788738489151001,
+      "ms": 91.42962499754503
+    },
+    {
+      "kind": "time",
+      "expected": "20:00",
+      "variation": 2,
+      "value": "20:00",
+      "confidence": 0.9849234819412231,
+      "ms": 92.04120800131932
+    },
+    {
+      "kind": "time",
+      "expected": "20:00",
+      "variation": 3,
+      "value": "20:00",
+      "confidence": 0.9787991642951965,
+      "ms": 92.01695800584275
+    },
+    {
+      "kind": "time",
+      "expected": "99:59",
+      "variation": 0,
+      "value": "99:59",
+      "confidence": 0.972764790058136,
+      "ms": 91.13962500123307
+    },
+    {
+      "kind": "time",
+      "expected": "99:59",
+      "variation": 1,
+      "value": "99:59",
+      "confidence": 0.9608680605888367,
+      "ms": 92.14074999908917
+    },
+    {
+      "kind": "time",
+      "expected": "99:59",
+      "variation": 2,
+      "value": "99:59",
+      "confidence": 0.9731380343437195,
+      "ms": 92.54137499374337
+    },
+    {
+      "kind": "time",
+      "expected": "99:59",
+      "variation": 3,
+      "value": "99:59",
+      "confidence": 0.8802722692489624,
+      "ms": 92.0544999971753
+    },
+    {
+      "kind": "score",
+      "expected": "0",
+      "variation": 0,
+      "value": "0",
+      "confidence": 0.5656554102897644,
+      "ms": 93.05720799602568
+    },
+    {
+      "kind": "score",
+      "expected": "0",
+      "variation": 1,
+      "value": "0",
+      "confidence": 0.5158767700195312,
+      "ms": 91.5462499979185
+    },
+    {
+      "kind": "score",
+      "expected": "0",
+      "variation": 2,
+      "value": "0",
+      "confidence": 0.7106760144233704,
+      "ms": 91.76787499745842
+    },
+    {
+      "kind": "score",
+      "expected": "0",
+      "variation": 3,
+      "value": "0",
+      "confidence": 0.512037992477417,
+      "ms": 91.52416599681601
+    },
+    {
+      "kind": "score",
+      "expected": "1",
+      "variation": 0,
+      "value": "1",
+      "confidence": 0.8900175094604492,
+      "ms": 92.53845900821034
+    },
+    {
+      "kind": "score",
+      "expected": "1",
+      "variation": 1,
+      "value": "1",
+      "confidence": 0.8756242394447327,
+      "ms": 93.52675000263844
+    },
+    {
+      "kind": "score",
+      "expected": "1",
+      "variation": 2,
+      "value": "1",
+      "confidence": 0.9528182148933411,
+      "ms": 92.71325000736397
+    },
+    {
+      "kind": "score",
+      "expected": "1",
+      "variation": 3,
+      "value": "1",
+      "confidence": 0.8901248574256897,
+      "ms": 92.95216600003187
+    },
+    {
+      "kind": "score",
+      "expected": "2",
+      "variation": 0,
+      "value": "2",
+      "confidence": 0.8708638548851013,
+      "ms": 100.20333300053608
+    },
+    {
+      "kind": "score",
+      "expected": "2",
+      "variation": 1,
+      "value": "2",
+      "confidence": 0.8512436747550964,
+      "ms": 92.48104199650697
+    },
+    {
+      "kind": "score",
+      "expected": "2",
+      "variation": 2,
+      "value": "2",
+      "confidence": 0.9425778388977051,
+      "ms": 91.86845899967011
+    },
+    {
+      "kind": "score",
+      "expected": "2",
+      "variation": 3,
+      "value": "2",
+      "confidence": 0.8645206093788147,
+      "ms": 92.00429100019392
+    },
+    {
+      "kind": "score",
+      "expected": "7",
+      "variation": 0,
+      "value": "7",
+      "confidence": 0.7938132286071777,
+      "ms": 92.63674999237992
+    },
+    {
+      "kind": "score",
+      "expected": "7",
+      "variation": 1,
+      "value": "7",
+      "confidence": 0.7765294909477234,
+      "ms": 91.93537500686944
+    },
+    {
+      "kind": "score",
+      "expected": "7",
+      "variation": 2,
+      "value": "7",
+      "confidence": 0.9077392220497131,
+      "ms": 92.8021669969894
+    },
+    {
+      "kind": "score",
+      "expected": "7",
+      "variation": 3,
+      "value": "7",
+      "confidence": 0.7918566465377808,
+      "ms": 92.92899999127258
+    },
+    {
+      "kind": "score",
+      "expected": "9",
+      "variation": 0,
+      "value": "9",
+      "confidence": 0.48240604996681213,
+      "ms": 90.97424999345094
+    },
+    {
+      "kind": "score",
+      "expected": "9",
+      "variation": 1,
+      "value": "9",
+      "confidence": 0.48097699880599976,
+      "ms": 90.99666599649936
+    },
+    {
+      "kind": "score",
+      "expected": "9",
+      "variation": 2,
+      "value": "9",
+      "confidence": 0.774996280670166,
+      "ms": 91.94954099075403
+    },
+    {
+      "kind": "score",
+      "expected": "9",
+      "variation": 3,
+      "value": "9",
+      "confidence": 0.480624258518219,
+      "ms": 92.84179100359324
+    },
+    {
+      "kind": "score",
+      "expected": "12",
+      "variation": 0,
+      "value": "12",
+      "confidence": 0.8932516574859619,
+      "ms": 92.2447080083657
+    },
+    {
+      "kind": "score",
+      "expected": "12",
+      "variation": 1,
+      "value": "12",
+      "confidence": 0.9548020958900452,
+      "ms": 92.39033400081098
+    },
+    {
+      "kind": "score",
+      "expected": "12",
+      "variation": 2,
+      "value": "12",
+      "confidence": 0.9338972568511963,
+      "ms": 92.25099999457598
+    },
+    {
+      "kind": "score",
+      "expected": "12",
+      "variation": 3,
+      "value": "12",
+      "confidence": 0.9416331052780151,
+      "ms": 92.61837499798276
+    },
+    {
+      "kind": "score",
+      "expected": "34",
+      "variation": 0,
+      "value": "34",
+      "confidence": 0.9545499086380005,
+      "ms": 92.44237501116004
+    },
+    {
+      "kind": "score",
+      "expected": "34",
+      "variation": 1,
+      "value": "34",
+      "confidence": 0.9571171998977661,
+      "ms": 92.1833339962177
+    },
+    {
+      "kind": "score",
+      "expected": "34",
+      "variation": 2,
+      "value": "34",
+      "confidence": 0.9333962202072144,
+      "ms": 91.89316599804442
+    },
+    {
+      "kind": "score",
+      "expected": "34",
+      "variation": 3,
+      "value": "34",
+      "confidence": 0.9192090034484863,
+      "ms": 91.66037500835955
+    },
+    {
+      "kind": "score",
+      "expected": "99",
+      "variation": 0,
+      "value": "99",
+      "confidence": 0.9458476305007935,
+      "ms": 194.83104201208334
+    },
+    {
+      "kind": "score",
+      "expected": "99",
+      "variation": 1,
+      "value": "99",
+      "confidence": 0.9352691173553467,
+      "ms": 155.2833329915302
+    },
+    {
+      "kind": "score",
+      "expected": "99",
+      "variation": 2,
+      "value": "99",
+      "confidence": 0.9489312171936035,
+      "ms": 305.4390409961343
+    },
+    {
+      "kind": "score",
+      "expected": "99",
+      "variation": 3,
+      "value": "99",
+      "confidence": 0.906295895576477,
+      "ms": 198.73245799681172
+    },
+    {
+      "kind": "score",
+      "expected": "127",
+      "variation": 0,
+      "value": "",
+      "confidence": 0.9995678067207336,
+      "ms": 116.33716699725483
+    },
+    {
+      "kind": "score",
+      "expected": "127",
+      "variation": 1,
+      "value": "",
+      "confidence": 0.9994309544563293,
+      "ms": 101.11795899865683
+    },
+    {
+      "kind": "score",
+      "expected": "127",
+      "variation": 2,
+      "value": "",
+      "confidence": 0.9995668530464172,
+      "ms": 93.2858329906594
+    },
+    {
+      "kind": "score",
+      "expected": "127",
+      "variation": 3,
+      "value": "",
+      "confidence": 0.9994015097618103,
+      "ms": 93.95033300097566
+    },
+    {
+      "kind": "score",
+      "reference": "debug-home.png",
+      "value": "",
+      "confidence": 0.298157662153244,
+      "ms": 96.30512500007171
+    },
+    {
+      "kind": "score",
+      "reference": "debug-away.png",
+      "value": "",
+      "confidence": 0.2715928256511688,
+      "ms": 92.8841669956455
+    },
+    {
+      "kind": "time",
+      "reference": "debug-time.png",
+      "value": "3",
+      "confidence": 0.16114261746406555,
+      "ms": 97.14562499721069
+    }
+  ]
+}

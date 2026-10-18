@@ -16,6 +16,7 @@ from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from secretariat_core.local_access import LocalAccessMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -1252,3 +1253,6 @@ async def scoped_template_download(kind: str) -> dict[str, Any]:
     destination = manager_downloads_directory() / filename
     await run_in_threadpool(destination.write_bytes, response.body)
     return {"path": str(destination), "filename": filename}
+
+# Outermost boundary: validate the browser origin before any API side effects.
+app.add_middleware(LocalAccessMiddleware, cookie_name="sp_manager_session")

@@ -1,8 +1,8 @@
 # SecretariatPro — dependencias completas
 #
-# macOS Apple Silicon usa deliberadamente el stack OCR legacy de PaddleOCR 2.7.3.
-# Esa versión exige OpenCV <= 4.6.0.66. No elevar OpenCV en macOS sin migrar
-# primero el backend OCR. Windows/Linux pueden usar OpenCV moderno.
+# macOS conserva la API OCR 2.x y el modelo PP-OCRv4, con el runtime actualizado
+# tras comparar inferencia real. Las versiones se fijan también en constraints-macos.txt.
+# Windows mantiene su stack OCR 3.x probado de forma independiente.
 
 # Interfaz heredada / utilidades gráficas
 customtkinter>=5.2.0
@@ -18,7 +18,7 @@ mss>=9.0.1
 numpy==1.26.4 ; sys_platform == "darwin"
 numpy==2.3.5 ; sys_platform == "win32"
 numpy>=1.24 ; sys_platform != "darwin" and sys_platform != "win32"
-# PaddleOCR 2.7.3 arrastra opencv-python/opencv-contrib-python <=4.6.0.66 en macOS.
+# Linux y Windows mantienen requisitos propios; macOS fija las tres ruedas cv2 al mismo ABI.
 opencv-python>=4.9.0 ; sys_platform != "darwin" and sys_platform != "win32"
 # One cv2 provider on Windows, matching PaddleX and the tested worker.
 opencv-contrib-python==4.10.0.84 ; sys_platform == "win32"
@@ -37,9 +37,13 @@ pyobjc-framework-ScreenCaptureKit>=10.1 ; sys_platform == "darwin"
 joblib==1.5.3
 scikit-learn==1.8.0
 
-# macOS Apple Silicon beta: runtime fijado para evitar Paddle 3.x/PIR en macOS 26.
-paddlepaddle==2.6.2 ; sys_platform == "darwin"
-paddleocr==2.7.3 ; sys_platform == "darwin"
+# macOS ARM64 + Intel: API 2.x, CPU única, PIR desactivado en el worker.
+paddlepaddle==3.0.0 ; sys_platform == "darwin"
+paddleocr==2.10.0 ; sys_platform == "darwin"
+opencv-python==4.10.0.84 ; sys_platform == "darwin"
+opencv-contrib-python==4.10.0.84 ; sys_platform == "darwin"
+opencv-python-headless==4.10.0.84 ; sys_platform == "darwin"
+setuptools>=78.1.1 ; sys_platform == "darwin"
 
 # Windows: versions exercised by real inference and the frozen-worker check.
 paddlepaddle==3.3.1 ; sys_platform == "win32"
@@ -72,3 +76,9 @@ imageio-ffmpeg>=0.6,<0.7
 
 # LAN adapter selection for tablet pairing.
 psutil>=5.9,<8
+
+# Security floors shared by auth/network/native-shell dependencies.
+multidict>=6.9.1,<7
+PyJWT>=2.15.0,<3
+urllib3>=2.8.0,<3
+Werkzeug>=3.1.9,<4

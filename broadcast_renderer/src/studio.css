@@ -1,0 +1,236 @@
+/* Studio skin. All colour inputs remain the published Manager variables.
+   The reference stylesheet supplies the field, squad and viewport geometry. */
+body.broadcast-studio {
+  --studio-line: color-mix(in srgb, var(--overlay-panel-text, white) 14%, transparent);
+  --studio-depth: 0 18px 44px rgba(0,0,0,.24), 0 3px 9px rgba(0,0,0,.14);
+  background: transparent !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body.broadcast-studio [data-sp-motion="off"] { display:none !important; }
+body.broadcast-studio :is(.scoreboard,.bottom-bar,.player-profile-bar,.prematch-panel,.lineups-panel.team-lineup-panel,.stats-panel,.penalties-panel,.intermission-modal) {
+  border-radius:6px !important;
+  box-shadow:var(--studio-depth),inset 0 1px rgba(255,255,255,.16) !important;
+}
+body.broadcast-studio .scoreboard {
+  background:var(--overlay-score-bg) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.18) !important;
+}
+body.broadcast-studio .scoreboard::before {
+  background:linear-gradient(180deg,rgba(255,255,255,.075),transparent 52%,rgba(0,0,0,.08)) !important;
+}
+body.broadcast-studio #scoreboard-wrapper .scoreboard::after { display:none !important;animation:none !important; }
+/* The complete scoreboard travels as one piece; its text is never staged. */
+body.broadcast-studio #scoreboard-wrapper :is(.score-input,.score-box,.clock-content) {
+  animation:none !important;transition:none !important;opacity:1 !important;
+}
+body.broadcast-studio .scoreboard .center {
+  background:var(--overlay-score-bg) !important;
+  box-shadow:inset 1px 0 rgba(255,255,255,.08),inset -1px 0 rgba(255,255,255,.08) !important;
+}
+body.broadcast-studio .scoreboard :is(.team1-name-box,.team2-name-box) {
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(0,0,0,.035)),var(--overlay-score-name) !important;
+}
+body.broadcast-studio .scoreboard .score-input {background:transparent !important;letter-spacing:.035em !important;}
+body.broadcast-studio .scoreboard .score-box {font-variant-numeric:tabular-nums;letter-spacing:-.045em !important;}
+body.broadcast-studio .scoreboard .team1-bar {border-radius:6px 0 0 6px !important;}
+body.broadcast-studio .scoreboard .team2-bar {border-radius:0 6px 6px 0 !important;}
+body.broadcast-studio .scoreboard .time-box {
+  border-radius:0 0 5px 5px !important;
+  border-top:1px solid color-mix(in srgb,var(--overlay-score-text) 14%,transparent) !important;
+  background:color-mix(in srgb,var(--overlay-score-bg) 86%,black) !important;
+}
+body.broadcast-studio .clock-content {letter-spacing:.035em;font-variant-numeric:tabular-nums;}
+body.broadcast-studio .sp-status-item {
+  border-top:1px solid rgba(255,255,255,.15);
+  box-shadow:inset 0 -1px rgba(0,0,0,.12) !important;
+}
+body.broadcast-studio .sp-status-timer {font-variant-numeric:tabular-nums;letter-spacing:.025em;}
+body.broadcast-studio :is(.prematch-panel,.stats-panel,.penalties-panel,.lineups-panel.team-lineup-panel) {
+  background:linear-gradient(155deg,rgba(255,255,255,.04),transparent 44%),var(--overlay-panel-bg) !important;
+  border:1px solid var(--studio-line) !important;
+}
+body.broadcast-studio :is(.prematch-header,.stats-header,.lineups-header,.scorer-prematch-header,.penalties-header) {
+  border-bottom:1px solid color-mix(in srgb,var(--overlay-panel-accent) 65%,transparent) !important;
+}
+body.broadcast-studio :is(.stats-title,.lineups-title,.prematch-kicker,.penalties-kicker,.intermission-events-title) {
+  letter-spacing:.12em !important;
+  font-weight:800 !important;
+}
+body.broadcast-studio :is(.stats-subtitle,.lineups-competition-name,.prematch-team-role,.prematch-info-label,.squad-caption) {
+  letter-spacing:.13em !important;
+  color:color-mix(in srgb,var(--overlay-panel-text) 66%,transparent) !important;
+}
+body.broadcast-studio :is(.prematch-team-card,.scorer-side) {
+  background:linear-gradient(160deg,rgba(255,255,255,.04),transparent 65%),var(--overlay-panel-surface) !important;
+  border:1px solid var(--studio-line) !important;
+  border-radius:4px !important;
+}
+body.broadcast-studio :is(.prematch-stat-row,.standings-row,.lineup-row) {
+  background:var(--overlay-panel-surface) !important;
+  box-shadow:none !important;
+  border-bottom:1px solid color-mix(in srgb,var(--overlay-panel-text) 7%,transparent) !important;
+  border-radius:3px !important;
+}
+body.broadcast-studio :is(.prematch-stat-row,.standings-row):nth-child(even) {
+  background:color-mix(in srgb,var(--overlay-panel-surface) 94%,var(--overlay-panel-text)) !important;
+}
+body.broadcast-studio :is(.prematch-stat-value,.scorer-metrics b,.standings-row,.player-profile-stats b) {
+  font-variant-numeric:tabular-nums;
+}
+body.broadcast-studio .prematch-stat-featured {border-left:2px solid var(--overlay-panel-accent) !important;}
+body.broadcast-studio .prematch-team-logo {filter:drop-shadow(0 7px 12px rgba(0,0,0,.2));}
+/* Header cards and footer facts use the same columns at every viewport width. */
+body.broadcast-studio .prematch-panel {
+  --studio-prematch-columns:minmax(0,.95fr) minmax(0,1.45fr) minmax(0,.95fr);
+  --studio-prematch-gap:clamp(18px,2.4vw,34px);
+}
+body.broadcast-studio .prematch-panel :is(.prematch-main,.prematch-footer-split) {
+  display:grid;grid-template-columns:var(--studio-prematch-columns) !important;
+  column-gap:var(--studio-prematch-gap) !important;width:100%;box-sizing:border-box;
+}
+body.broadcast-studio .prematch-footer-split {padding-inline:0 !important;align-items:stretch;}
+body.broadcast-studio .prematch-footer-split .prematch-info-box {width:100%;box-sizing:border-box;}
+body.broadcast-studio .prematch-info-venue {grid-column:1;}
+body.broadcast-studio .prematch-info-time {grid-column:3;}
+body.broadcast-studio .prematch-footer-split .prematch-footer-logo {grid-column:2;justify-self:center;align-self:center;max-width:100%;}
+body.broadcast-studio .prematch-team-name {
+  white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;
+  font-size:clamp(22px,2vw,32px);line-height:1.13;
+}
+body.broadcast-studio .intermission-team-summary .team-name {
+  white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;
+  font-size:clamp(18px,1.6vw,28px);line-height:1.13;
+}
+@media(max-width:980px) {
+  body.broadcast-studio .prematch-panel {
+    --studio-prematch-columns:minmax(0,.85fr) minmax(0,1.3fr) minmax(0,.85fr);
+    --studio-prematch-gap:14px;
+  }
+}
+@media(max-width:720px) {
+  body.broadcast-studio .prematch-panel {--studio-prematch-columns:repeat(2,minmax(0,1fr));}
+  body.broadcast-studio .prematch-info-venue {grid-column:1;grid-row:1;}
+  body.broadcast-studio .prematch-info-time {grid-column:2;grid-row:1;}
+  body.broadcast-studio .prematch-footer-split .prematch-footer-logo {grid-column:1 / -1;grid-row:2;}
+}
+/* Intrinsic grid sizing gives both 1fr team columns the larger max-content
+   requirement. The frame grows with that shared width, capped by the viewport. */
+body.broadcast-studio .intermission-modal {
+  width:max-content !important;min-width:min(1180px,94vw);max-width:94vw;
+  box-sizing:border-box;
+  background:var(--overlay-panel-bg) !important;border:1px solid var(--studio-line) !important;
+}
+body.broadcast-studio .intermission-header {
+  grid-template-columns:minmax(0,1fr) clamp(100px,10vw,160px) minmax(0,1fr);
+  align-items:stretch;
+}
+body.broadcast-studio .intermission-content {min-width:0;}
+@media(max-width:760px) {
+  body.broadcast-studio .intermission-header {grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);}
+}
+@media(max-width:640px) {
+  body.broadcast-studio .intermission-header {grid-template-columns:repeat(2,minmax(0,1fr));}
+  body.broadcast-studio .intermission-center {grid-column:1 / -1;grid-row:1;flex-direction:row;}
+  body.broadcast-studio .intermission-home {grid-column:1;grid-row:2;}
+  body.broadcast-studio .intermission-away {grid-column:2;grid-row:2;}
+  body.broadcast-studio .intermission-team-summary {grid-template-columns:repeat(2,minmax(0,1fr));}
+  body.broadcast-studio .intermission-team-summary .team-name {grid-column:1 / -1;grid-row:2;padding-inline:0;}
+  body.broadcast-studio .intermission-home .team-logo {grid-column:1;grid-row:1;justify-self:start;}
+  body.broadcast-studio .intermission-home .team-score {grid-column:2;grid-row:1;}
+  body.broadcast-studio .intermission-away .team-score {grid-column:1;grid-row:1;}
+  body.broadcast-studio .intermission-away .team-logo {grid-column:2;grid-row:1;justify-self:end;}
+}
+body.broadcast-studio .intermission-events-side {border-top:1px solid var(--team-event-color) !important;}
+body.broadcast-studio .intermission-event-row {border-bottom:1px solid var(--studio-line) !important;}
+body.broadcast-studio .lineups-panel.team-lineup-panel {border-top:3px solid var(--lineup-color,var(--overlay-panel-accent)) !important;}
+body.broadcast-studio .lineups-modal .starter-card:not(.empty) {
+  box-shadow:0 5px 16px rgba(0,0,0,.17),inset 0 1px rgba(255,255,255,.12) !important;
+  border-radius:4px !important;
+}
+body.broadcast-studio :is(.penalties-home-row,.penalties-away-row) {
+  background:var(--overlay-panel-surface) !important;
+  border-bottom:1px solid var(--studio-line) !important;
+}
+/* One painted shell per lower third. Its drawers contain content, not separate
+   cards; animating the content can never pull the background apart. */
+body.broadcast-studio #bottom-bar {
+  border-radius:6px !important;isolation:isolate;gap:0 !important;
+  background:linear-gradient(100deg,
+    color-mix(in srgb,var(--bottom-team-color) 24%,var(--bottom-body-color)) 0%,
+    var(--bottom-body-color) 17%,var(--bottom-middle-color) 30%,
+    var(--bottom-body-color) 49%,var(--bottom-body-color) 100%) !important;
+  border:1px solid color-mix(in srgb,var(--bottom-text-color) 12%,transparent) !important;
+}
+body.broadcast-studio #bottom-bar :is(#bottom-team-block,.bottom-match-state,.bottom-event-copy) {
+  background:transparent !important;border:0 !important;border-radius:0 !important;
+  box-shadow:none !important;clip-path:none !important;
+}
+body.broadcast-studio #bottom-bar #bottom-team-block::before {content:none !important;display:none !important;}
+body.broadcast-studio #bottom-bar::before,
+body.broadcast-studio #bottom-bar::after {
+  content:"" !important;display:block !important;position:absolute !important;
+  inset:0 !important;pointer-events:none;z-index:3;
+}
+body.broadcast-studio #bottom-bar::before {
+  background:linear-gradient(180deg,rgba(255,255,255,.055),transparent 56%,rgba(0,0,0,.065));
+  box-shadow:inset 0 1px rgba(255,255,255,.1);
+}
+body.broadcast-studio #bottom-bar::after {
+  inset:auto 0 0 !important;height:2px;
+  background:linear-gradient(90deg,var(--bottom-team-color),color-mix(in srgb,var(--bottom-team-color) 48%,transparent));
+}
+body.broadcast-studio #bottom-bar .bottom-match-state::after {
+  content:"";position:absolute;right:0;top:25%;bottom:25%;width:1px;
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--bottom-text-color) 16%,transparent),transparent);
+}
+body.broadcast-studio #bottom-bar .bottom-current-score {letter-spacing:-.035em !important;}
+body.broadcast-studio #bottom-bar .bottom-match-time {letter-spacing:.09em !important;}
+body.broadcast-studio #bottom-bar .bottom-person-name {letter-spacing:.035em !important;}
+body.broadcast-studio .player-profile-bar {
+  isolation:isolate;gap:0 !important;
+  background:linear-gradient(100deg,
+    color-mix(in srgb,var(--profile-team-color) 24%,var(--overlay-panel-surface)) 0%,
+    var(--overlay-panel-surface) 22%,var(--overlay-panel-bg) 100%) !important;
+}
+body.broadcast-studio .player-profile-bar :is(.player-profile-team-block,.player-profile-main,.player-profile-stats) {
+  background:transparent !important;border:0 !important;box-shadow:none !important;border-radius:0 !important;
+}
+body.broadcast-studio .player-profile-bar::after {
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),transparent 55%,rgba(0,0,0,.06));
+  border-bottom:2px solid color-mix(in srgb,var(--profile-team-color) 65%,transparent);
+}
+/* GSAP owns the new ceremony. Never run the reference keyframes at the same time. */
+body.broadcast-studio #bottom-bar .bottom-goal-intro,
+body.broadcast-studio #bottom-bar .bottom-goal-intro :is(#bottom-goal-word,.goal-intro-rule,.goal-intro-lockup) {
+  animation:none !important;
+}
+body.broadcast-studio #bottom-bar .bottom-goal-intro::before,
+body.broadcast-studio #bottom-bar .bottom-goal-intro::after {display:none !important;animation:none !important;}
+body.broadcast-studio #bottom-bar.goal-intro > .bottom-goal-intro {
+  background:linear-gradient(110deg,rgba(255,255,255,.1),transparent 52%,rgba(0,0,0,.15)),var(--bottom-team-color) !important;
+  clip-path:inset(0 var(--studio-goal-cut,0%) 0 0) !important;
+  opacity:var(--studio-goal-opacity,1) !important;
+  color:var(--goal-intro-text) !important;
+  box-shadow:inset 0 -3px var(--goal-intro-accent),inset 0 1px rgba(255,255,255,.24) !important;
+}
+body.broadcast-studio #bottom-bar .goal-intro-lockup {width:min(72%,760px);z-index:2;}
+body.broadcast-studio #bottom-bar #bottom-goal-word {
+  font-size:clamp(48px,5vw,78px) !important;
+  letter-spacing:.12em;
+  font-style:italic;
+  text-shadow:none !important;
+}
+.studio-goal-art {position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;color:var(--goal-intro-text);}
+.studio-goal-echo {font-size:186px;font-weight:900;font-style:italic;letter-spacing:.08em;fill:none;stroke:currentColor;stroke-width:.7;opacity:.13;}
+.studio-goal-tracks {opacity:.2;}
+.studio-goal-chevron {opacity:.3;}
+.studio-goal-beam {opacity:0;}
+/* Flag geometry is supplied by the shared natural-aspect-ratio calculation. */
+body.broadcast-studio.international-teams .scoreboard :is(.team1-bar,.team2-bar) {border-radius:0 !important;}
+body.broadcast-studio.international-teams .scoreboard :is(.team1-bar,.team2-bar) img {object-fit:contain !important;border-radius:0 !important;}
+@media (prefers-reduced-motion:reduce) {
+  body.broadcast-studio * {scroll-behavior:auto !important;}
+  .studio-goal-art {display:none;}
+}

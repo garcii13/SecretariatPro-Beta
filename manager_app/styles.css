@@ -1239,6 +1239,13 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 
 .is-international .preview-scoreboard {border-radius:0;}
 
+/* A continuous lower-third shell, with the published middle colour blended in. */
+.preview-bottom {
+  gap:0;background:linear-gradient(100deg,var(--bb-body,#24272e) 0%,var(--bb-middle,#30333b) 24%,var(--bb-body,#24272e) 52%);
+}
+.preview-bottom :is(b,strong,span) {background:transparent;border:0;box-shadow:none;border-radius:0;}
+.is-previewing .preview-scoreboard .preview-team {animation:none;}
+
 /* Match the goal ceremony in the editable miniature, including its colour wipe. */
 .preview-bottom::before {
   content:attr(data-goal-word);position:absolute;inset:0;display:none;place-items:center;z-index:1;
@@ -1250,3 +1257,16 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 .is-previewing .preview-bottom::before {display:grid;animation:sp-preview-goal-surface 2.84s cubic-bezier(.4,0,.2,1) both;}
 @keyframes sp-preview-goal-surface {0%,77.46% {clip-path:inset(0 0 0 0);} 100% {clip-path:inset(0 100% 0 0);}}
 @media(prefers-reduced-motion:reduce) {.is-previewing .preview-bottom::before {display:none;}}
+
+/* Studio finish mirrors the editable on-air palette; the miniature is illustrative. */
+.preview-scoreboard,.preview-bottom,.preview-panel {border-radius:6px;}
+.preview-panel {border:1px solid color-mix(in srgb,var(--panel-text,#fff) 14%,transparent);}
+.preview-scoreboard .preview-team {letter-spacing:.035em;}
+.preview-bottom {box-shadow:0 14px 32px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.16);}
+.is-previewing :is(.preview-panel,.preview-bottom) {
+  animation-duration:860ms;animation-timing-function:cubic-bezier(.45,0,.55,1);
+}
+.preview-canvas {overflow:hidden;}
+.is-previewing .preview-scoreboard {animation:sp-preview-score-slide 640ms cubic-bezier(.16,1,.3,1) both;}
+@keyframes sp-preview-score-slide {from {translate:0 -180%;opacity:1;} to {translate:0 0;opacity:1;}}
+.is-international .preview-scoreboard {border-radius:0;}

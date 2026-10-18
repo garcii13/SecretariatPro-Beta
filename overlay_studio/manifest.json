@@ -1,0 +1,35 @@
+{
+  "renderer": "svelte-svg-gsap",
+  "sources": {
+    "broadcast_renderer/package-lock.json": "f9daba6ba24a7cc4e5627fa9113c2ff4f0ed9738787bac70acec9e6f54047a44",
+    "broadcast_renderer/package.json": "afc6eb75b2c05da4e43ef868ae3c71da84aca831c4b523c5c66b163e9b71e1d0",
+    "broadcast_renderer/scripts/manifest.mjs": "627dff644632b99636e16815fee98971b6ffeb504011277fc77f4f13bbd304f9",
+    "broadcast_renderer/src/App.svelte": "ad58a4bd6ee249c0c79602f5eb549313c69c651545398bdb38a8b3a20129a5d5",
+    "broadcast_renderer/src/components/GoalArtwork.svelte": "657372ae1ca4442ab8f61a2843748c9a5c71d568fbf26f39980bc8dfa3c48920",
+    "broadcast_renderer/src/components/GoalBottom.svelte": "7f9fa6ee9ca9fd80f7727d272c414b03bdcac64ee02f679551f7f55ee7dc7193",
+    "broadcast_renderer/src/components/Intermission.svelte": "f6ce84fdbb673089d8748e75dd8a99ee9688163bff5636f98c929afb7aac9692",
+    "broadcast_renderer/src/components/Lineups.svelte": "303b39757302b632ec8b6a577ca2cc90e3957f1f951b23a424e8e8868f713365",
+    "broadcast_renderer/src/components/Penalties.svelte": "6ad71bbed9126a79b1ae5b776c3a5e3e641051bb78c56ea7e29a129ecd719023",
+    "broadcast_renderer/src/components/PlayerProfile.svelte": "9ec8b496b8a1e805b1696dc0e57c1d575ef2c32f2c80979d2d7a16b0e803fad7",
+    "broadcast_renderer/src/components/Prematch.svelte": "f6ce421dac1a1f9a43d1188527b485c1710711dc31864c2ae44c247da7c4935e",
+    "broadcast_renderer/src/components/Scoreboard.svelte": "2abd2d3e27e8cc3ee17392e1c45e2aeca30f2a61ef1dd50f4be51dcdf2d02fcf",
+    "broadcast_renderer/src/components/Standings.svelte": "97e1df98b1b6bc570c667b84a75551584a029da81f7b31cb0433c02fb51e62e9",
+    "broadcast_renderer/src/components/TopScorers.svelte": "13e64772ccf8035173aca571865ef8ce7764b46732e0c1976e5c222df039a463",
+    "broadcast_renderer/src/env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "broadcast_renderer/src/main.ts": "5ebff825c74c84cd6d16a38a2707dfe3e285b648e7ccb68d3c6afdf74f50c944",
+    "broadcast_renderer/src/motion.ts": "4e3e22946beb5192ffc151e781c6e0ad8c756267ef5a6e1eeee74eb20ae6ce32",
+    "broadcast_renderer/src/studio.css": "13c267b98e8f5f4f010d4b86938950ae45bcf13b0c5cca274623f17788c5c272",
+    "broadcast_renderer/src/types.ts": "b22d1fe580bb1932742e36fea9923fd4140d5732f365644c394411c669f18043",
+    "broadcast_renderer/tsconfig.json": "51f4932da5bd3e40ccfb3f21a6ec2f0146f44a070fd822445bf9f3a828169256",
+    "broadcast_renderer/vite.config.ts": "c5ca1e49971d6569ca4f3e304dd4d4750f54838ae7074d40019be3eabf78f7f5",
+    "overlay-studio.html": "ba80e4e40a489b6a6e71667effb96b90beb60d6a40244332f58664262ae43571",
+    "overlay_cinematic.css": "493c8a18171fcd60ac4582826f30359c2ccc50a85175cccacbf1caf7a3b8a963",
+    "script.js": "c52b07ff8f0c6485ec0970fb8e6d0e7f3cc496d8ccdeac18252d86e18457cd35",
+    "styles.css": "0c04f24dba1d365a368a98684777a2485b5a7aad3021db1d18376d2b8f4bf791"
+  },
+  "assets": {
+    "studio.js": "fb3830cd939a28f0e4a97bbf2eb7af65975a3d9e10ccfa518eade6f0c3d48996",
+    "studio.css": "78ff12a1fe04139a22b707e510c56a925a0ad0dde76df6ad97ab1d8d0710e041",
+    "THIRD_PARTY_NOTICES.txt": "5a165fa64616abaac4d57606d952a73c329e4eced1d186c035828688cf72c31a"
+  }
+}

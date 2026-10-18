@@ -1,5 +1,10 @@
 // Presentation helpers do not mutate the saved match or its club crests.
 const OverlayPresentation = {
+  fullTeamName(data, key) {
+    // Lineups already carry the full name in older saved matches.
+    return [data?.[key]?.full_name, data?.statistics?.lineups?.[`${key}_name`], data?.[key]?.name]
+      .map(value => String(value || "").trim()).find(Boolean) || "";
+  },
   goalWord(language) {
     return ({es: "GOL", en: "GOAL", sv: "MÅL", cs: "GÓL", fi: "MAALI", de: "TOR"})[language] || "GOAL";
   },
@@ -45,7 +50,41 @@ const OverlayPresentation = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+// One bounded request cycle owns each frame, including initial load and legacy TXT fallback.
+// A timed-out fetch may still resolve (old browser/mock); its lease prevents DOM writes.
+class OverlayPoller {
+  constructor(timeout = 3000) { this.timeout = timeout; this.busy = false; this.serial = 0; }
+  async run(work) {
+    if (this.busy) return false;
+    this.busy = true;
+    const serial = ++this.serial;
+    const controller = new AbortController();
+    let active = true, timer;
+    const current = () => active && serial === this.serial;
+    try {
+      await Promise.race([
+        Promise.resolve().then(() => work(current, controller.signal)),
+        new Promise(resolve => { timer = setTimeout(() => {
+          active = false;
+          controller.abort();
+          resolve();
+        }, this.timeout); }),
+      ]);
+    } catch (_) { /* Keep the last valid on-air frame during transient failures. */ }
+    finally {
+      active = false;
+      clearTimeout(timer);
+      this.busy = false;
+    }
+    return true;
+  }
+}
+
+// Both renderers use this adapter. Start only after the Svelte display tree (or
+// the legacy document) exists; repeated readiness signals must not double-poll.
+function startSecretariatOverlay() {
+  if (document.documentElement.dataset.spController === "on") return;
+  document.documentElement.dataset.spController = "on";
   // -------------------- Helpers --------------------
   const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
   const motion = globalThis.SPBroadcastMotion ? new globalThis.SPBroadcastMotion({reduced: () => motionPreference.matches}) : null;
@@ -248,6 +287,15 @@ document.addEventListener("DOMContentLoaded", () => {
     root.style.setProperty("--bottom-middle-color", bottom.middle);
     root.style.setProperty("--bottom-text-color", bottom.text);
     root.style.setProperty("--bottom-secondary-color", bottom.secondary_text);
+    // The reference geometry declares local defaults on the bottom itself.
+    // Publish here too so its single shared surface uses the Manager palette.
+    const bottomSurface = safeGet("bottom-bar");
+    if (bottomSurface) {
+      bottomSurface.style.setProperty("--bottom-body-color", bottom.body);
+      bottomSurface.style.setProperty("--bottom-middle-color", bottom.middle);
+      bottomSurface.style.setProperty("--bottom-text-color", bottom.text);
+      bottomSurface.style.setProperty("--bottom-secondary-color", bottom.secondary_text);
+    }
     root.style.setProperty("--overlay-panel-bg", panels.background);
     root.style.setProperty("--overlay-panel-surface", panels.surface);
     root.style.setProperty("--overlay-panel-accent", panels.accent);
@@ -299,11 +347,19 @@ document.addEventListener("DOMContentLoaded", () => {
     applyOverlayLanguage(settings.language || "es");
   }
 
+  let stateOwnsSettings = false;
+  const settingsPoller = new OverlayPoller();
   async function refreshOverlaySettings() {
+    if (stateOwnsSettings) return;
+    return settingsPoller.run(async (current, signal) => {
     try {
-      const response = await fetch(`/api/settings?_=${Date.now()}`, { cache: "no-store" });
-      if (response.ok) applyOverlayAppearance(await response.json());
+      const response = await fetch(`/api/settings?_=${Date.now()}`, { cache: "no-store", signal });
+      if (response.ok) {
+        const settings = await response.json();
+        if (current() && !stateOwnsSettings) applyOverlayAppearance(settings);
+      }
     } catch (_) { /* The overlay remains operational with defaults. */ }
+    });
   }
 
   // -------------------- ELEMENTS --------------------
@@ -638,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderIntermissionEvents(events, team1Name, team2Name) {
     const rows = Array.isArray(events) ? events : [];
-    const signature = JSON.stringify(rows);
+    const signature = JSON.stringify({rows, team1Name, team2Name});
     if (intermissionEventsHomeList?.dataset.signature === signature &&
         intermissionEventsAwayList?.dataset.signature === signature) return;
     if (intermissionEventsHomeList) intermissionEventsHomeList.dataset.signature = signature;
@@ -753,6 +809,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function animateStatusEntry(node, teamKey) {
+    if (typeof motion !== "undefined" && motion?.statusEnter) { motion.statusEnter(node, teamKey); return; }
     if (!node || typeof node.animate !== "function" || motionPreference.matches) return;
     const animation = node.animate([
       { opacity: 0, transform: `translateX(${statusSlideOffset(teamKey)})` },
@@ -774,6 +831,7 @@ document.addEventListener("DOMContentLoaded", () => {
       node.remove();
       if (typeof onDone === "function") onDone();
     };
+    if (typeof motion !== "undefined" && motion?.statusExit) { motion.statusExit(node, teamKey, done); return; }
     if (typeof node.animate !== "function" || motionPreference.matches) {
       done();
       return;
@@ -840,10 +898,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const statusDesiredOrder = new WeakMap();
   function renderTeamStatusStack(stack, info, emptyNetActive, teamKey) {
     if (!stack) return;
     const desired = statusDesiredItems(info, Boolean(emptyNetActive));
     const desiredKeys = desired.map((item) => item.key);
+    statusDesiredOrder.set(stack, desiredKeys);
     const desiredSet = new Set(desiredKeys);
     const current = new Map(
       [...stack.querySelectorAll(":scope > .sp-status-item")]
@@ -858,6 +918,7 @@ document.addEventListener("DOMContentLoaded", () => {
         current.set(item.key, node);
       }
       if (node.dataset.spExiting === "1") {
+        motion?.cancelStatus?.(node, teamKey);
         node.getAnimations?.().forEach((animation) => animation.cancel());
         node.dataset.spExiting = "0";
         node.style.removeProperty("opacity");
@@ -874,7 +935,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const key = node.dataset.spStatusKey;
       if (desiredSet.has(key)) return;
       animateStatusExit(node, teamKey, () => {
-        reorderStatusNodesWhenStable(stack, desiredKeys);
+        reorderStatusNodesWhenStable(stack, statusDesiredOrder.get(stack) || desiredKeys);
         applyStatusGeometry(stack);
       });
     });
@@ -1116,6 +1177,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateFromJSON(data) {
     if (data?.overlay_settings) {
+      stateOwnsSettings = true;
       data.overlay_settings.sport_mode = data.match?.sport_mode || data.overlay_settings.sport_mode;
       applyOverlayAppearance(data.overlay_settings);
     }
@@ -1241,7 +1303,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Names come through under the outgoing colour curtain. Their complete
       // configured reading duration starts only once GOAL_REVEAL has finished.
       if (bar.status === "show" && changed && (goal.reveal || (goal.phase === "GOAL_BOTTOM" && previousPhase !== "GOAL_REVEAL"))) {
-        motion?.revealDetails(bottomBar, "bottom", ".bottom-team-block img,.bottom-match-state,.bottom-scorer-row,.bottom-assistant-row", {duration: 480, start: 20 - (goal.reveal ? goal.elapsed * 1000 : 0), stagger: 40, distance: 7});
+        motion?.revealDetails(bottomBar, "bottom", ".bottom-team-block img,.bottom-match-time,.bottom-current-score,.bottom-scorer-row,.bottom-assistant-row", {duration: 540, start: 20 - (goal.reveal ? goal.elapsed * 1000 : 0), stagger: 14, distance: 3});
       }
       const stateTeamColor = bar.team_key === "team2"
         ? data.team2?.stripe_color
@@ -1272,6 +1334,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bottomBar.classList.toggle("no-assistant", !hasAssistant);
       if (bottomMatchTime) setTextIfChanged(bottomMatchTime, prevTxt.time || "00:00");
       if (bottomCurrentScore) setTextIfChanged(bottomCurrentScore, `${goalGraphicScores?.team1_score ?? prevTxt.home ?? "0"}–${goalGraphicScores?.team2_score ?? prevTxt.away ?? "0"}`);
+      motion?.presentGoal?.(bottomBar, goal, bar.status === "show");
     }
 
 
@@ -1393,11 +1456,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (intermissionTeam1Logo) setSrcIfChanged(intermissionTeam1Logo, data.team1?.logo || "");
     if (intermissionTeam2Logo) setSrcIfChanged(intermissionTeam2Logo, data.team2?.logo || "");
     if (intermissionTeam1Name) {
-      setTextIfChanged(intermissionTeam1Name, data.team1?.name || "");
+      setTextIfChanged(intermissionTeam1Name, OverlayPresentation.fullTeamName(data, "team1"));
       intermissionTeam1Name.style.color = "#FFFFFF";
     }
     if (intermissionTeam2Name) {
-      setTextIfChanged(intermissionTeam2Name, data.team2?.name || "");
+      setTextIfChanged(intermissionTeam2Name, OverlayPresentation.fullTeamName(data, "team2"));
       intermissionTeam2Name.style.color = "#FFFFFF";
     }
     if (intermissionEventsHomeTitle) {
@@ -1406,7 +1469,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (intermissionEventsAwayTitle) {
       intermissionEventsAwayTitle.style.color = data.team2?.alternate_text_color || "#FFFFFF";
     }
-    renderIntermissionEvents(data.intermission?.events || [], data.team1?.name, data.team2?.name);
+    renderIntermissionEvents(data.intermission?.events || [], OverlayPresentation.fullTeamName(data, "team1"), OverlayPresentation.fullTeamName(data, "team2"));
     if (intermissionLeagueLogo) setSrcIfChanged(intermissionLeagueLogo, data.match?.logo || "");
 
     // Prematch modal: show/hide and content
@@ -1434,8 +1497,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (pmTeam1Logo) setSrcIfChanged(pmTeam1Logo, data.team1?.logo || "");
     if (pmTeam2Logo) setSrcIfChanged(pmTeam2Logo, data.team2?.logo || "");
-    if (pmTeam1Name) setTextIfChanged(pmTeam1Name, data.team1?.name || "");
-    if (pmTeam2Name) setTextIfChanged(pmTeam2Name, data.team2?.name || "");
+    if (pmTeam1Name) setTextIfChanged(pmTeam1Name, OverlayPresentation.fullTeamName(data, "team1"));
+    if (pmTeam2Name) setTextIfChanged(pmTeam2Name, OverlayPresentation.fullTeamName(data, "team2"));
     // prematch scores (if you want them to reflect last known JSON scores)
     if (pmTeam1Score) setTextIfChanged(pmTeam1Score, String(data.team1?.score ?? ""));
     if (pmTeam2Score) setTextIfChanged(pmTeam2Score, String(data.team2?.score ?? ""));
@@ -1507,73 +1570,62 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshOverlaySettings();
   setInterval(refreshOverlaySettings, 1200);
 
-  // -------------------- Poll JSON + TXT (main loop) --------------------
-  const POLL_MS = 250;
-  setInterval(() => {
-    // 1) data.json (non-score fields)
-    fetch(overlayDataURL, { cache: "no-store" })
-      .then(res => res.ok ? res.json() : null)
-      .then(j => {
-        if (j) updateFromJSON(j);
-      })
-      .catch(err => console.error("JSON fetch error:", err));
-
-    // 2) TXT scores + timer (SOURCE OF TRUTH for score/time to avoid flicker)
-    Promise.all([
-      fetch(`scores/Home Score.txt?_=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => ""),
-      fetch(`scores/Away Score.txt?_=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => ""),
-      fetch(`scores/Time.txt?_=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => "")
-    ]).then(([t1, t2, t]) => {
-      const homeScore = (t1 ?? "").trim();
-      const awayScore = (t2 ?? "").trim();
-      const matchTime = (t ?? "").trim();
-
-      // Only update DOM when actual data changed (prevents flicker)
-      if (prevTxt.home !== homeScore) {
-        motion?.scoreChanged(team1Score, prevTxt.home, homeScore);
-        if (team1Score && document.activeElement !== team1Score) team1Score.value = homeScore;
-        if (intermissionTeam1Score) setTextIfChanged(intermissionTeam1Score, graphicScores?.team1_score ?? homeScore);
-        prevTxt.home = homeScore;
-      }
-      if (prevTxt.away !== awayScore) {
-        motion?.scoreChanged(team2Score, prevTxt.away, awayScore);
-        if (team2Score && document.activeElement !== team2Score) team2Score.value = awayScore;
-        if (intermissionTeam2Score) setTextIfChanged(intermissionTeam2Score, graphicScores?.team2_score ?? awayScore);
-        prevTxt.away = awayScore;
-      }
-      if (prevTxt.time !== matchTime) {
-        if (timeDiv) setTextIfChanged(timeDiv, matchTime);
-        prevTxt.time = matchTime;
-      }
-      if (bottomMatchTime) setTextIfChanged(bottomMatchTime, matchTime || "00:00");
-    }).catch(err => {
-      console.error("TXT fetch error:", err);
-    });
-
-  }, POLL_MS);
-
-  // Initial load
-  fetch(overlayDataURL, { cache: "no-store" })
-    .then(res => res.ok ? res.json() : null)
-    .then(j => { if (j) updateFromJSON(j); })
-    .catch(() => {});
-  // Also populate scores immediately
-  Promise.all([
-    fetch(`scores/Home Score.txt?_=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => ""),
-    fetch(`scores/Away Score.txt?_=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => ""),
-    fetch(`scores/Time.txt?_=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => "")
-  ]).then(([t1, t2, t]) => {
-    prevTxt.home = (t1 ?? "").trim();
-    prevTxt.away = (t2 ?? "").trim();
-    prevTxt.time = (t ?? "").trim();
-    if (team1Score && document.activeElement !== team1Score) team1Score.value = prevTxt.home;
-    if (team2Score && document.activeElement !== team2Score) team2Score.value = prevTxt.away;
-    if (timeDiv) setTextIfChanged(timeDiv, prevTxt.time);
-    if (intermissionTeam1Score) setTextIfChanged(intermissionTeam1Score, graphicScores?.team1_score ?? prevTxt.home);
-    if (intermissionTeam2Score) setTextIfChanged(intermissionTeam2Score, graphicScores?.team2_score ?? prevTxt.away);
-    if (bottomMatchTime) setTextIfChanged(bottomMatchTime, prevTxt.time || "00:00");
+  // Raw OCR/manual TXT values remain distinct from the confirmed graphic score.
+  function applyLiveScores(scores) {
+    const validScore = value => /^\d{1,3}$/.test(String(value ?? "").trim());
+    const validTime = value => /^\d{1,3}:[0-5]\d(?:[.,]\d+)?$/.test(String(value ?? "").trim());
+    const homeScore = validScore(scores.team1_score) ? String(scores.team1_score).trim() : prevTxt.home;
+    const awayScore = validScore(scores.team2_score) ? String(scores.team2_score).trim() : prevTxt.away;
+    const matchTime = validTime(scores.time) ? String(scores.time).trim() : prevTxt.time;
+    if (homeScore != null && prevTxt.home !== homeScore) {
+      motion?.scoreChanged(team1Score, prevTxt.home, homeScore);
+      if (team1Score && document.activeElement !== team1Score) team1Score.value = homeScore;
+      if (intermissionTeam1Score) setTextIfChanged(intermissionTeam1Score, graphicScores?.team1_score ?? homeScore);
+      prevTxt.home = homeScore;
+    }
+    if (awayScore != null && prevTxt.away !== awayScore) {
+      motion?.scoreChanged(team2Score, prevTxt.away, awayScore);
+      if (team2Score && document.activeElement !== team2Score) team2Score.value = awayScore;
+      if (intermissionTeam2Score) setTextIfChanged(intermissionTeam2Score, graphicScores?.team2_score ?? awayScore);
+      prevTxt.away = awayScore;
+    }
+    if (matchTime != null && prevTxt.time !== matchTime) {
+      if (timeDiv) setTextIfChanged(timeDiv, matchTime);
+      prevTxt.time = matchTime;
+    }
+    if (bottomMatchTime && matchTime != null) setTextIfChanged(bottomMatchTime, matchTime);
     if (bottomCurrentScore) setTextIfChanged(bottomCurrentScore, `${goalGraphicScores?.team1_score ?? prevTxt.home ?? "0"}–${goalGraphicScores?.team2_score ?? prevTxt.away ?? "0"}`);
-  }).catch(() => {});
+  }
+
+  const statePoller = new OverlayPoller();
+  let lastTransport = null;
+  async function pollOverlay() {
+    return statePoller.run(async (current, signal) => {
+      const response = await fetch(overlayDataURL, {cache: "no-store", signal});
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!current() || !data || typeof data !== "object" || Array.isArray(data)) return;
+      const transport = data.overlay_transport;
+      if (transport && lastTransport && transport.epoch === lastTransport.epoch &&
+          transport.revision <= lastTransport.revision) return;
+      if (transport) lastTransport = transport;
+      updateFromJSON(data);
+      if (transport?.scores) {
+        applyLiveScores(transport.scores);
+        return;
+      }
+      // Compatibility with older APIs / standalone JSON+TXT overlays.
+      const values = await Promise.all(["Home Score.txt", "Away Score.txt", "Time.txt"].map(async name => {
+        try {
+          const result = await fetch(`scores/${name}?_=${Date.now()}`, {cache: "no-store", signal});
+          return result.ok ? await result.text() : null;
+        } catch (_) { return null; }
+      }));
+      if (current()) applyLiveScores({team1_score: values[0], team2_score: values[1], time: values[2]});
+    });
+  }
+  pollOverlay();
+  setInterval(pollOverlay, 250);
 
   window.addEventListener("resize", () => {
     if (intermissionModal?.classList.contains("show")) {
@@ -1581,4 +1633,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-}); // DOMContentLoaded end
+}
+globalThis.startSecretariatOverlay = startSecretariatOverlay;
+document.addEventListener("DOMContentLoaded", startSecretariatOverlay);

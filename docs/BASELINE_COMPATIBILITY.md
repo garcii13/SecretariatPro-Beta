@@ -73,3 +73,89 @@ pendiente y no se han lanzado compilaciones ni publicado la nueva versión.
 comprueba la fase GOAL_REVEAL, su cancelación, el tiempo completo del goleador,
 la continuidad al invertir una animación, goles consecutivos y la sincronización
 de clientes que reciben tarde una fase. La revisión visual permanece pendiente.
+
+## Nueva presentación Svelte/SVG/GSAP
+
+`BROADCAST_STUDIO.md` documenta la migración de todos los paneles, el adaptador
+compartido con la referencia y el nuevo motor de movimiento. La URL habitual
+`/overlay.html` sirve la presentación nueva; `?renderer=legacy` conserva la
+referencia y la recuperación automática. Las preferencias y publicaciones de
+Manager mantienen sus contratos. Se conservan OCR, manual, periodos, cuentas,
+competiciones, colas, replay, multicámara, plantillas, biblioteca y exportación.
+
+Verificación local: 438 pruebas Python sin fallos (dos exclusivas de Win32
+omitidas), 25 pruebas JavaScript previas y 14 pruebas del nuevo bundle compilado.
+Svelte/TypeScript: cero errores y cero avisos. Se comprueban la equivalencia de
+contenido en seis idiomas y dos deportes, estilos publicados, banderas,
+previsualización de cola, fases/cancelación de GOL y powerplays (ambos equipos,
+sanciones simultáneas, reloj detenido, aviso final, salida/recuperación y FIFO
+cuando se modifica una cola durante una animación). No se retira cobertura previa.
+
+Ejecutar `npm ci --prefix broadcast_renderer` y
+`npm run verify --prefix broadcast_renderer` antes de las comprobaciones Python.
+Los assets y su manifiesto de hashes quedan versionados y empaquetados, sin Node
+ni CDN en el equipo del usuario. Se exige la misma compilación/verificación en CI.
+La revisión visual, Windows nativo y la sesión real con OBS/cámaras/aplicación
+instalada siguen pendientes antes de distribuir; estas pruebas DOM no las sustituyen.
+
+## Continuidad de bloques y movimiento
+
+Bottom y perfil comparten una superficie continua; marcador y bottoms animan el
+contenido sin desplazar sus fondos internos. Se suavizan aceleración/frenado y
+se reduce el recorrido/desfase de las piezas. El GOL conserva su posición al
+pasar a GOAL_REVEAL; la máscara supera el reset de la geometría anterior y el
+modo de movimiento reducido utiliza un fundido. Manager conserva todos sus
+colores, tamaños y tipografías, incluidos los colores propios de la raíz del bottom.
+
+438 pruebas Python sin fallos, dos Win32 omitidas; 25 JavaScript previas y 17 del
+renderer correctas, con Svelte/TypeScript sin errores ni avisos. Powerplays,
+sanciones simultáneas, reloj detenido, EMPTY NET y orden/cancelación de las colas
+siguen incluidos. Revisión visual y sesión real OBS/Windows pendientes.
+
+## Texto fijo y desplazamiento superior del marcador
+
+El marcador completo entra desde arriba y sale hacia arriba, con textos siempre
+visibles y sin animación independiente al cambiar el resultado. La distancia
+incluye reloj y colas de powerplays/EMPTY NET actuales. Se mantiene la escala de
+Manager. El bottom se desvanece sin desplazarse al salir y conserva los detalles
+si se cancela o invierte una entrada en curso.
+
+438 pruebas Python sin fallos (dos Win32 omitidas), 25 JavaScript existentes y
+20 del renderer correctas; Svelte/TypeScript sin errores ni avisos. Continúan
+pendientes revisión visual, Windows nativo y sesión real OBS antes de distribuir.
+
+## Nombres completos y ajuste de previa
+
+El contexto mantiene abreviatura para marcador y nombre completo para previa y
+descanso, con recuperación desde alineaciones en estados anteriores. Cambiar de
+partido sustituye ambos nombres. La previa comparte columnas entre tarjetas y
+cajas de pabellón/inicio, también en el formato estrecho. El marcador conserva
+su texto visible y movimiento superior con entrada/frenado y salida acelerada.
+
+440 pruebas Python sin fallos (dos Win32 omitidas); 26 JavaScript anteriores y
+21 del renderer correctas, Svelte/TypeScript sin errores ni avisos. Revisión
+visual/OBS y ejecución nativa Windows pendientes antes de distribuir.
+
+## Descanso responsive y simétrico
+
+Ancho intrínseco automático del panel de descanso, con límite del 94 % del
+viewport y columnas de equipo iguales según el mayor espacio necesario. Logo
+centrado y composición compacta para pantallas estrechas, sin configuración nueva
+en Manager. Se conservan nombres completos, personalización, eventos y colas.
+Validación: 440 Python sin fallos (dos Win32 omitidas), 26 JavaScript y 21 del
+renderer correctas, sin errores/avisos Svelte/TypeScript. Revisión visual pendiente.
+
+## Correcciones de auditoría (18 de octubre)
+
+`AUDIT_FIXES_BETA11.md` detalla transporte ordenado, resultados conservados ante
+fallos, protección Host/Origin/sesión local, invitaciones idempotentes, nuevas
+auditorías de dependencias y aceptación obligatoria antes de publicar. El Lab
+queda excluido. El runtime Mac mantiene la API OCR 2.x con Paddle 3.0.0,
+PaddleOCR 2.10.0 y OpenCV 4.10.0; 67 lecturas comparadas idénticas, modelos y
+CPU/PIR preservados. Windows conserva sus requisitos propios.
+
+445 pruebas Python (dos Win32 omitidas), 27 Node y 24 del renderer correctas;
+SQL de invitación probado en PostgreSQL local. Svelte sin errores/avisos,
+auditorías Python/web/renderer sin avisos y Astro compila 16 páginas. Pendientes
+Windows/Intel nativos, instalación/OBS/cámaras, revisión visual y despliegue cloud;
+la publicación exige evidencias para esos recorridos, vinculadas a commit y hash.

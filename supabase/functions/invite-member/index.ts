@@ -1,4 +1,4 @@
-import { createClient, type User } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type User } from "https://esm.sh/@supabase/supabase-js@2.118.0";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +10,7 @@ const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.
   headers: { ...cors, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
 });
 
-async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string): Promise<User | null> {
+async function findUserByEmail(admin: Pick<ReturnType<typeof createClient>, "auth">, email: string): Promise<User | null> {
   for (let page = 1; page <= 20; page += 1) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
@@ -73,38 +73,36 @@ Deno.serve(async (request) => {
     }
     if (!target) throw new Error("Supabase no pudo crear la cuenta invitada");
 
-    const confirmed = Boolean(target.email_confirmed_at);
     const targetName = String(
       target.user_metadata?.display_name || target.user_metadata?.full_name || email.split("@", 1)[0],
     );
-    const { error: membershipError } = await admin.from("sp_workspace_members").upsert({
-      workspace_id: workspaceId,
-      user_id: target.id,
-      role,
-      status: confirmed ? "active" : "invited",
-      invited_by: userData.user.id,
-      joined_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "workspace_id,user_id" });
+    // The caller JWT is checked again inside the atomic database operation.
+    // Existing memberships (including owner/suspended) are returned unchanged.
+    const { data: membershipResult, error: membershipError } = await callerClient.rpc("sp_invite_workspace_member", {
+      p_workspace: workspaceId, p_user: target.id, p_role: role,
+    });
     if (membershipError) throw membershipError;
+    const membership = membershipResult?.membership;
+    if (!membership) throw new Error("La invitación no devolvió una membresía válida");
 
     const { error: directoryError } = await admin.from("scoreboard_operators").upsert({
       id: target.id,
       email,
       display_name: targetName,
       workspace_id: workspaceId,
-    }, { onConflict: "id" });
+    }, { onConflict: "id", ignoreDuplicates: true });
     if (directoryError) console.warn("No se pudo sincronizar scoreboard_operators", directoryError.message);
 
     return json({
       ok: true,
       invited,
-      already_pending: !invited && !confirmed,
+      already_pending: !invited && membership.status === "invited",
+      already_member: membershipResult.created === false,
       user_id: target.id,
       email,
       display_name: targetName,
-      role,
-      status: confirmed ? "active" : "invited",
+      role: membership.role,
+      status: membership.status,
     });
   } catch (error) {
     console.error(error);

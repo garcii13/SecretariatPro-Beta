@@ -54,3 +54,11 @@ y adjuntar banderas por selección sin reemplazar sus escudos. Ambas banderas
 comparten ancho, con un máximo de 1,5 veces la altura del marcador y sin recortes.
 Los goles muestran una animación breve en el idioma de Live antes del goleador.
 Detalles y validaciones pendientes en [las notas de beta 11](docs/RELEASE_BETA11_UNIFIED.md).
+
+
+Las correcciones de la auditoría de octubre y el despliegue pendiente de Supabase
+se describen en [AUDIT_FIXES_BETA11.md](docs/AUDIT_FIXES_BETA11.md). El remoto
+accesible para este proyecto y sus instaladores es `installers`
+(`garcii13/SecretariatPro-Beta`); `origin` se conserva como referencia y requiere
+resolver su acceso antes de usarlo como copia de recuperación. No publicar beta
+11 sin la aceptación instalada y cloud correspondiente.

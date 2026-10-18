@@ -24,8 +24,8 @@ class Phase64OCRApiCompatibilityTests(unittest.TestCase):
     def test_mac_setup_recreates_venv_and_verifies_versions(self):
         setup = (ROOT / "PREPARAR_MAC_BETA.command").read_text(encoding="utf-8")
         self.assertIn("rm -rf .venv", setup)
-        self.assertIn('startswith("2.6.2")', setup)
-        self.assertIn('startswith("2.7.3")', setup)
+        self.assertIn('startswith("3.0.0")', setup)
+        self.assertIn('startswith("2.10.0")', setup)
 
     def test_mac_diagnostic_exists(self):
         self.assertTrue((ROOT / "DIAGNOSTICO_OCR_MAC.command").exists())

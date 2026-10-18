@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecretariatPro Broadcast Studio</title>
+  <link rel="stylesheet" href="/styles.css?v=phase57-studio1">
+  <link rel="stylesheet" href="/overlay_cinematic.css?v=studio1">
+  <link rel="stylesheet" href="/overlay_studio/studio.css?v=studio6-audit">
+</head>
+<body>
+  <div id="broadcast-root"></div>
+  <script>
+    // A missing/corrupt bundle must recover the established OBS source as well.
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.secretariatStudioReady) return;
+      const fallback = new URL('/overlay.html', location.href);
+      fallback.search = location.search;
+      fallback.searchParams.set('renderer', 'legacy');
+      location.replace(fallback);
+    });
+  </script>
+  <script src="/overlay_studio/studio.js?v=studio6-audit" defer></script>
+</body>
+</html>

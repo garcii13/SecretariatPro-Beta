@@ -40,12 +40,12 @@ print("joblib:", joblib.__version__)
 print("scikit-learn:", sklearn.__version__)
 
 errors = []
-if not str(paddle.__version__).startswith("2.6.2"):
-    errors.append(f"PaddlePaddle esperado 2.6.2; instalado {paddle.__version__}")
-if not str(getattr(paddleocr, "__version__", "")).startswith("2.7.3"):
-    errors.append(f"PaddleOCR esperado 2.7.3; instalado {getattr(paddleocr, '__version__', 'desconocida')}")
-if str(cv2.__version__) != "4.6.0":
-    errors.append(f"OpenCV esperado 4.6.0; instalado {cv2.__version__}")
+if not str(paddle.__version__).startswith("3.0.0"):
+    errors.append(f"PaddlePaddle esperado 3.0.0; instalado {paddle.__version__}")
+if not str(getattr(paddleocr, "__version__", "")).startswith("2.10.0"):
+    errors.append(f"PaddleOCR esperado 2.10.0; instalado {getattr(paddleocr, '__version__', 'desconocida')}")
+if str(cv2.__version__) != "4.10.0":
+    errors.append(f"OpenCV esperado 4.10.0; instalado {cv2.__version__}")
 if str(numpy.__version__) != "1.26.4":
     errors.append(f"NumPy esperado 1.26.4; instalado {numpy.__version__}")
 if str(joblib.__version__) != "1.5.3":

@@ -42,7 +42,7 @@ for package in ('paddle', 'paddleocr', 'sklearn', 'joblib'):
     datas += d
     binaries += b
     hidden += h
-# Paddle 2.6.2's macOS wheel contains Intel-only helper libraries even on
+# Paddle macOS wheels can contain Intel-only helper libraries even on
 # Apple Silicon. Explicit collect_all entries bypass PyInstaller's usual
 # dependency architecture checks and can shadow NumPy's native libraries.
 if sys.platform == 'darwin':

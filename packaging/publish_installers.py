@@ -24,6 +24,7 @@ allowed_changes = {'SecretariatPro_App.spec', 'SecretariatPro_OCR.spec',
                    notes_path, '.github/workflows/beta-installers.yml',
                    'packaging/smoke_macos.py'}
 evidence = []
+accepted_builds = {}
 for platform, variable in platforms.items():
     run_id = os.environ[variable]
     if not run_id.isdigit():
@@ -41,6 +42,7 @@ for platform, variable in platforms.items():
             raise SystemExit(f'Application source changed since {platform} was built: {changed - allowed_changes}')
     gh('run', 'download', run_id, '--name', f'SecretariatPro-beta-{platform}', '--dir', f'installers/{platform}')
     evidence.append(f"- {platform}: {run['html_url']} · `{run['head_sha']}`")
+    accepted_builds[platform] = run['head_sha']
 
 root = Path('installers')
 installers = sorted(p for p in root.rglob('*') if p.suffix in ('.exe', '.dmg'))
@@ -48,11 +50,26 @@ suffixes = ('macos-arm64.dmg', 'macos-x86_64.dmg') if mac_live_only else ('windo
 expected = {f'SecretariatPro-{product}-{version}-{suffix}' for product in products for suffix in suffixes}
 if {p.name for p in installers} != expected or len(installers) != len(expected):
     raise SystemExit('Unexpected installers for the selected release scope')
+artifact_hashes = {}
 for path in installers:
     with path.open('rb') as stream:
         digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    artifact_hashes[path] = digest
     if path.with_suffix(path.suffix + '.sha256').read_text().split()[0] != digest:
         raise SystemExit(f'Checksum mismatch: {path.name}')
+
+# Unit tests and a successful build do not certify real OBS/camera/tenant operation.
+accepted_artifacts = {
+    platform: {p.name: artifact_hashes[p]
+               for p in installers if p.relative_to(root).parts[0] == platform}
+    for platform in platforms
+}
+try:
+    acceptance = json.loads(os.environ.get('SP_ACCEPTANCE_JSON', 'null'))
+    runpy.run_path('packaging/verify_acceptance.py')['validate_acceptance'](
+        acceptance, version, accepted_builds, accepted_artifacts)
+except (ValueError, TypeError, KeyError) as exc:
+    raise SystemExit(f'Installed acceptance blocks publication: {exc}') from exc
 
 for product in products:
     files = []

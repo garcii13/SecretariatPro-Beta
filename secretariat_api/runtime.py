@@ -84,6 +84,8 @@ class ApplicationRuntime:
             camera_service=self.camera_service,
         )
         self._lock = threading.RLock()
+        self._overlay_epoch = uuid4().hex
+        self._overlay_revision = 0
         self._login_lock = threading.Lock()
         self._session_generation = 0
         from concurrent.futures import ThreadPoolExecutor
@@ -293,6 +295,23 @@ class ApplicationRuntime:
         with self._lock:
             return self.state_store.load()
 
+    def overlay_snapshot(self) -> dict[str, Any]:
+        """One match-bound frame: state, raw score files and confirmed graphic score."""
+        with self._lock:
+            state = self.state_store.load()
+            scores = self.scores()
+            state["graphic_scores"] = self.graphic_scores(scores)
+            self._overlay_revision += 1
+            state["overlay_transport"] = {
+                "epoch": self._overlay_epoch, "revision": self._overlay_revision,
+                "context": ":".join(str(value or "") for value in (
+                    getattr(self.supabase, "user_id", ""),
+                    (self.active_workspace or {}).get("id"),
+                    (self.active_match or {}).get("id"))),
+                "scores": scores,
+            }
+            return state
+
     def mutate_state(self, mutator: Callable[[dict[str, Any]], Any]) -> tuple[dict[str, Any], Any]:
         with self._lock:
             state = self.state_store.load()
@@ -314,8 +333,8 @@ class ApplicationRuntime:
             "time": self.score_store.read("time", state.get("match", {}).get("time", "00:00")),
         }
 
-    def graphic_scores(self) -> dict[str, str]:
-        scores = self.scores()
+    def graphic_scores(self, raw_scores: dict[str, str] | None = None) -> dict[str, str]:
+        scores = dict(raw_scores) if raw_scores is not None else self.scores()
         for key, row in self.score_store.reconciliation().items():
             if key in scores:
                 scores[key] = str(max(int(scores[key] or 0), int(row.get("internal", 0))))

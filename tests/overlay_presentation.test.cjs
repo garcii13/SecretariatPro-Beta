@@ -6,6 +6,23 @@ const context = {document: {addEventListener() {}}};
 vm.runInNewContext(fs.readFileSync('script.js', 'utf8') + '\nglobalThis.presentation = OverlayPresentation;', context);
 const p = context.presentation;
 
+test('a timed out transport lease cannot commit after recovery, even if fetch ignores abort', async () => {
+  const timers=[];
+  context.AbortController=AbortController;
+  context.setTimeout=callback=>{timers.push(callback);return timers.length;};
+  context.clearTimeout=()=>{};
+  vm.runInContext('globalThis.Poller = OverlayPoller',context);
+  const poller=new context.Poller();
+  let release,frame='initial';
+  const old=poller.run(async current=>{await new Promise(resolve=>{release=resolve;});if(current())frame='stale';});
+  await Promise.resolve();
+  assert.equal(await poller.run(()=>{frame='overlap';}),false);
+  timers[0](); await old;
+  await poller.run(async current=>{if(current())frame='recovered';});
+  release(); await Promise.resolve(); await Promise.resolve();
+  assert.equal(frame,'recovered');
+});
+
 test('goal word follows all six Live languages', () => {
   for (const [language, word] of Object.entries({es:'GOL',en:'GOAL',sv:'MÅL',cs:'GÓL',fi:'MAALI',de:'TOR',unknown:'GOAL'})) assert.equal(p.goalWord(language), word);
 });
@@ -74,4 +91,14 @@ test('a new goal restarts the ceremony and reveal hands over exactly once', () =
   assert.equal(f.classes.has('goal-reveal'),true);assert.equal(f.reveals.length,1);
   f.c.data.broadcast_flow={phase:'GOAL_BOTTOM',generation:2};f.c.render();
   assert.equal(f.classes.has('goal-intro'),false);assert.equal(f.reveals.length,1);
+});
+
+test('full panel names prefer explicit names, recover older lineups and leave scoreboard identity untouched', () => {
+  const data={team1:{name:'TRC',full_name:'Club Deportivo Tres Cantos'},team2:{name:'ESC'},statistics:{lineups:{team1_name:'Old name',team2_name:'Club San Lorenzo de El Escorial'}}};
+  const original=JSON.stringify(data);
+  assert.equal(p.fullTeamName(data,'team1'),'Club Deportivo Tres Cantos');
+  assert.equal(p.fullTeamName(data,'team2'),'Club San Lorenzo de El Escorial');
+  assert.equal(p.fullTeamName({team1:{full_name:'  ',name:'Local'}},'team1'),'Local');
+  assert.equal(p.fullTeamName({},'team2'),'');
+  assert.equal(JSON.stringify(data),original);
 });

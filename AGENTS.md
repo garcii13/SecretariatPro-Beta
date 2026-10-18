@@ -20,6 +20,15 @@ requirements separate. Windows-only tests must run on Windows before calling a
 cross-platform release validated. Installed application checks and an OBS/camera
 session remain necessary before distributing new installers.
 
+Security changes also run `npm ci --prefix security_tests` and
+`npm test --prefix security_tests` (the invitation SQL executes on PostgreSQL).
+Do not update the OCR Lab as part of application audit fixes.
+
+For renderer changes first run `npm ci --prefix broadcast_renderer` and
+`npm run verify --prefix broadcast_renderer`. Keep the generated `overlay_studio/`
+assets and their source/build manifest synchronized in both checkouts. Node is
+a build dependency only; the installed overlay must work using local bundled assets.
+
 International flags must remain complete and undistorted. On the scoreboard,
 both flags have the same visible width, capped at 1.5 times its height. If either
 flag requires more height, reduce the common width of both. Keep the scoreboard

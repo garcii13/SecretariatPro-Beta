@@ -21,6 +21,7 @@ from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocket
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from secretariat_core.local_access import LocalAccessMiddleware
 
 import qrcode
 import qrcode.image.svg
@@ -274,6 +275,7 @@ TABLET_DIR = BASE_DIR / "tablet"
 app = FastAPI(title="SecretariatPro Local API", version=API_VERSION, lifespan=lifespan)
 app.mount("/app", StaticFiles(directory=WEB_DIR, html=True), name="webapp")
 app.mount("/tablet", StaticFiles(directory=TABLET_DIR, html=True), name="tablet")
+app.mount("/overlay_studio", StaticFiles(directory=BASE_DIR / "overlay_studio", check_dir=False), name="overlay_studio")
 
 _PUBLIC_API_PATHS = {
     "/api/health", "/api/state", "/api/auth/login", "/api/auth/logout",
@@ -334,8 +336,16 @@ async def root() -> FileResponse:
 
 
 @app.get("/overlay.html")
-async def overlay_html() -> FileResponse:
-    return FileResponse(BASE_DIR / "overlay.html")
+async def overlay_html(renderer: str = Query("studio")) -> FileResponse:
+    # The existing OBS URL remains valid. The reference renderer is available
+    # for comparison/recovery without changing state or Manager publications.
+    name = "overlay.html" if renderer == "legacy" else "overlay-studio.html"
+    return FileResponse(BASE_DIR / name, headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/overlay-studio.html")
+async def overlay_studio_html() -> FileResponse:
+    return FileResponse(BASE_DIR / "overlay-studio.html", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/script.js")
@@ -368,8 +378,7 @@ async def overlay_data() -> JSONResponse:
     newer, larger version, which Uvicorn rejects with
     ``Response content longer than Content-Length``.
     """
-    payload = await run_in_threadpool(runtime.state_store.load)
-    payload["graphic_scores"] = await run_in_threadpool(runtime.graphic_scores)
+    payload = await run_in_threadpool(runtime.overlay_snapshot)
     return JSONResponse(
         payload,
         headers={
@@ -624,7 +633,8 @@ async def queue_graphic(payload: GraphicsCueRequest) -> dict[str, Any]:
 async def preview_graphic(cue_id: str) -> JSONResponse:
     match_id = str((runtime.active_match or {}).get("id") or "")
     try:
-        preview = await run_in_threadpool(cue_preview, runtime.read_state(), cue_id, match_id)
+        snapshot = await run_in_threadpool(runtime.overlay_snapshot)
+        preview = await run_in_threadpool(cue_preview, snapshot, cue_id, match_id)
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from exc
     return JSONResponse(preview, headers={"Cache-Control": "no-store"})
@@ -2000,3 +2010,6 @@ async def finish_match(payload: FinishPayload) -> dict[str, Any]:
     await run_in_threadpool(runtime.write_score, "team1", payload.home_score, force=True)
     await run_in_threadpool(runtime.write_score, "team2", payload.away_score, force=True)
     return await broadcast_state()
+
+# Outermost boundary: validate the browser origin before any API side effects.
+app.add_middleware(LocalAccessMiddleware)

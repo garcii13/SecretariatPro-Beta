@@ -2,6 +2,10 @@ name: Publish verified installers
 on:
   workflow_dispatch:
     inputs:
+      acceptance_json:
+        description: Acceptance evidence JSON matching build commits and installer hashes (docs/AUDIT_FIXES_BETA11.md)
+        required: true
+        type: string
       scope:
         description: Release scope
         type: choice
@@ -27,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SP_RELEASE_SCOPE: ${{ inputs.scope }}
+      SP_ACCEPTANCE_JSON: ${{ inputs.acceptance_json }}
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       WINDOWS_RUN: ${{ inputs.windows_run }}
