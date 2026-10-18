@@ -22,7 +22,7 @@ class StudioAssetsTests(unittest.TestCase):
 
     def test_bundles_are_local_served_and_included_in_installed_application(self):
         client = TestClient(main.app, client=("127.0.0.1", 50100))
-        spec = (ROOT / "SecretariatPro_App.spec").read_text()
+        spec = (ROOT / "SecretariatPro_App.spec").read_text(encoding="utf-8")
         self.assertIn('(str(ROOT / "overlay_studio"), "overlay_studio")', spec)
         self.assertIn('(str(ROOT / "overlay-studio.html"), ".")', spec)
         for name, mime in (("studio.js", "application/javascript"), ("studio.css", "text/css"), ("manifest.json", "application/json")):
@@ -34,10 +34,10 @@ class StudioAssetsTests(unittest.TestCase):
             else:
                 self.assertTrue(response.headers["content-type"].startswith(mime))
             self.assertEqual(response.content, (ROOT / "overlay_studio" / name).read_bytes())
-        self.assertNotIn('src="https://', (ROOT / "overlay-studio.html").read_text())
+        self.assertNotIn('src="https://', (ROOT / "overlay-studio.html").read_text(encoding="utf-8"))
 
     def test_committed_assets_match_current_sources_and_built_bytes(self):
-        manifest = json.loads((ROOT / "overlay_studio/manifest.json").read_text())
+        manifest = json.loads((ROOT / "overlay_studio/manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["renderer"], "svelte-svg-gsap")
         required_sources = {str(path.relative_to(ROOT)).replace("\\", "/")
                             for path in (ROOT / "broadcast_renderer/src").rglob("*") if path.is_file()}

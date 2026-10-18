@@ -38,8 +38,8 @@ class CameraStartupTests(unittest.TestCase):
                  patch.object(video_source, 'SharedFrameReader') as reader:
                 reader.return_value.read.return_value = frame
                 stream = video_source.IsolatedCameraStream(1, Path(folder) / 'frames.bin')
-                self.assertEqual(popen.call_args.args[0][:3], [video_source.sys.executable, '--camera', '1'])
-                self.assertIn('Starting camera 1', stream.path.with_suffix('.log').read_text())
+                self.assertEqual(popen.call_args.args[0][:3], [str(Path(video_source.sys.executable)), '--camera', '1'])
+                self.assertIn('Starting camera 1', stream.path.with_suffix('.log').read_text(encoding="utf-8"))
                 stream.close()
 
     def test_simultaneous_selection_and_preview_share_one_camera_startup(self):

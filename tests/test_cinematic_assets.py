@@ -14,9 +14,9 @@ class CinematicAssetsTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.headers["content-type"].startswith(mime))
             self.assertEqual(response.content, (ROOT / name).read_bytes())
-            self.assertIn(f'(str(ROOT / "{name}"), ".")', (ROOT / "SecretariatPro_App.spec").read_text())
+            self.assertIn(f'(str(ROOT / "{name}"), ".")', (ROOT / "SecretariatPro_App.spec").read_text(encoding="utf-8"))
 
     def test_controller_loads_before_the_existing_overlay_and_styles_after_base(self):
-        html = (ROOT / "overlay.html").read_text()
+        html = (ROOT / "overlay.html").read_text(encoding="utf-8")
         self.assertLess(html.index('href="styles.css?'), html.index('href="overlay_cinematic.css?'))
         self.assertLess(html.index('src="overlay_motion.js?'), html.index('src="script.js?'))

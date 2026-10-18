@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main, 'release/**', 'feature/unified-international-goals']
+env:
+  PYTHONUTF8: "1"
 permissions:
   contents: read
 jobs:

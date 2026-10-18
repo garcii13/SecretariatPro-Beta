@@ -14,7 +14,7 @@ from secretariat_api.tablet_access import is_loopback
 
 def production_definitions(**context):
     source = Path(__file__).resolve().parents[1] / "secretariat_api/main.py"
-    tree = ast.parse(source.read_text())
+    tree = ast.parse(source.read_text(encoding="utf-8"))
     names = {"watch_state_files", "ConnectionManager", "_tablet_snapshot"}
     nodes = [node for node in tree.body if getattr(node, "name", None) in names]
     namespace = {"asyncio": asyncio, "json": json, "Any": Any, "WebSocket": object, "is_loopback": is_loopback, **context}

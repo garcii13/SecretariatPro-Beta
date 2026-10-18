@@ -10,6 +10,26 @@ GOAL_INTRO_SECONDS = 2.2
 GOAL_REVEAL_SECONDS = 0.64
 
 
+async def wait_presentation_seconds(seconds: float) -> None:
+    """Never shorten a configured on-air phase when a Windows timer wakes early.
+
+    Windows/Python 3.12's coarse monotonic/wall clock can account for a frame
+    early. Use the high-resolution counter and a clock-resolution margin there;
+    cancellation remains an ordinary cancellable asyncio wait.
+    """
+    seconds = max(0.0, float(seconds))
+    if seconds == 0:
+        return
+    resolution = time.get_clock_info("monotonic").resolution
+    margin = resolution if resolution > .001 else 0.0
+    deadline = time.perf_counter() + seconds + margin
+    while True:
+        remaining = deadline - time.perf_counter()
+        if remaining <= 0:
+            return
+        await asyncio.sleep(max(remaining, 2 * resolution))
+
+
 class BroadcastFlow:
     def __init__(self, runtime: Any, broadcast: Callable) -> None:
         self.runtime = runtime
@@ -58,12 +78,12 @@ class BroadcastFlow:
                     state.setdefault("bottombar", {}).update(state.pop("pending_goal_celebration", {}))
                 await asyncio.to_thread(self.runtime.mutate_state, show)
                 await self._state("GOAL_INTRO", bottom=True, generation=token, duration_seconds=GOAL_INTRO_SECONDS)
-                await asyncio.sleep(GOAL_INTRO_SECONDS)
+                await wait_presentation_seconds(GOAL_INTRO_SECONDS)
                 await self._state("GOAL_REVEAL", bottom=True, generation=token, duration_seconds=GOAL_REVEAL_SECONDS)
-                await asyncio.sleep(GOAL_REVEAL_SECONDS)
+                await wait_presentation_seconds(GOAL_REVEAL_SECONDS)
                 await self._state("GOAL_BOTTOM", bottom=True, generation=token)
                 config = self.runtime.safe_settings()["appearance"]["goal_celebration"]
-                await asyncio.sleep(float(config["duration_seconds"]))
+                await wait_presentation_seconds(float(config["duration_seconds"]))
         await self._state("IDLE", scoreboard=True, generation=token)
 
     async def without_replay(self) -> None:
@@ -76,7 +96,7 @@ class BroadcastFlow:
                 return
             await self._state("GOAL_DELAY", generation=token)
             config = self.runtime.safe_settings()["appearance"]["goal_celebration"]
-            await asyncio.sleep(float(config["delay_seconds"]))
+            await wait_presentation_seconds(float(config["delay_seconds"]))
             await self._finish(True, token)
         self.task = asyncio.create_task(run())
 

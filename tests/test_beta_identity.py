@@ -74,6 +74,6 @@ class BetaIdentityTests(unittest.TestCase):
     def test_installers_exclude_local_data(self):
         root = Path(__file__).resolve().parents[1]
         for spec in root.glob('*.spec'):
-            source = spec.read_text()
+            source = spec.read_text(encoding="utf-8")
             for private in ('app_settings.json', 'account_settings.json', 'subscription_access.json', 'data.json', 'ocr_config.json', 'ocr_training'):
                 self.assertNotIn(private, source)

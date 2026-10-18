@@ -26,9 +26,9 @@ class Phase47OCRPrivacyTests(unittest.TestCase):
         self.assertIn('API_VERSION = "57.0.0-beta-rc"', api)
 
     def test_public_package_does_not_ship_training_toolchain(self):
-        self.assertIn("ocr_training/", (ROOT / ".gitignore").read_text())
+        self.assertIn("ocr_training/", (ROOT / ".gitignore").read_text(encoding="utf-8"))
         for spec in ROOT.glob("*.spec"):
-            self.assertNotIn("ocr_training", spec.read_text())
+            self.assertNotIn("ocr_training", spec.read_text(encoding="utf-8"))
         self.assertFalse((ROOT / "secretariat_core" / "ocr_training.py").exists())
         self.assertFalse((ROOT / "README_ENTRENAMIENTO_OCR.md").exists())
 

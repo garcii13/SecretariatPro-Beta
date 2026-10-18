@@ -66,9 +66,9 @@ class Beta6ReplaySequenceTests(unittest.TestCase):
             status_path = Path(directory) / "secretariatpro-bridge.json"
             status_path.write_text('{"loaded":true,"event_ready":true}', encoding="utf-8")
             bridge = ReplayPluginBridge(Mock(connected=True), status_path)
-            bridge._wait_for = Mock(side_effect=lambda predicate, timeout, **kwargs: {"last_command_id": __import__("json").loads(status_path.with_name("secretariatpro-command.json").read_text())["command_id"]})
+            bridge._wait_for = Mock(side_effect=lambda predicate, timeout, **kwargs: {"last_command_id": __import__("json").loads(status_path.with_name("secretariatpro-command.json").read_text(encoding="utf-8"))["command_id"]})
             result = bridge.compose([{"camera": 1, "duration_seconds": 3, "speed_percent": 100}], play_now=True)
-            command = __import__("json").loads(status_path.with_name("secretariatpro-command.json").read_text())
+            command = __import__("json").loads(status_path.with_name("secretariatpro-command.json").read_text(encoding="utf-8"))
             assert command["action"] == "compose" and command["play_now"] is True
             assert result["last_command_id"] == command["command_id"]
 
