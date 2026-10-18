@@ -12,7 +12,7 @@ test('direct authenticated SQL cannot escalate roles, change owner, move members
       create schema auth; grant usage on schema auth to authenticated;
       create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
       create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}');
-      create table sp_workspaces(id uuid primary key,owner_user_id uuid references auth.users on delete restrict,sport_mode text default 'floorball');
+      create table sp_workspaces(id uuid primary key,owner_user_id uuid references auth.users on delete restrict,sport_mode text default 'floorball',deleted_at timestamptz);
       create table sp_workspace_members(workspace_id uuid references sp_workspaces on delete cascade,
         user_id uuid references auth.users on delete cascade, role text not null, status text not null default 'active',
         invited_by uuid,joined_at timestamptz not null default now(),created_at timestamptz not null default now(),updated_at timestamptz not null default now(),
@@ -38,7 +38,19 @@ test('direct authenticated SQL cannot escalate roles, change owner, move members
       grant all on sp_workspaces,sp_workspace_members to authenticated;
     `);
     await db.exec(readFileSync(new URL('../SUPABASE_AUDIT_INVITATIONS.sql',import.meta.url),'utf8'));
+    // Seed historical downgrades before installing the new invariant guard.
+    for(const n of [6,7,8])await db.query('insert into auth.users(id,email) values($1,$2)',[id(n),`historical${n}@example.invalid`]);
+    for(const [workspace,user,role,status,deleted] of [[30,6,'competition_manager','active',false],[40,7,'producer','suspended',false],[50,8,'producer','active',true]]){
+      await db.query('insert into sp_workspaces(id,owner_user_id,deleted_at) values($1,$2,$3)',[id(workspace),id(user),deleted?'2026-10-01T00:00:00Z':null]);
+      await db.query('insert into sp_workspace_members(workspace_id,user_id,role,status) values($1,$2,$3,$4)',[id(workspace),id(user),role,status]);
+    }
     await db.exec(readFileSync(new URL('../SUPABASE_AUDIT_MEMBERSHIP_GUARDS.sql',import.meta.url),'utf8'));
+    const repair=readFileSync(new URL('../SUPABASE_AUDIT_REPAIR_OWNER_ROLE.sql',import.meta.url),'utf8');
+    await db.exec(repair);
+    const repaired=(await db.query('select * from sp_workspace_members order by workspace_id')).rows;
+    assert.deepEqual(repaired.map(m=>[m.role,m.status]),[['owner','active'],['producer','suspended'],['producer','active']]);
+    await db.exec(repair);
+    assert.deepEqual((await db.query('select * from sp_workspace_members order by workspace_id')).rows,repaired);
     for(const n of [1,2,3,4,5])await db.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())',[id(n),`audit${n}@example.invalid`]);
     await db.query('insert into sp_workspaces(id,owner_user_id) values($1,$2),($3,$4)',[id(10),id(1),id(20),id(5)]);
     for(const [user,role,status] of [[1,'owner','active'],[2,'competition_manager','active'],[3,'producer','active'],[4,'producer','suspended']])
