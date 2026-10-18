@@ -1,7 +1,7 @@
 import { detectInstaller, platforms } from '../lib/download-platform.mjs';
 
 const labels: Record<string, string> = {
-  'windows-x64': 'Windows · 64 bits',
+  'windows-x64': 'Windows · x64',
   'macos-arm64': 'macOS · Apple Silicon (M1, M2, M3, M4…)',
   'macos-x86_64': 'macOS · Intel'
 };

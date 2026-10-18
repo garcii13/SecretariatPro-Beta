@@ -3,7 +3,7 @@ import releases from '../lib/downloads.json';
 const { lang = 'es' } = Astro.props;
 const es = lang === 'es';
 const labels: Record<string, string> = {
-  'windows-x64': 'Windows · 64 bits',
+  'windows-x64': 'Windows · x64',
   'macos-arm64': 'Mac · Apple Silicon',
   'macos-x86_64': 'Mac · Intel'
 };
@@ -21,7 +21,7 @@ const size = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
     <span class="account-kicker">SECRETARIATPRO · {es ? 'DESCARGAS' : 'DOWNLOADS'}</span>
     <h1>{es ? 'Todo listo.' : 'Ready to go.'}<br /><span class="kicker">{es ? 'Empieza aquí.' : 'Start here.'}</span></h1>
     <p class="lead">{es ? 'Elige Live para la retransmisión y Manager para preparar la competición. Descarga el instalador y sigue trabajando con tu cuenta.' : 'Choose Live for broadcasting and Manager to prepare your competition. Download the installer and continue with your account.'}</p>
-    <p class="muted download-detection" data-detection-status aria-live="polite">{es ? 'Versiones para Windows de 64 bits y macOS. Elige tu equipo en las opciones de descarga.' : 'Versions for 64-bit Windows and macOS. Choose your computer in the download options.'}</p>
+    <p class="muted download-detection" data-detection-status aria-live="polite">{es ? 'Versiones para Windows x64 y macOS. Elige tu equipo en las opciones de descarga.' : 'Versions for Windows x64 and macOS. Choose your computer in the download options.'}</p>
     <div class="grid-2 download-grid">
       {['live', 'manager'].map((product) => (
         <article class="card download-card" id={product} data-download-card>
