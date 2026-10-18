@@ -105,6 +105,7 @@ jobs:
             release/*.dmg
             release/*.sha256
             release/smoke-*.log
+            release/dependency-audit.json
             resolved-dependencies.txt
           if-no-files-found: error
           retention-days: 30

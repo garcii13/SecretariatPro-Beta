@@ -104,10 +104,21 @@ Añadir `macos-15` y `macos-15-intel` si se publican esas plataformas, con sus p
 - 445 pruebas Python, con dos Win32 omitidas; sin fallos.
 - 27 pruebas Node de OCR/presentación/Manager/movimiento y 24 del bundle compilado; correctas.
 - Prueba SQL sobre PostgreSQL local correcta; auditoría npm de ese proyecto sin avisos.
-- Svelte/TypeScript sin errores ni avisos; sintaxis de las interfaces correcta.
+- Svelte/TypeScript y la función de invitación comprobada con Deno: sin errores; sintaxis de las interfaces correcta.
 - Auditorías Python, web y renderer sin vulnerabilidades conocidas en la consulta actual; `pip check` correcto.
 - Astro: 16 páginas compiladas tras instalación limpia.
 - Inferencia real del worker, especialistas y runtime de cámara correctos; 67 lecturas comparadas sin diferencias.
 - Fuentes y assets sincronizados; hashes del bundle comprobados. Clon limpio y estado Git registrados al cerrar el trabajo.
 
 Continúan pendientes Windows nativo, Intel nativo, aplicaciones congeladas/instaladas, sesión real OBS/cámara/multicámara, revisión visual y despliegue/aceptación cloud. La ausencia de avisos del catálogo no garantiza ausencia de vulnerabilidades. Las evidencias actuales están en `docs/audits/2026-10-18/fixes/`.
+
+
+## Recuperación desde Git
+
+Se verificó el commit de implementación `1101ae3` mediante un clon limpio local,
+restaurando únicamente los dos modelos del manifiesto con SHA-256 comprobado.
+`npm ci` y la recompilación reproducen exactamente los assets versionados: Git
+permanece limpio después del build. El clon supera 445 casos Python (dos Win32
+omitidos), 27 Node, 24 del renderer y la prueba PostgreSQL de invitaciones. Las
+pruebas Python usan la venv Mac ya verificada; esto no equivale a instalar en
+un Mac Intel o Windows nuevo. No se ha hecho push ni publicado releases.

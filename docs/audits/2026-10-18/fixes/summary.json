@@ -32,5 +32,16 @@
   "obs_camera_session_tested": false,
   "deno_typecheck": true,
   "python_packages_audited": 147,
-  "python_known_vulnerabilities": 0
+  "python_known_vulnerabilities": 0,
+  "clean_clone": {
+    "source_commit": "1101ae3",
+    "source_recovered": true,
+    "asset_rebuild_byte_identical": true,
+    "python_registered": 445,
+    "python_skipped_windows": 2,
+    "node_passed": 27,
+    "studio_passed": 24,
+    "postgres_sql_passed": true,
+    "fresh_python_environment": false
+  }
 }
