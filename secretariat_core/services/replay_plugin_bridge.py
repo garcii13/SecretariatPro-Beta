@@ -101,18 +101,22 @@ class ReplayPluginBridge:
             raise RuntimeError("Conecta OBS antes de controlar el plugin de replay")
         self.obs.trigger_hotkey_by_name(self.HOTKEYS[action])
 
-    def _wait_for(self, predicate: Callable[[dict[str, Any]], bool], timeout: float, *, ignore_previous_error: bool = False) -> dict[str, Any]:
+    def _wait_for(self, predicate: Callable[[dict[str, Any]], bool], timeout: float, *, ignore_previous_error: bool = False, previous_error: str = "") -> dict[str, Any]:
         deadline = time.monotonic() + max(0.5, float(timeout))
         latest = self.status()
         while time.monotonic() < deadline:
             if predicate(latest):
                 return latest
-            if latest.get("error") and not ignore_previous_error:
+            # Hotkeys are asynchronous. The first snapshot may still contain
+            # an error from the previous command until OBS handles this one.
+            if latest.get("error") and not ignore_previous_error and latest["error"] != previous_error:
                 raise RuntimeError(str(latest["error"]))
             time.sleep(0.15)
             latest = self.status()
         if predicate(latest):
             return latest
+        if latest.get("error"):
+            raise RuntimeError(str(latest["error"]))
         raise RuntimeError("El plugin de replay no confirmó la operación a tiempo")
 
     def set_buffers_active(self, active: bool, timeout: float = 5.0) -> dict[str, Any]:
@@ -122,7 +126,8 @@ class ReplayPluginBridge:
         if bool(current.get("buffers_active")) == bool(active):
             return current
         self._trigger("toggle")
-        return self._wait_for(lambda state: bool(state.get("buffers_active")) == bool(active), timeout)
+        return self._wait_for(lambda state: bool(state.get("buffers_active")) == bool(active), timeout,
+                              previous_error=str(current.get("error") or ""))
 
     def mark(self, timeout: float = 30.0) -> dict[str, Any]:
         current = self.status()
@@ -153,20 +158,26 @@ class ReplayPluginBridge:
         raise RuntimeError("La captura no terminó; revisa las cámaras y el estado del búfer")
 
     def take(self) -> dict[str, Any]:
+        current = self.status()
         self._trigger("take")
-        return self._wait_for(lambda state: bool(state.get("playing")), 5.0)
+        return self._wait_for(lambda state: bool(state.get("playing")), 5.0,
+                              previous_error=str(current.get("error") or ""))
 
     def out(self) -> dict[str, Any]:
+        current = self.status()
         self._trigger("out")
-        return self._wait_for(lambda state: not bool(state.get("playing")), 5.0)
+        return self._wait_for(lambda state: not bool(state.get("playing")), 5.0,
+                              previous_error=str(current.get("error") or ""))
 
     def switch_camera(self, direction: str) -> dict[str, Any]:
         action = "previous_camera" if direction == "previous" else "next_camera"
-        before = int(self.status().get("active_camera") or 0)
+        current = self.status()
+        before = int(current.get("active_camera") or 0)
         self._trigger(action)
         return self._wait_for(
             lambda state: int(state.get("active_camera") or 0) != before,
             3.0,
+            previous_error=str(current.get("error") or ""),
         )
 
     def _compose(self, segments: list[dict[str, Any]], *, play_now: bool = False, timeout: float = 6.0) -> dict[str, Any]:
