@@ -4935,7 +4935,7 @@ textarea {
 
 .manual-score-mode #bottom-match-time {display:none !important;}
 
-/* International identities: complete flag image in the existing crest drawer. */
+/* International identities: preserve original assets; the scoreboard crops its flag frame. */
 body.international-teams .scoreboard :is(.team1-bar,.team2-bar),
 body.international-teams .penalties-team-logo-box,
 body.international-teams .player-profile-team-block {
@@ -4995,6 +4995,12 @@ body.international-teams #bottom-bar #bottom-team-block #bottom-team-logo,
 body.international-teams .player-profile-team-block img,
 body.international-teams .penalties-team-logo-box .penalties-team-logo {
   position: absolute !important; inset: 0 !important; box-sizing: border-box !important;
+}
+
+/* Fill the identical flag drawers edge to edge. Club crest fallbacks stay contained. */
+body.international-teams .scoreboard {gap:0 !important;}
+body.international-teams .scoreboard :is(.team1-bar,.team2-bar) img[data-national-flag="true"] {
+  object-fit:cover !important; object-position:center !important;
 }
 
 /* Fallback handoff when only the base overlay stylesheet is available. */

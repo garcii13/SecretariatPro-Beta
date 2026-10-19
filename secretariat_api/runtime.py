@@ -190,13 +190,17 @@ class ApplicationRuntime:
     def _theme_appearance(theme: dict[str, Any]) -> dict[str, Any]:
         config = theme.get("config") if isinstance(theme, dict) else {}
         if not isinstance(config, dict):
-            return {}
+            config = {}
         source = config.get("appearance") if isinstance(config.get("appearance"), dict) else config
         clean: dict[str, Any] = {}
         for section in ("scoreboard", "bottom_bar", "panels", "elements", "period_strip", "goal_celebration", "team_identity"):
             values = source.get(section)
             if isinstance(values, dict):
                 clean[section] = copy.deepcopy(values)
+        # Current competitions own this setting; historical theme-only clients remain readable.
+        identity = theme.get("competition_identity") if isinstance(theme, dict) else None
+        if isinstance(identity, dict):
+            clean["team_identity"] = copy.deepcopy(identity)
         return clean
 
     def _settings_with_published_theme(

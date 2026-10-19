@@ -29,10 +29,13 @@ For renderer changes first run `npm ci --prefix broadcast_renderer` and
 assets and their source/build manifest synchronized in both checkouts. Node is
 a build dependency only; the installed overlay must work using local bundled assets.
 
-International flags must remain complete and undistorted. On the scoreboard,
-both flags have the same visible width, capped at 1.5 times its height. If either
-flag requires more height, reduce the common width of both. Keep the scoreboard
-height unchanged. Preserve club crests separately in all competition modes.
+International flags use one centered crop frame based on the minimum source
+width and minimum source height of both flags. Scale it to fill the unchanged
+scoreboard height, cap its width at 1.5 times that height, and crop without
+stretching or leaving gutters. Match this in Manager preview. Keep uploaded
+originals and club crests separately in all competition modes. International
+mode belongs to competitions.is_international and each team owns its flag_url;
+visual themes only style the graphics and must not override competition mode.
 
 Goal presentation belongs to BroadcastFlow: replay/confirmed live (or configured
 delay), goal intro, GOAL_REVEAL handoff, full configured scorer duration, bottom hidden, scoreboard

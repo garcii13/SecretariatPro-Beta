@@ -1217,7 +1217,7 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 .preview-scoreboard .preview-logo {position:relative;}
 @media(max-width:650px) {.identity-flag-row {grid-template-columns:64px minmax(0,1fr);}.identity-flag-preview {width:64px;height:48px;}.identity-flag-row button {grid-column:2;justify-self:start;}}
 
-.is-international .preview-scoreboard {grid-template-columns:var(--preview-flag-width,96px) minmax(70px,1fr) 47px 66px 47px minmax(70px,1fr) var(--preview-flag-width,96px);}
+.is-international .preview-scoreboard {gap:0;align-items:stretch;grid-template-columns:var(--preview-flag-width,96px) minmax(70px,1fr) 47px 66px 47px minmax(70px,1fr) var(--preview-flag-width,96px);}
 
 /* The editable identity preview uses the same restrained light and motion. */
 .preview-motion-help {font-size:12px;color:var(--muted);margin:0 0 14px;}
@@ -1270,3 +1270,11 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 .is-previewing .preview-scoreboard {animation:sp-preview-score-slide 640ms cubic-bezier(.16,1,.3,1) both;}
 @keyframes sp-preview-score-slide {from {translate:0 -180%;opacity:1;} to {translate:0 0;opacity:1;}}
 .is-international .preview-scoreboard {border-radius:0;}
+
+/* Match the common, centered scoreboard flag crop; attachment thumbnails remain complete. */
+.is-international .preview-scoreboard .preview-logo {padding:0;border:0;border-radius:0;}
+.is-international .preview-scoreboard .preview-logo img {object-fit:cover;object-position:center;}
+
+.team-national-flag {width:92px;min-height:48px;display:grid;place-items:center;text-align:center;}
+.team-national-flag img {width:92px;height:64px;object-fit:contain;}
+.preview-competition-select {display:grid;gap:6px;margin:16px 0;}

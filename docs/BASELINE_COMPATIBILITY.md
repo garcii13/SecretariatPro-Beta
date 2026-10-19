@@ -20,7 +20,7 @@ Fecha: 17 de octubre de 2026. Rama: `feature/unified-international-goals`.
 | Emisión | Resultado OCR separado del resultado gráfico, modo manual, periodos, sanciones, penaltis, goles y asistencias | Pruebas core, operaciones, goles, powerplay y reconciliación |
 | OBS y replay | Vuelta confirmada a directo, cancelación, multicámara, velocidades, secuencias, biblioteca, miniaturas y exportación | `test_replay_workflow.py`, `test_beta6_replay_sequences.py`; sesión real con OBS y cámaras |
 | Manager | Cuentas, invitaciones, ámbitos, equipos, jugadores, rosters, importación y publicación visual | Pruebas de identidad, permisos, importaciones y perfiles |
-| Banderas | Subida original por selección; publicación por identidad; escudos conservados; ancho común limitado y altura dentro del marcador | `test_international_identity.py`, `overlay_presentation.test.cjs`, `manager_identity.test.cjs` |
+| Banderas | Subida original por selección; publicación por identidad; escudos conservados; recorte centrado con mínimos de ancho y alto, dimensiones iguales sin huecos y altura del marcador intacta | `test_international_identity.py`, `overlay_presentation.test.cjs`, `manager_identity.test.cjs` |
 | Gol animado | Idioma de Live, color del equipo, ceremonia de 2,2 s y transición de 640 ms al goleador; duración del goleador intacta; cancelación segura | Pruebas BroadcastFlow y presentación JavaScript |
 
 ## Comprobación de cada cambio
@@ -182,3 +182,21 @@ La revisión visual sigue bloqueada por el permiso del navegador. No se declara
 aceptado OCR sobre marcador real, DPI físico, concurrencia real ni restauración
 de copias. No se han publicado instaladores. Véanse AUDIT_FIXES_BETA11.md y las
 evidencias de docs/audits/2026-10-18/fixes/. El Lab continúa excluido.
+
+## Ajuste de banderas — 19 de octubre de 2026
+
+La instrucción actual sustituye la presentación completa anterior: el marco común
+parte del menor ancho y de la menor altura de las dos imágenes, se escala a la
+altura del marcador y limita el ancho a 1,5 veces esa altura. Ambas banderas
+rellenan ese marco con recorte centrado, sin deformación ni márgenes. Manager
+previsualiza el mismo cálculo; las imágenes adjuntas, los escudos guardados y los
+otros gráficos conservan sus originales. Los instaladores beta 11 anteriores
+no incluyen este ajuste hasta que se recompilen desde esta revisión.
+
+El modo internacional se edita en las particularidades de la competición
+(`competitions.is_international`); cada equipo tiene `teams.flag_url`, separado
+de sus escudos. La identidad visual ya no autoriza ese modo ni adjunta banderas.
+Live consulta esos datos incluso sin un tema publicado, los refresca sin exigir
+republicación y vuelve a escudos al seleccionar una competición de clubes.
+La migración conserva la configuración publicada anterior dentro de su espacio
+y recupera las banderas adjuntas sin borrar los temas históricos.

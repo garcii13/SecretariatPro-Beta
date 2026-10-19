@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from supabase import Client, create_client
 from secretariat_core.services.powerplay import penalty_values
+from secretariat_core.visual_identity import normalize_team_identity
 
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
@@ -644,7 +645,7 @@ class ScoreboardSupabaseClient:
         workspace_id = self._active_workspace_id()
         response = (
             self.client.table("competitions")
-            .select("id,workspace_id,name,category,season_id,active,logo_url,points_win,points_draw,points_loss,seasons(name)")
+            .select("id,workspace_id,name,category,season_id,active,is_international,logo_url,points_win,points_draw,points_loss,seasons(name)")
             .eq("workspace_id", workspace_id)
             .order("name")
             .execute()
@@ -656,8 +657,10 @@ class ScoreboardSupabaseClient:
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(
             payload,
-            {"name", "category", "season_id", "active", "logo_url", "points_win", "points_draw", "points_loss"},
+            {"name", "category", "season_id", "active", "is_international", "logo_url", "points_win", "points_draw", "points_loss"},
         )
+        if "is_international" in clean and not isinstance(clean["is_international"], bool):
+            raise ValueError("El modo internacional debe ser verdadero o falso")
         if not clean.get("name"):
             raise ValueError("El nombre de la competición es obligatorio")
         clean.setdefault("active", True)
@@ -673,8 +676,10 @@ class ScoreboardSupabaseClient:
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(
             payload,
-            {"name", "category", "season_id", "active", "logo_url", "points_win", "points_draw", "points_loss"},
+            {"name", "category", "season_id", "active", "is_international", "logo_url", "points_win", "points_draw", "points_loss"},
         )
+        if "is_international" in clean and not isinstance(clean["is_international"], bool):
+            raise ValueError("El modo internacional debe ser verdadero o falso")
         response = (
             self.client.table("competitions")
             .update(clean)
@@ -698,7 +703,7 @@ class ScoreboardSupabaseClient:
         workspace_id = self._active_workspace_id()
         response = (
             self.client.table("teams")
-            .select("id,workspace_id,name,short_name,logo_url,alternate_logo_url,primary_color,secondary_color")
+            .select("id,workspace_id,name,short_name,logo_url,alternate_logo_url,flag_url,primary_color,secondary_color")
             .eq("workspace_id", workspace_id)
             .order("name")
             .execute()
@@ -710,8 +715,10 @@ class ScoreboardSupabaseClient:
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(
             payload,
-            {"name", "short_name", "logo_url", "alternate_logo_url", "primary_color", "secondary_color"},
+            {"name", "short_name", "logo_url", "alternate_logo_url", "flag_url", "primary_color", "secondary_color"},
         )
+        if clean.get("flag_url") and not normalize_team_identity({"flags": {"team": clean["flag_url"]}})["flags"]:
+            raise ValueError("La bandera debe usar una URL HTTP o HTTPS válida")
         if not clean.get("name"):
             raise ValueError("El nombre del equipo es obligatorio")
         if not clean.get("short_name"):
@@ -727,8 +734,10 @@ class ScoreboardSupabaseClient:
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(
             payload,
-            {"name", "short_name", "logo_url", "alternate_logo_url", "primary_color", "secondary_color"},
+            {"name", "short_name", "logo_url", "alternate_logo_url", "flag_url", "primary_color", "secondary_color"},
         )
+        if clean.get("flag_url") and not normalize_team_identity({"flags": {"team": clean["flag_url"]}})["flags"]:
+            raise ValueError("La bandera debe usar una URL HTTP o HTTPS válida")
         response = (
             self.client.table("teams")
             .update(clean)
@@ -2008,7 +2017,7 @@ class ScoreboardSupabaseClient:
                 .execute()
             ).data or []
             if rows:
-                return dict(rows[0])
+                return self._competition_identity_theme(dict(rows[0]), clean_competition, workspace_id)
         rows = (
             self.client.table("sp_visual_themes")
             .select("id,workspace_id,competition_id,name,config,version,published,locked,updated_at")
@@ -2019,13 +2028,39 @@ class ScoreboardSupabaseClient:
             .limit(1)
             .execute()
         ).data or []
-        return dict(rows[0]) if rows else {}
+        return self._competition_identity_theme(dict(rows[0]) if rows else {}, clean_competition, workspace_id)
+
+    def _competition_identity_theme(self, theme, competition_id, workspace_id):
+        result = dict(theme)
+        identity = {"international": False, "flags": {}}
+        if competition_id:
+            rows = (self.client.table("competitions").select("id,is_international")
+                    .eq("workspace_id", workspace_id).eq("id", competition_id).limit(1).execute()).data or []
+            if not rows:
+                raise ValueError("Competición no disponible en este espacio")
+            if rows[0].get("is_international") is True:
+                # Do not lose flags beyond PostgREST's default row limit.
+                teams = []
+                start = 0
+                while True:
+                    page = (self.client.table("teams").select("id,flag_url")
+                            .eq("workspace_id", workspace_id).order("id")
+                            .range(start, start + 499).execute()).data or []
+                    teams.extend(page)
+                    if len(page) < 500:
+                        break
+                    start += 500
+                identity = normalize_team_identity({"international": True, "flags": {
+                    str(team["id"]): team.get("flag_url") for team in teams if team.get("flag_url")
+                }})
+        result["competition_identity"] = identity
+        return result
 
     def list_competitions(self) -> list[dict[str, Any]]:
         response = (
             self.client.table("competitions")
             .select(
-                "id,workspace_id,name,category,season_id,active,logo_url,points_win,points_draw,points_loss,"
+                "id,workspace_id,name,category,season_id,active,is_international,logo_url,points_win,points_draw,points_loss,"
                 "seasons(name)"
             )
         )
@@ -2068,9 +2103,9 @@ class ScoreboardSupabaseClient:
                 "assigned_operator:scoreboard_operators!matches_assigned_to_fkey("
                 "id,email,display_name),"
                 "home_team:teams!matches_home_team_id_fkey("
-                "id,name,short_name,logo_url,alternate_logo_url,primary_color,secondary_color),"
+                "id,name,short_name,logo_url,alternate_logo_url,flag_url,primary_color,secondary_color),"
                 "away_team:teams!matches_away_team_id_fkey("
-                "id,name,short_name,logo_url,alternate_logo_url,primary_color,secondary_color)"
+                "id,name,short_name,logo_url,alternate_logo_url,flag_url,primary_color,secondary_color)"
             )
             .eq("competition_id", competition_id)
         )

@@ -18,18 +18,18 @@
     "broadcast_renderer/src/env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
     "broadcast_renderer/src/main.ts": "5ebff825c74c84cd6d16a38a2707dfe3e285b648e7ccb68d3c6afdf74f50c944",
     "broadcast_renderer/src/motion.ts": "4e3e22946beb5192ffc151e781c6e0ad8c756267ef5a6e1eeee74eb20ae6ce32",
-    "broadcast_renderer/src/studio.css": "13c267b98e8f5f4f010d4b86938950ae45bcf13b0c5cca274623f17788c5c272",
+    "broadcast_renderer/src/studio.css": "7985f0f6708afa95358ace43aa15d5b7c69a6031444b2f21a84a69725ddfb5a9",
     "broadcast_renderer/src/types.ts": "b22d1fe580bb1932742e36fea9923fd4140d5732f365644c394411c669f18043",
     "broadcast_renderer/tsconfig.json": "51f4932da5bd3e40ccfb3f21a6ec2f0146f44a070fd822445bf9f3a828169256",
     "broadcast_renderer/vite.config.ts": "c5ca1e49971d6569ca4f3e304dd4d4750f54838ae7074d40019be3eabf78f7f5",
-    "overlay-studio.html": "ba80e4e40a489b6a6e71667effb96b90beb60d6a40244332f58664262ae43571",
+    "overlay-studio.html": "c05672224ef9e8c6545f233c069ede257d902e8887a525d3d12a26142a5d7359",
     "overlay_cinematic.css": "493c8a18171fcd60ac4582826f30359c2ccc50a85175cccacbf1caf7a3b8a963",
-    "script.js": "c52b07ff8f0c6485ec0970fb8e6d0e7f3cc496d8ccdeac18252d86e18457cd35",
-    "styles.css": "0c04f24dba1d365a368a98684777a2485b5a7aad3021db1d18376d2b8f4bf791"
+    "script.js": "f864e78d02ba44cbba8e5fcfc62b40081be9b13a1e362a40827638d536911b4b",
+    "styles.css": "e1d14ce63e14c32687446313bf25c09cf23d327b66cab905d705234bcecdb69b"
   },
   "assets": {
-    "studio.js": "fb3830cd939a28f0e4a97bbf2eb7af65975a3d9e10ccfa518eade6f0c3d48996",
-    "studio.css": "78ff12a1fe04139a22b707e510c56a925a0ad0dde76df6ad97ab1d8d0710e041",
+    "studio.js": "6c07903246b3599e63598aba9d10a2496afd6149e99afe6f9d15b57a68387f11",
+    "studio.css": "ee3ec5d4a479d1757d9fcd9b5117361efd7a199325f8a61df92441b8228efea3",
     "THIRD_PARTY_NOTICES.txt": "5a165fa64616abaac4d57606d952a73c329e4eced1d186c035828688cf72c31a"
   }
 }

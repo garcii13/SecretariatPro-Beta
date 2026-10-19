@@ -75,26 +75,77 @@ test('Manager palette, fonts, scales, periods and TXT scoring remain live after 
   } finally { h.close(); }
 });
 
-test('international assets keep common capped width and original crests survive a competition switch', async () => {
-  const h = await harness();
+test('international flags fill equal minimum-dimension frames in both renderers and club crests stay intact', async () => {
+  for (const legacy of [true,false]) {
+    const h = await harness({legacy});
+    try {
+      for (const name of ['styles.css','overlay_cinematic.css',...(!legacy ? ['overlay_studio/studio.css'] : [])]) {
+        const style=h.w.document.createElement('style');style.textContent=source(name);h.w.document.head.append(style);
+      }
+      const state = fixture();
+      state.overlay_settings.appearance.team_identity = { international: true, flags: { home: '/home-flag.svg', away: '/away-flag.svg' } };
+      const sizes={home:{width:200,height:100},away:{width:100,height:200}};
+      for (const [id,key] of [['team1-logo','home'],['team2-logo','away']]) {
+        Object.defineProperty(byId(h,id),'naturalWidth',{get:()=>sizes[key].width});
+        Object.defineProperty(byId(h,id),'naturalHeight',{get:()=>sizes[key].height});
+      }
+      await h.update(state);
+      assert.equal(byId(h,'scoreboard').style.getPropertyValue('--logo-width'), '94px');
+      for (const id of ['team1-logo','team2-logo']) {
+        const img=byId(h,id),css=h.w.getComputedStyle(img),box=h.w.getComputedStyle(img.parentElement);
+        assert.equal(img.dataset.nationalFlag,'true');
+        assert.equal(css.objectFit,'cover');assert.equal(css.objectPosition,'center');
+        assert.equal(css.width,'100%');assert.equal(css.height,'100%');
+        assert.equal(box.height,'94px');assert.equal(box.padding,'0px');assert.equal(box.overflow,'hidden');
+      }
+      assert.equal(h.w.getComputedStyle(byId(h,'scoreboard')).gap,'0px');
+      assert.equal(byId(h,'team1-logo').getAttribute('src'), '/home-flag.svg');
+      assert.equal(byId(h,'team2-logo').getAttribute('src'), '/away-flag.svg');
+      assert.equal(byId(h,'bottom-team-logo').getAttribute('src'), '/away-flag.svg');
+      assert.equal(state.team1.logo, '/home.svg');
+      sizes.home={width:300,height:100};sizes.away={width:400,height:100};
+      byId(h,'team2-logo').dispatchEvent(new h.w.Event('load'));
+      assert.equal(byId(h,'scoreboard').style.getPropertyValue('--logo-width'),'141px');
+      delete state.overlay_settings.appearance.team_identity.flags.home;
+      await h.update(state);
+      assert.equal(byId(h,'team1-logo').getAttribute('src'),'/home.svg');
+      assert.equal(h.w.getComputedStyle(byId(h,'team1-logo')).objectFit,'contain');
+      await h.update(fixture());
+      assert.equal(byId(h,'team1-logo').getAttribute('src'), '/home.svg');
+      assert.equal(byId(h,'scoreboard').style.getPropertyValue('--logo-width'), '');
+      assert.deepEqual(h.errors, []);
+    } finally { h.close(); }
+  }
+});
+
+test('Manager edits international mode on the competition and keeps each team flag separate from both crests', () => {
+  const dom = new JSDOM(source('manager_app/index.html'), {runScripts:'outside-only'});
   try {
-    const state = fixture();
-    state.overlay_settings.appearance.team_identity = { international: true, flags: { home: '/home-flag.svg', away: '/away-flag.svg' } };
-    for (const [id,width,height] of [['team1-logo',100,100],['team2-logo',300,100]]) {
-      Object.defineProperty(byId(h,id),'naturalWidth',{get:()=>width});
-      Object.defineProperty(byId(h,id),'naturalHeight',{get:()=>height});
-    }
-    await h.update(state);
-    assert.equal(byId(h,'scoreboard').style.getPropertyValue('--logo-width'), '94px');
-    assert.equal(byId(h,'team1-logo').getAttribute('src'), '/home-flag.svg');
-    assert.equal(byId(h,'team2-logo').getAttribute('src'), '/away-flag.svg');
-    assert.equal(byId(h,'bottom-team-logo').getAttribute('src'), '/away-flag.svg');
-    assert.equal(state.team1.logo, '/home.svg');
-    await h.update(fixture());
-    assert.equal(byId(h,'team1-logo').getAttribute('src'), '/home.svg');
-    assert.equal(byId(h,'scoreboard').style.getPropertyValue('--logo-width'), '');
-    assert.deepEqual(h.errors, []);
-  } finally { h.close(); }
+    const text=source('manager_app/app.js');
+    const piece=(start,end)=>text.slice(text.indexOf(start),text.indexOf(end));
+    dom.window.eval(`const state={cache:{seasons:[]}};
+      const tr=value=>value;const escapeHtml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
+      ${piece('  const forms = {','  function rosterFormConfig(')}
+      ${piece('  function normalizeInputValue(','  async function openForm(')}
+      ${piece('  function parseForm(','  async function uploadModalFiles(')}
+      globalThis.managerFields={forms,fieldHtml,parseForm};`);
+    const {forms,fieldHtml,parseForm}=dom.window.managerFields;
+    const form=dom.window.document.createElement('form');
+    const competitionFields=forms.competition.fields();
+    form.innerHTML=competitionFields.map(field=>fieldHtml(field)).join('');
+    const toggle=form.elements.namedItem('is_international');
+    assert.ok(toggle);assert.match(form.textContent,/Particularidades de la competición/);
+    toggle.checked=true;assert.equal(parseForm(form,competitionFields).is_international,true);
+    toggle.checked=false;assert.equal(parseForm(form,competitionFields).is_international,false);
+    assert.equal(dom.window.document.querySelector('#identity-international'),null);
+    assert.ok(dom.window.document.querySelector('#identity-preview-competition'));
+    form.innerHTML=forms.team.fields.map(field=>fieldHtml(field)).join('');
+    for(const [key,value] of Object.entries({logo_url:'crest',alternate_logo_url:'alternate',flag_url:'https://assets.test/flag.svg'})) form.elements.namedItem(key).value=value;
+    const payload=parseForm(form,forms.team.fields);
+    assert.equal(payload.logo_url,'crest');assert.equal(payload.alternate_logo_url,'alternate');
+    assert.equal(payload.flag_url,'https://assets.test/flag.svg');
+    assert.equal(form.querySelector('[data-logo-file="flag_url"]').dataset.assetKind,'team-flags');
+  } finally {dom.window.close();}
 });
 
 test('queue previews preserve the cue endpoint and every panel clears on hide-all', async () => {

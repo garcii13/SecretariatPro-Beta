@@ -1,0 +1,15 @@
+{
+  "migration": "competition_international_flags",
+  "applied": true,
+  "tables_rls_preserved": true,
+  "restrictive_tenant_guards": 2,
+  "legacy_international_competitions_preserved": 1,
+  "legacy_team_flags_recovered": 2,
+  "real_database_probe": {
+    "passed": true,
+    "checks": 9,
+    "fixtures_rolled_back": true,
+    "sent_emails": 0
+  },
+  "new_public_release": false
+}

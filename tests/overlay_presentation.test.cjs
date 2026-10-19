@@ -26,14 +26,30 @@ test('a timed out transport lease cannot commit after recovery, even if fetch ig
 test('goal word follows all six Live languages', () => {
   for (const [language, word] of Object.entries({es:'GOL',en:'GOAL',sv:'MÅL',cs:'GÓL',fi:'MAALI',de:'TOR',unknown:'GOAL'})) assert.equal(p.goalWord(language), word);
 });
-test('both flags share one capped visible width and fit vertically without distortion', () => {
-  for (const ratios of [[1.5,2], [1,2], [0.7,1.5], [3,4], [1.6,1.666]]) {
-    const width = p.flagWidth(94, ratios);
+test('both flag frames use the minimum source width AND height, scaled to the unchanged scoreboard height', () => {
+  for (const [dimensions, expected] of [
+    [[{width:150,height:100},{width:200,height:100}],141],
+    [[{width:100,height:100},{width:200,height:100}],94],
+    [[{width:200,height:100},{width:100,height:200}],94],
+    [[{width:300,height:200},{width:400,height:100}],141],
+    [[{width:50,height:100},{width:100,height:200}],47],
+    [[{width:300,height:100},{width:400,height:100}],141],
+  ]) {
+    const width = p.flagWidth(94, dimensions);
+    assert.equal(width, expected);
     assert.ok(width <= 141);
-    for (const ratio of ratios) assert.ok(width / ratio <= 94);
+    assert.equal(p.flagWidth(94, dimensions.slice().reverse()), width, 'order cannot change the shared frame');
+    // Uniform cover fills both dimensions; excess is cropped rather than letterboxed.
+    for (const source of dimensions) {
+      const scale = Math.max(width / source.width, 94 / source.height);
+      assert.ok(source.width * scale >= width);
+      assert.ok(source.height * scale >= 94);
+    }
   }
-  assert.equal(p.flagWidth(94,[1.5,2]),141);
-  assert.equal(p.flagWidth(94,[1,2]),94);
+  assert.equal(p.flagWidth(94,[]),141);
+  assert.equal(p.flagWidth(94,[{width:0,height:0},{width:NaN,height:20}]),141);
+  assert.equal(p.flagWidth(94,[{width:Infinity,height:50},{width:100,height:100}]),94);
+  assert.equal(p.flagWidth(94,[{width:300,height:100}],110),110);
 });
 test('published flags reach every team graphic while club assets stay intact', () => {
   const source = {team1:{id:'h',logo:'home-crest'},team2:{id:'a',logo:'away-crest'},bottombar:{team_key:'team2',team_logo:'away-crest'},statistics:{lineups:{team1_logo:'home-crest',team2_logo:'away-crest'},top_scorers:{team1:{team_logo:'home-crest'},team2:{team_logo:'away-crest'}},player_profile:{team_key:'team1',team_logo:'home-crest'}}};

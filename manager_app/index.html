@@ -22,7 +22,7 @@
     })();
   </script>
   <!-- Compatibility: styles.css?v=phase42 -->
-  <link rel="stylesheet" href="/manager/styles.css?v=phase56-international-goals-studio4-scoped-import5">
+  <link rel="stylesheet" href="/manager/styles.css?v=phase56-competition-flags">
 </head>
 <body data-compat-build="phase38" data-manager-release="phase56">
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -184,7 +184,7 @@
               <label>Control de realizadores<select name="locked"><option value="true">Bloqueada</option></select></label>
               <label>Al guardar<select name="published"><option value="false">Guardar borrador</option><option value="true">Publicar ahora</option></select></label>
             </div>
-            <div class="palette-section"><h3>Competiciones de selecciones</h3><label class="check-field"><input id="identity-international" type="checkbox"> Competición internacional · usar banderas</label><p>Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.</p><div id="identity-flags" hidden></div></div>
+
             <div class="palette-section"><div><span class="eyebrow">MARCADOR</span><h3>Marcador principal</h3></div><div class="color-fields" data-palette-section="scoreboard"></div></div>
             <div class="palette-section"><div><span class="eyebrow">BOTTOM BAR</span><h3>Goles y avisos</h3></div><div class="color-fields" data-palette-section="bottom_bar"></div></div>
             <div class="palette-section"><div><span class="eyebrow">PANELES</span><h3>Prematch, descanso y estadísticas</h3></div><div class="color-fields" data-palette-section="panels"></div></div>
@@ -197,6 +197,8 @@
           <div class="identity-preview-column">
             <article class="panel preview-stage">
               <div class="panel-head"><div><span class="eyebrow">VISTA PREVIA</span><h2>Overlay</h2></div><button type="button" class="secondary" id="identity-preview-motion">Reproducir animación</button></div>
+              <label class="preview-competition-select">Competición para previsualizar<select id="identity-preview-competition"><option value="">Sin competición</option></select></label>
+              <p class="field-help">El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.</p>
               <p class="preview-motion-help">Prueba las entradas con tus colores, tamaños y tipografías antes de publicar.</p>
               <div class="preview-canvas" id="visual-preview">
                 <div class="preview-scoreboard"><div class="preview-logo">SP</div><div class="preview-team">LOCAL</div><strong>2</strong><div class="preview-clock"><span>12:34</span><div id="preview-period-strip" class="preview-period-strip"><i class="active">1</i><i>2</i><i>3</i></div></div><strong>1</strong><div class="preview-team">VISITA</div><div class="preview-logo">VS</div></div>
@@ -318,6 +320,6 @@
 
   <div class="toast" id="toast" hidden></div>
   <!-- Compatibility: app.js?v=phase42 -->
-  <script src="/manager/app.js?v=phase56-international-goals-cinema2-scoped-import5"></script>
+  <script src="/manager/app.js?v=phase56-competition-flags"></script>
 </body>
 </html>

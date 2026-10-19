@@ -32,3 +32,5 @@ source-manifest.json
 *.exe
 *.sha256
 secretariatpro-ocr-models-*.zip
+
+supabase/.temp/

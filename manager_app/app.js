@@ -147,11 +147,11 @@
   Object.assign(UI_TRANSLATIONS.cs, {"Mostrar número dentro del reloj": "Zobrazit číslo periody v hodinách", "El marcador vuelve después de retirar el bottom del gol.": "Ukazatel skóre se vrátí po skrytí gólové grafiky."});
   Object.assign(UI_TRANSLATIONS.fi, {"Mostrar número dentro del reloj": "Näytä erän numero kellossa", "El marcador vuelve después de retirar el bottom del gol.": "Tulostaulu palaa maaligrafiikan poistuttua."});
   Object.assign(UI_TRANSLATIONS.de, {"Mostrar número dentro del reloj": "Spielabschnitt in der Uhr anzeigen", "El marcador vuelve después de retirar el bottom del gol.": "Die Anzeigetafel erscheint nach dem Ausblenden der Torgrafik."});
-  Object.assign(UI_TRANSLATIONS.en, {"Competiciones de selecciones": "National team competitions", "Competición internacional · usar banderas": "International competition · use flags", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Attach a flag for each national team. Both share the same width, up to 1.5 times the scoreboard height, without cropping or distortion. If one is taller, both shrink equally.", "Adjuntar bandera": "Attach flag", "Quitar bandera": "Remove flag", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Create national teams in Teams to attach their flags.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Use PNG, JPG, WEBP or SVG up to 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "A 2.2-second goal animation in Live’s language and the team colour precedes the scorer. The scoreboard returns after the goal lower third clears."});
-  Object.assign(UI_TRANSLATIONS.sv, {"Competiciones de selecciones": "Landslagstävlingar", "Competición internacional · usar banderas": "Internationell tävling · använd flaggor", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Bifoga en flagga per landslag. Båda har samma bredd, högst 1,5 gånger resultattavlans höjd, utan beskärning eller förvrängning. Om en är högre minskas båda lika mycket.", "Adjuntar bandera": "Bifoga flagga", "Quitar bandera": "Ta bort flagga", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Skapa landslagen under Lag för att bifoga deras flaggor.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Använd PNG, JPG, WEBP eller SVG på högst 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "En 2,2 sekunder lång målanimation på Lives språk och i lagets färg visas före målskytten. Resultattavlan återkommer efter målgrafiken."});
-  Object.assign(UI_TRANSLATIONS.cs, {"Competiciones de selecciones": "Soutěže národních týmů", "Competición internacional · usar banderas": "Mezinárodní soutěž · použít vlajky", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Připojte vlajku pro každý národní tým. Obě mají stejnou šířku, nejvýše 1,5násobek výšky ukazatele skóre, bez ořezu či deformace. Je-li jedna vyšší, obě se stejně zmenší.", "Adjuntar bandera": "Připojit vlajku", "Quitar bandera": "Odebrat vlajku", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Vytvořte národní týmy v sekci Týmy a připojte jejich vlajky.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Použijte PNG, JPG, WEBP nebo SVG do 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Před střelcem se zobrazí animace gólu na 2,2 sekundy v jazyce Live a barvě týmu. Ukazatel skóre se vrátí po skrytí gólové grafiky."});
-  Object.assign(UI_TRANSLATIONS.fi, {"Competiciones de selecciones": "Maajoukkuekilpailut", "Competición internacional · usar banderas": "Kansainvälinen kilpailu · käytä lippuja", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Liitä lippu kullekin maajoukkueelle. Molemmilla on sama leveys, enintään 1,5 kertaa tulostaulun korkeus, ilman rajausta tai vääristymistä. Jos toinen on korkeampi, molempia pienennetään yhtä paljon.", "Adjuntar bandera": "Liitä lippu", "Quitar bandera": "Poista lippu", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Luo maajoukkueet Joukkueet-osiossa ja liitä niiden liput.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Käytä PNG-, JPG-, WEBP- tai SVG-tiedostoja, enintään 10 Mt.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Ennen maalintekijää näkyy 2,2 sekunnin maalianimaatio Liven kielellä ja joukkueen värillä. Tulostaulu palaa maaligrafiikan poistuttua."});
-  Object.assign(UI_TRANSLATIONS.de, {"Competiciones de selecciones": "Nationalmannschaftswettbewerbe", "Competición internacional · usar banderas": "Internationaler Wettbewerb · Flaggen verwenden", "Adjunta una bandera por selección. Ambas tienen el mismo ancho, hasta 1,5 veces la altura del marcador, sin recortes ni deformación. Si una es más alta, se reducen ambas por igual.": "Füge für jede Nationalmannschaft eine Flagge hinzu. Beide sind gleich breit, höchstens 1,5-mal so breit wie die Anzeigetafel hoch ist, ohne Zuschnitt oder Verzerrung. Ist eine höher, werden beide gleich verkleinert.", "Adjuntar bandera": "Flagge hinzufügen", "Quitar bandera": "Flagge entfernen", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Erstelle die Nationalmannschaften unter Teams, um ihre Flaggen hinzuzufügen.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Verwende PNG, JPG, WEBP oder SVG bis 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Vor dem Torschützen erscheint eine 2,2 Sekunden lange Toranimation in der Sprache von Live und der Teamfarbe. Die Anzeigetafel kehrt nach der Torgrafik zurück."});
+  Object.assign(UI_TRANSLATIONS.en, {"Competiciones de selecciones": "National team competitions", "Competición internacional · usar banderas": "International competition · use flags", "Adjuntar bandera": "Attach flag", "Quitar bandera": "Remove flag", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Create national teams in Teams to attach their flags.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Use PNG, JPG, WEBP or SVG up to 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "A 2.2-second goal animation in Live’s language and the team colour precedes the scorer. The scoreboard returns after the goal lower third clears.", "Adjunta una bandera por selección. El marcador toma el menor ancho y la menor altura de ambas y usa un recorte centrado para igualarlas, sin deformación ni huecos. El ancho no supera 1,5 veces la altura del marcador.": "Attach a flag for each national team. The scoreboard uses the smaller width and height of the pair and a centered crop to match them, without stretching or gaps. Width is capped at 1.5 times the scoreboard height."});
+  Object.assign(UI_TRANSLATIONS.sv, {"Competiciones de selecciones": "Landslagstävlingar", "Competición internacional · usar banderas": "Internationell tävling · använd flaggor", "Adjuntar bandera": "Bifoga flagga", "Quitar bandera": "Ta bort flagga", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Skapa landslagen under Lag för att bifoga deras flaggor.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Använd PNG, JPG, WEBP eller SVG på högst 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "En 2,2 sekunder lång målanimation på Lives språk och i lagets färg visas före målskytten. Resultattavlan återkommer efter målgrafiken.", "Adjunta una bandera por selección. El marcador toma el menor ancho y la menor altura de ambas y usa un recorte centrado para igualarlas, sin deformación ni huecos. El ancho no supera 1,5 veces la altura del marcador.": "Bifoga en flagga per landslag. Resultattavlan använder parets minsta bredd och höjd med centrerad beskärning, utan förvrängning eller mellanrum. Bredden är högst 1,5 gånger resultattavlans höjd."});
+  Object.assign(UI_TRANSLATIONS.cs, {"Competiciones de selecciones": "Soutěže národních týmů", "Competición internacional · usar banderas": "Mezinárodní soutěž · použít vlajky", "Adjuntar bandera": "Připojit vlajku", "Quitar bandera": "Odebrat vlajku", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Vytvořte národní týmy v sekci Týmy a připojte jejich vlajky.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Použijte PNG, JPG, WEBP nebo SVG do 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Před střelcem se zobrazí animace gólu na 2,2 sekundy v jazyce Live a barvě týmu. Ukazatel skóre se vrátí po skrytí gólové grafiky.", "Adjunta una bandera por selección. El marcador toma el menor ancho y la menor altura de ambas y usa un recorte centrado para igualarlas, sin deformación ni huecos. El ancho no supera 1,5 veces la altura del marcador.": "Připojte vlajku každé reprezentace. Ukazatel použije menší šířku a výšku dvojice a vystředěný ořez, bez deformace či mezer. Šířka nepřesáhne 1,5násobek výšky ukazatele."});
+  Object.assign(UI_TRANSLATIONS.fi, {"Competiciones de selecciones": "Maajoukkuekilpailut", "Competición internacional · usar banderas": "Kansainvälinen kilpailu · käytä lippuja", "Adjuntar bandera": "Liitä lippu", "Quitar bandera": "Poista lippu", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Luo maajoukkueet Joukkueet-osiossa ja liitä niiden liput.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Käytä PNG-, JPG-, WEBP- tai SVG-tiedostoja, enintään 10 Mt.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Ennen maalintekijää näkyy 2,2 sekunnin maalianimaatio Liven kielellä ja joukkueen värillä. Tulostaulu palaa maaligrafiikan poistuttua.", "Adjunta una bandera por selección. El marcador toma el menor ancho y la menor altura de ambas y usa un recorte centrado para igualarlas, sin deformación ni huecos. El ancho no supera 1,5 veces la altura del marcador.": "Liitä lippu kullekin maajoukkueelle. Tulostaulu käyttää parin pienintä leveyttä ja korkeutta sekä keskitettyä rajausta ilman vääristymiä tai aukkoja. Leveys on enintään 1,5 kertaa tulostaulun korkeus."});
+  Object.assign(UI_TRANSLATIONS.de, {"Competiciones de selecciones": "Nationalmannschaftswettbewerbe", "Competición internacional · usar banderas": "Internationaler Wettbewerb · Flaggen verwenden", "Adjuntar bandera": "Flagge hinzufügen", "Quitar bandera": "Flagge entfernen", "Crea las selecciones en Equipos para adjuntar sus banderas.": "Erstelle die Nationalmannschaften unter Teams, um ihre Flaggen hinzuzufügen.", "Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB.": "Verwende PNG, JPG, WEBP oder SVG bis 10 MB.", "Animación de gol de 2,2 segundos con el idioma de Live y el color del equipo antes del goleador. El marcador vuelve después de retirar el bottom del gol.": "Vor dem Torschützen erscheint eine 2,2 Sekunden lange Toranimation in der Sprache von Live und der Teamfarbe. Die Anzeigetafel kehrt nach der Torgrafik zurück.", "Adjunta una bandera por selección. El marcador toma el menor ancho y la menor altura de ambas y usa un recorte centrado para igualarlas, sin deformación ni huecos. El ancho no supera 1,5 veces la altura del marcador.": "Füge für jede Nationalmannschaft eine Flagge hinzu. Die Anzeigetafel nutzt die kleinere Breite und Höhe des Paars mit mittigem Zuschnitt, ohne Verzerrung oder Lücken. Die Breite beträgt höchstens das 1,5-Fache der Anzeigetafelhöhe."});
   Object.assign(UI_TRANSLATIONS.en, {"Reproducir animación": "Play animation", "Prueba las entradas con tus colores, tamaños y tipografías antes de publicar.": "Preview entrances with your colours, sizes and fonts before publishing."});
   Object.assign(UI_TRANSLATIONS.sv, {"Reproducir animación": "Spela animation", "Prueba las entradas con tus colores, tamaños y tipografías antes de publicar.": "Förhandsvisa övergångarna med dina färger, storlekar och typsnitt före publicering."});
   Object.assign(UI_TRANSLATIONS.cs, {"Reproducir animación": "Přehrát animaci", "Prueba las entradas con tus colores, tamaños y tipografías antes de publicar.": "Před publikováním si prohlédněte nástupy s vlastními barvami, velikostmi a písmy."});
@@ -160,6 +160,11 @@
   const translatedTextNodes = new WeakMap();
   const translationExclusions = ".row-title,.row-subtitle,.match-teams,.profile,.workspace-control,.team-card h3,.player-card h3,.theme-card h3,.account-profile-copy,.logo-placeholder,#workspace-name,#profile-name,#profile-email";
 
+  Object.assign(UI_TRANSLATIONS.en, {"Particularidades de la competición": "Competition specifics", "Bandera de la selección": "National team flag", "Bandera pendiente": "Flag missing", "Internacional": "International", "Competición para previsualizar": "Preview competition", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Change international mode in the competition specifics. Attach flags in each team profile.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Each team uses its flag in this competition. Attach it in the team profile; club competitions keep the crest.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Used in every international competition for this team. The primary and alternate crests are saved separately."});
+  Object.assign(UI_TRANSLATIONS.sv, {"Particularidades de la competición": "Tävlingsinställningar", "Bandera de la selección": "Landslagets flagga", "Bandera pendiente": "Flagga saknas", "Internacional": "Internationell", "Competición para previsualizar": "Förhandsvisa tävling", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Ändra internationellt läge i tävlingsinställningarna. Bifoga flaggor i lagens profiler.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Varje lag använder sin flagga i denna tävling. Bifoga den i lagets profil; klubbtävlingar behåller klubbmärket.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Används i lagets internationella tävlingar. Ordinarie och alternativa klubbmärken sparas separat."});
+  Object.assign(UI_TRANSLATIONS.cs, {"Particularidades de la competición": "Nastavení soutěže", "Bandera de la selección": "Vlajka reprezentace", "Bandera pendiente": "Chybí vlajka", "Internacional": "Mezinárodní", "Competición para previsualizar": "Náhled soutěže", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Mezinárodní režim změňte v nastavení soutěže. Vlajky připojte v profilech týmů.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Každý tým používá v této soutěži vlajku. Připojte ji v profilu týmu; klubové soutěže zachovají znak.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Používá se v mezinárodních soutěžích týmu. Hlavní a alternativní znaky se ukládají samostatně."});
+  Object.assign(UI_TRANSLATIONS.fi, {"Particularidades de la competición": "Kilpailun asetukset", "Bandera de la selección": "Maajoukkueen lippu", "Bandera pendiente": "Lippu puuttuu", "Internacional": "Kansainvälinen", "Competición para previsualizar": "Esikatseltava kilpailu", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Vaihda kansainvälinen tila kilpailun asetuksissa. Lisää liput joukkueiden profiileihin.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Jokainen joukkue käyttää lippua tässä kilpailussa. Lisää se joukkueen profiiliin; seurakilpailut säilyttävät tunnuksen.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Käytetään joukkueen kansainvälisissä kilpailuissa. Pää- ja vaihtoehtoiset tunnukset tallennetaan erikseen."});
+  Object.assign(UI_TRANSLATIONS.de, {"Particularidades de la competición": "Wettbewerbseinstellungen", "Bandera de la selección": "Nationalmannschaftsflagge", "Bandera pendiente": "Flagge fehlt", "Internacional": "International", "Competición para previsualizar": "Wettbewerb für Vorschau", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Ändere den internationalen Modus in den Wettbewerbseinstellungen. Füge Flaggen im jeweiligen Teamprofil hinzu.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Jedes Team nutzt seine Flagge in diesem Wettbewerb. Füge sie im Teamprofil hinzu; Vereinswettbewerbe behalten das Wappen.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Wird in den internationalen Wettbewerben dieses Teams verwendet. Haupt- und Alternativwappen werden getrennt gespeichert."});
   function tr(value) {
     const text = String(value ?? "");
     if (state.preferences.language === "es") return text;
@@ -324,8 +329,7 @@
 
   function renderSession(next) {
     if ((state.session.workspace?.id || "") !== (next?.workspace?.id || "")) {
-      $("#identity-international").checked = false;
-      resetIdentityFlags();
+      if ($("#identity-preview-competition")) $("#identity-preview-competition").value = "";
     }
     state.session = next || {};
     const connected = !!state.session.connected;
@@ -491,7 +495,7 @@
     $("#season-count").textContent = seasons.length;
     $("#competition-count").textContent = competitions.length;
     $("#seasons-list").innerHTML = seasons.length ? seasons.map((season) => `<div class="details"><div><dt><span class="row-title">${escapeHtml(season.name)}</span></dt><dd><div class="table-actions"><span class="pill ${season.active === false ? "" : "green"}">${season.active === false ? "Cerrada" : "Activa"}</span><button class="danger" data-delete="season" data-id="${escapeHtml(season.id)}" data-name="${escapeHtml(season.name)}">Eliminar</button></div></dd></div></div>`).join("") : '<div class="empty-state">Crea la primera temporada.</div>';
-    $("#competitions-list").innerHTML = competitions.length ? `<table class="data-table"><thead><tr><th>Competición</th><th>Temporada</th><th>Puntuación</th><th>Estado</th><th></th></tr></thead><tbody>${competitions.map((item) => `<tr><td><div class="competition-cell">${competitionLogoMarkup(item)}<div><span class="row-title">${escapeHtml(item.name)}</span><span class="row-subtitle">${escapeHtml(item.category || "Sin categoría")}</span></div></div></td><td>${escapeHtml(competitionSeason(item))}</td><td>${item.points_win ?? 2} / ${item.points_draw ?? 1} / ${item.points_loss ?? 0}</td><td><span class="pill ${item.active ? "green" : ""}">${item.active ? "Activa" : "Inactiva"}</span></td><td><div class="table-actions"><button data-edit="competition" data-id="${escapeHtml(item.id)}">Editar</button><button class="danger" data-delete="competition" data-id="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">Eliminar</button></div></td></tr>`).join("")}</tbody></table>` : '<div class="empty-state">Todavía no hay competiciones.</div>';
+    $("#competitions-list").innerHTML = competitions.length ? `<table class="data-table"><thead><tr><th>Competición</th><th>Temporada</th><th>Puntuación</th><th>Estado</th><th></th></tr></thead><tbody>${competitions.map((item) => `<tr><td><div class="competition-cell">${competitionLogoMarkup(item)}<div><span class="row-title">${escapeHtml(item.name)}</span><span class="row-subtitle">${escapeHtml(item.category || "Sin categoría")}${item.is_international ? ` · ${escapeHtml(tr("Internacional"))}` : ""}</span></div></div></td><td>${escapeHtml(competitionSeason(item))}</td><td>${item.points_win ?? 2} / ${item.points_draw ?? 1} / ${item.points_loss ?? 0}</td><td><span class="pill ${item.active ? "green" : ""}">${item.active ? "Activa" : "Inactiva"}</span></td><td><div class="table-actions"><button data-edit="competition" data-id="${escapeHtml(item.id)}">Editar</button><button class="danger" data-delete="competition" data-id="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}">Eliminar</button></div></td></tr>`).join("")}</tbody></table>` : '<div class="empty-state">Todavía no hay competiciones.</div>';
     bindEntityActionButtons();
   }
 
@@ -584,6 +588,7 @@
     $("#team-detail").innerHTML = `
       <div class="team-detail-header">
         ${teamLogoMarkup(team, "team-detail-logo")}
+        ${team.flag_url || rosterCompetitions.some(item => item.is_international) ? `<div class="team-national-flag">${team.flag_url ? `<img src="${escapeHtml(team.flag_url)}" alt="${escapeHtml(tr("Bandera de la selección"))}">` : `<small>${escapeHtml(tr("Bandera pendiente"))}</small>`}</div>` : ""}
         <div><span class="eyebrow">FICHA DEL EQUIPO</span><h2>${escapeHtml(team.name)}</h2><p>${escapeHtml(team.short_name || "Sin nombre corto")}</p><div class="color-pair"><span class="color-dot" style="background:${escapeHtml(team.primary_color || "#1f2937")}"></span><span class="color-dot" style="background:${escapeHtml(team.secondary_color || "#ffffff")}"></span></div></div>
         <div class="detail-actions"><button class="secondary" data-edit-team-detail="${escapeHtml(team.id)}">Editar equipo</button><button id="team-create-roster" ${!canWrite() ? "disabled" : ""}>Crear roster</button><button class="danger" data-delete="team" data-id="${escapeHtml(team.id)}" data-name="${escapeHtml(team.name)}" ${!canWrite() ? "disabled" : ""}>Eliminar equipo</button></div>
       </div>
@@ -908,62 +913,24 @@
       state.cache.teams = teams;
     }
     renderIdentityCompetitionOptions();
-    renderIdentityFlags();
+    renderPreviewCompetitionOptions();
     renderThemes();
   }
 
-  let identityFlags = {};
-  let identityFlagFiles = {};
-  let identityFlagPreviews = {};
-
-  function resetIdentityFlags(flags = {}) {
-    Object.values(identityFlagPreviews).forEach(url => URL.revokeObjectURL(url));
-    identityFlags = {...flags};
-    identityFlagFiles = {};
-    identityFlagPreviews = {};
-    renderIdentityFlags();
+  function renderPreviewCompetitionOptions() {
+    const select = $("#identity-preview-competition");
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = `<option value="">${escapeHtml(tr("Sin competición"))}</option>${(state.cache.competitions || []).map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("")}`;
+    select.value = [...select.options].some(option => option.value === current) ? current : "";
+    updateVisualPreview();
   }
 
-  function renderIdentityFlags() {
-    const host = $("#identity-flags");
-    if (!host) return;
-    host.hidden = !$("#identity-international").checked;
-    host.innerHTML = (state.cache.teams || []).map(team => {
-      const id = String(team.id);
-      const src = identityFlagPreviews[id] || identityFlags[id] || "";
-      return `<div class="identity-flag-row"><div class="identity-flag-preview">${src ? `<img src="${escapeHtml(src)}" alt="">` : "⚑"}</div><label><span class="row-title">${escapeHtml(team.name)}</span><input type="file" data-identity-flag="${escapeHtml(id)}" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="${escapeHtml(tr("Adjuntar bandera"))}: ${escapeHtml(team.name)}"></label><button type="button" class="secondary" data-remove-flag="${escapeHtml(id)}">${escapeHtml(tr("Quitar bandera"))}</button></div>`;
-    }).join("") || `<p>${escapeHtml(tr("Crea las selecciones en Equipos para adjuntar sus banderas."))}</p>`;
-    $$('[data-identity-flag]', host).forEach(input => input.addEventListener("change", () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      if (file.size > 10 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
-        showToast(tr("Utiliza PNG, JPG, WEBP o SVG de hasta 10 MB."), true);
-        input.value = "";
-        return;
-      }
-      const id = input.dataset.identityFlag;
-      if (identityFlagPreviews[id]) URL.revokeObjectURL(identityFlagPreviews[id]);
-      identityFlagFiles[id] = file;
-      identityFlagPreviews[id] = URL.createObjectURL(file);
-      renderIdentityFlags();
-      updateVisualPreview();
-    }));
-    $$('[data-remove-flag]', host).forEach(button => button.addEventListener("click", () => {
-      const id = button.dataset.removeFlag;
-      if (identityFlagPreviews[id]) URL.revokeObjectURL(identityFlagPreviews[id]);
-      delete identityFlags[id]; delete identityFlagFiles[id]; delete identityFlagPreviews[id];
-      renderIdentityFlags(); updateVisualPreview();
-    }));
-  }
-
-  async function uploadIdentityFlags() {
-    for (const [id, file] of Object.entries(identityFlagFiles)) {
-      const body = new FormData();
-      body.append("file", file);
-      const result = await api("/api/assets/upload?asset_kind=team-flags", {method: "POST", body, timeout: 45000});
-      identityFlags[id] = result.url;
-      delete identityFlagFiles[id];
-    }
+  function previewCompetitionIdentity() {
+    const competition = (state.cache.competitions || []).find(item => String(item.id) === $("#identity-preview-competition")?.value);
+    return {international: competition?.is_international === true, flags: Object.fromEntries(
+      (state.cache.teams || []).filter(team => team.flag_url).map(team => [String(team.id), team.flag_url])
+    )};
   }
 
   function renderIdentityCompetitionOptions() {
@@ -1002,7 +969,7 @@
   function renderPaletteFields() {
     $("#element-controls").innerHTML = Object.entries(ELEMENT_LABELS).map(([key, label]) => `<label>${label} · tamaño (%)<input type="number" min="50" max="150" step="1" required value="100" data-element-scale="${key}"></label><label>${label} · tipografía<select data-element-font="${key}">${ELEMENT_FONTS.map(font => `<option value="${font}">${font === "default" ? "Original del diseño" : font}</option>`).join("")}</select></label>`).join("");
     $$("[data-element-scale], [data-element-font]").forEach(field => field.addEventListener("input", updateVisualPreview));
-    $("#identity-international").addEventListener("change", () => { renderIdentityFlags(); updateVisualPreview(); });
+    $("#identity-preview-competition").addEventListener("change", updateVisualPreview);
     [$("#period-clock-number"), $("#period-strip-enabled"), $("#period-strip-segments"), $("#period-strip-labels"), $("#period-strip-active-color"), $("#period-strip-text-color"), $("#goal-celebration-delay"), $("#goal-celebration-duration")].forEach(field => field?.addEventListener("input", updateVisualPreview));
     Object.entries(PALETTE_FIELDS).forEach(([section, fields]) => {
       const host = $(`[data-palette-section="${section}"]`);
@@ -1028,7 +995,7 @@
   }
 
   function identityFormAppearance() {
-    const result = {team_identity: {international: $("#identity-international").checked, flags: {...identityFlags}}};
+    const result = {};
     Object.entries(PALETTE_FIELDS).forEach(([section, fields]) => {
       result[section] = {};
       fields.forEach(([key]) => {
@@ -1043,7 +1010,9 @@
     const entered = $("#period-strip-labels").value.split(",").map(value => value.trim()).filter(Boolean);
     result.period_strip = {show_number: $("#period-clock-number").checked, enabled: $("#period-strip-enabled").checked, active_color: $("#period-strip-active-color").value, text_color: $("#period-strip-text-color").value, segments, labels: Array.from({length:segments}, (_, index) => (entered[index] || String(index + 1)).slice(0, 8))};
     result.goal_celebration = {delay_seconds: Math.max(0, Math.min(30, Number($("#goal-celebration-delay").value || 0))), duration_seconds: Math.max(1, Math.min(30, Number($("#goal-celebration-duration").value || 6)))};
-    return mergedAppearance(result);
+    const appearance = mergedAppearance(result);
+    delete appearance.team_identity;
+    return appearance;
   }
 
   function updateVisualPreview() {
@@ -1054,17 +1023,20 @@
       el.style.scale = String(config.scale);
       el.style.fontFamily = config.font === "default" ? "" : `"${config.font}"`;
     });
-    const international = appearance.team_identity.international;
+    const identity = previewCompetitionIdentity();
+    const international = identity.international;
     $("#visual-preview").classList.toggle("is-international", international);
-    const previewTeams = (state.cache.teams || []).filter(team => identityFlagPreviews[team.id] || identityFlags[team.id]);
+    const previewTeams = (state.cache.teams || []).filter(team => identity.flags[team.id]);
     const syncPreviewFlagWidth = () => {
       const images = $$(".preview-scoreboard .preview-logo img");
-      const ratios = images.filter(img => img.naturalHeight > 0).map(img => img.naturalWidth / img.naturalHeight);
-      $(".preview-scoreboard").style.setProperty("--preview-flag-width", `${Math.min(96,64 * Math.min(1.5,...ratios))}px`);
+      const dimensions = images.filter(img => img.naturalWidth > 0 && img.naturalHeight > 0);
+      const width = dimensions.length ? Math.min(...dimensions.map(img => img.naturalWidth)) : 1.5;
+      const height = dimensions.length ? Math.min(...dimensions.map(img => img.naturalHeight)) : 1;
+      $(".preview-scoreboard").style.setProperty("--preview-flag-width", `${Math.min(96,64 * width / height)}px`);
     };
     $$(".preview-scoreboard .preview-logo").forEach((el, index) => {
       const id = previewTeams[index]?.id;
-      const flag = identityFlagPreviews[id] || identityFlags[id];
+      const flag = identity.flags[id];
       el.innerHTML = international && flag ? `<img src="${escapeHtml(flag)}" alt="">` : (index ? "VS" : "SP");
       el.querySelector("img")?.addEventListener("load", syncPreviewFlagWidth);
     });
@@ -1095,8 +1067,7 @@
   function loadThemeIntoEditor(theme = null) {
     const form = $("#identity-form");
     const appearance = mergedAppearance(themeAppearance(theme || {}));
-    $("#identity-international").checked = appearance.team_identity.international;
-    resetIdentityFlags(appearance.team_identity.flags);
+    if (theme?.competition_id) $("#identity-preview-competition").value = theme.competition_id;
     form.elements.name.value = theme ? theme.name : "Nueva personalización";
     form.elements.competition_id.value = theme?.competition_id || "";
     form.elements.locked.value = "true";
@@ -1134,7 +1105,6 @@
     button.disabled = true;
     $("#identity-message").textContent = "";
     try {
-      await uploadIdentityFlags();
       const data = {
         name: form.elements.name.value.trim(),
         competition_id: form.elements.competition_id.value || null,
@@ -1176,6 +1146,7 @@
         { name: "name", label: "Nombre", required: true, full: true },
         { name: "category", label: "Categoría" },
         { name: "season_id", label: "Temporada", type: "select", options: [["", "Sin temporada"], ...(state.cache.seasons || []).map((x) => [x.id, x.name])] },
+        { name: "is_international", label: "Competición internacional · usar banderas", type: "checkbox", full: true, section: "Particularidades de la competición", help: "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes." },
         { name: "points_win", label: "Puntos por victoria", type: "number", value: 2 },
         { name: "points_draw", label: "Puntos por empate", type: "number", value: 1 },
         { name: "points_loss", label: "Puntos por derrota", type: "number", value: 0 },
@@ -1192,6 +1163,7 @@
         { name: "secondary_color", label: "Color secundario", type: "colorPair", value: "#ffffff" },
         { name: "logo_url", label: "Logo principal", type: "logo", assetKind: "team-logos", full: true },
         { name: "alternate_logo_url", label: "Logo alternativo", type: "logo", assetKind: "team-logos", full: true },
+        { name: "flag_url", label: "Bandera de la selección", type: "logo", assetKind: "team-flags", full: true, help: "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado." },
       ],
     },
     player: {
@@ -1321,7 +1293,7 @@
     const required = field.required ? " required" : "";
     const current = value ?? field.value ?? "";
     if (field.type === "checkbox") {
-      return `<label class="coach-checkbox"><input type="checkbox" name="${escapeHtml(field.name)}" ${current === true ? "checked" : ""}>${escapeHtml(field.label)}<small>${escapeHtml(tr(field.help || ""))}</small></label>`;
+      return `${field.section ? `<div class="full"><h3>${escapeHtml(tr(field.section))}</h3></div>` : ""}<label class="coach-checkbox${full}"><input type="checkbox" name="${escapeHtml(field.name)}" ${current === true ? "checked" : ""}>${escapeHtml(tr(field.label))}<small>${escapeHtml(tr(field.help || ""))}</small></label>`;
     }
     if (field.type === "select") {
       return `<label class="${full.trim()}">${escapeHtml(field.label)}<select name="${escapeHtml(field.name)}"${required}>${(field.options || []).map(([optionValue, label]) => `<option value="${escapeHtml(String(optionValue))}" ${String(current) === String(optionValue) ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}</select></label>`;
@@ -1330,7 +1302,7 @@
       return `<label>${escapeHtml(field.label)}<div class="color-control"><input type="color" data-modal-color="${escapeHtml(field.name)}" value="${escapeHtml(current)}"><input type="text" name="${escapeHtml(field.name)}" value="${escapeHtml(current)}" pattern="#[0-9A-Fa-f]{6}" maxlength="7" required></div></label>`;
     }
     if (field.type === "logo") {
-      return `<div class="logo-field"><label>${escapeHtml(field.label)}</label><div class="logo-field-main"><input name="${escapeHtml(field.name)}" type="text" value="${escapeHtml(current)}" placeholder="https://… o selecciona un archivo local"><button class="logo-file-button" type="button" data-logo-select="${escapeHtml(field.name)}">Elegir archivo local</button><input type="file" data-logo-file="${escapeHtml(field.name)}" data-asset-kind="${escapeHtml(field.assetKind || "logos")}" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></div><div class="logo-preview" data-logo-preview="${escapeHtml(field.name)}">${current ? `<img src="${escapeHtml(current)}" alt="">` : '<span class="logo-placeholder">LOGO</span>'}</div><div class="logo-hint">Se aceptan enlaces de internet o archivos PNG, JPG, WEBP y SVG. El archivo local se subirá al espacio.</div></div>`;
+      return `<div class="logo-field"><label>${escapeHtml(field.label)}</label><div class="logo-field-main"><input name="${escapeHtml(field.name)}" type="text" value="${escapeHtml(current)}" placeholder="https://… o selecciona un archivo local"><button class="logo-file-button" type="button" data-logo-select="${escapeHtml(field.name)}">Elegir archivo local</button><input type="file" data-logo-file="${escapeHtml(field.name)}" data-asset-kind="${escapeHtml(field.assetKind || "logos")}" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden></div><div class="logo-preview" data-logo-preview="${escapeHtml(field.name)}">${current ? `<img src="${escapeHtml(current)}" alt="">` : '<span class="logo-placeholder">LOGO</span>'}</div><div class="logo-hint">Se aceptan enlaces de internet o archivos PNG, JPG, WEBP y SVG. El archivo local se subirá al espacio.</div>${field.help ? `<p class="field-help">${escapeHtml(tr(field.help))}</p>` : ""}</div>`;
     }
     const bounds = `${field.min !== undefined ? ` min="${field.min}"` : ""}${field.max !== undefined ? ` max="${field.max}"` : ""}`;
     return `<label class="${full.trim()}">${escapeHtml(field.label)}<input name="${escapeHtml(field.name)}" type="${escapeHtml(field.type || "text")}" value="${escapeHtml(normalizeInputValue(field.type, current))}" placeholder="${escapeHtml(field.placeholder || "")}"${required}${bounds}></label>`;
@@ -1415,9 +1387,11 @@
 
   async function uploadModalFiles(data) {
     for (const [name, item] of Object.entries(state.modal?.files || {})) {
+      if (item.url) { data[name] = item.url; continue; }
       const body = new FormData();
       body.append("file", item.file);
       const result = await api(`/api/assets/upload?asset_kind=${encodeURIComponent(item.assetKind || "logos")}`, { method: "POST", body, timeout: 45000 });
+      item.url = result.url;
       data[name] = result.url;
     }
     return data;

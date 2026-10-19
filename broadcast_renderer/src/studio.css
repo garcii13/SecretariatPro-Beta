@@ -227,9 +227,9 @@ body.broadcast-studio #bottom-bar #bottom-goal-word {
 .studio-goal-tracks {opacity:.2;}
 .studio-goal-chevron {opacity:.3;}
 .studio-goal-beam {opacity:0;}
-/* Flag geometry is supplied by the shared natural-aspect-ratio calculation. */
+/* Shared minimum-width/minimum-height crop frame, flush with the scoreboard. */
 body.broadcast-studio.international-teams .scoreboard :is(.team1-bar,.team2-bar) {border-radius:0 !important;}
-body.broadcast-studio.international-teams .scoreboard :is(.team1-bar,.team2-bar) img {object-fit:contain !important;border-radius:0 !important;}
+body.broadcast-studio.international-teams .scoreboard :is(.team1-bar,.team2-bar) img[data-national-flag="true"] {object-fit:cover !important;object-position:center !important;border-radius:0 !important;}
 @media (prefers-reduced-motion:reduce) {
   body.broadcast-studio * {scroll-behavior:auto !important;}
   .studio-goal-art {display:none;}

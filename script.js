@@ -19,9 +19,13 @@ const OverlayPresentation = {
     const elapsed = Number.isFinite(started) && started > 0 ? Math.max(0, Math.min(duration, now - started)) : 0;
     return {phase, overlay, reveal: phase === "GOAL_REVEAL", duration, elapsed, key: `${flow.generation || 0}:${phase}`};
   },
-  flagWidth(height, ratios, maximum = height * 1.5) {
-    const valid = ratios.filter(value => Number.isFinite(value) && value > 0);
-    return Math.min(maximum, height * Math.min(1.5, ...valid));
+  flagWidth(height, dimensions, maximum = height * 1.5) {
+    const valid = dimensions.filter(({width, height}) => Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0);
+    // One crop frame uses the smaller source width AND the smaller source height.
+    // Scale that frame to the scoreboard height; cover crops without stretching.
+    const width = valid.length ? Math.min(...valid.map(size => size.width)) : 1.5;
+    const sourceHeight = valid.length ? Math.min(...valid.map(size => size.height)) : 1;
+    return Math.min(maximum, height * width / sourceHeight);
   },
   withFlags(data, identity = {}) {
     if (!identity.international) return data;
@@ -382,8 +386,9 @@ function startSecretariatOverlay() {
       return;
     }
     const height = team1Bar?.clientHeight || 94;
-    const ratios = [team1Logo, team2Logo].filter(img => img?.naturalHeight > 0).map(img => img.naturalWidth / img.naturalHeight);
-    scoreboard.style.setProperty("--logo-width", `${OverlayPresentation.flagWidth(height, ratios)}px`, "important");
+    const dimensions = [team1Logo, team2Logo].filter(img => img?.dataset.nationalFlag === "true")
+      .map(img => ({width: img.naturalWidth, height: img.naturalHeight}));
+    scoreboard.style.setProperty("--logo-width", `${OverlayPresentation.flagWidth(height, dimensions)}px`, "important");
   }
   [team1Logo, team2Logo].forEach(img => img?.addEventListener("load", syncFlagWidth));
   window.addEventListener("resize", syncFlagWidth);
@@ -1245,6 +1250,9 @@ function startSecretariatOverlay() {
     if (team2Name) setInputValueIfChanged(team2Name, data.team2?.name || "");
     if (team1Name) team1Name.style.color = data.team1?.text_color || "white";
     if (team2Name) team2Name.style.color = data.team2?.text_color || "white";
+    for (const [key, img] of [["team1", team1Logo], ["team2", team2Logo]]) {
+      if (img) img.dataset.nationalFlag = String(Boolean(teamIdentity.international && teamIdentity.flags?.[data[key]?.id]));
+    }
     if (team1Logo) setSrcIfChanged(team1Logo, data.team1?.logo || "");
     if (team2Logo) setSrcIfChanged(team2Logo, data.team2?.logo || "");
     syncFlagWidth();
