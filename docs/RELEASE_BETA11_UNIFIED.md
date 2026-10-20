@@ -1,37 +1,29 @@
 # SecretariatPro 1.0.0-beta.11 · base común
 
-Integra las correcciones de Mac beta 8 y Windows beta 10: arranque de cámaras y
-captura exclusiva de ventanas en Mac; coordenadas físicas DPI y aplicación de
-regiones guardadas al OCR activo en Windows. Conserva las mejoras locales del
-consenso temporal del reloj. Las dependencias OCR mantienen sus versiones
-específicas para cada plataforma.
+Live y Manager para Windows x64, Mac Apple Silicon y Mac Intel. Esta entrega
+reúne Mac beta 8 y Windows beta 10, junto con las correcciones del consenso del
+reloj OCR y de la auditoría del ecosistema. Conserva captura y cámaras, OCR,
+marcador manual, periodos, sanciones y powerplays, plantillas, colas de gráficos,
+replay multicámara de OBS, biblioteca y exportación.
 
-Manager → Identidad visual → Competiciones de selecciones permite activar
-«Competición internacional · usar banderas» y adjuntar una imagen por selección.
-Se guardan en la identidad publicada, separadas de los escudos originales.
-Aparecen en marcador, bottoms, ficha, previa, descanso, alineaciones, goleadores
-y penaltis. La clasificación existente sigue mostrando sus nombres y datos.
-No hace falta migrar la base de datos: la configuración vive en el JSON de la
-identidad y los archivos en el almacenamiento de recursos del espacio.
+El modo internacional se configura en las particularidades de cada competición.
+Cada equipo conserva su escudo y dispone de una bandera independiente. Las
+competiciones nacionales siguen mostrando los escudos. En el marcador, ambas
+banderas usan un recorte centrado común calculado con el mínimo de los anchos y
+alturas originales; llenan la altura del marcador sin huecos ni deformación,
+con un ancho máximo de 1,5 veces esa altura. Se conservan las imágenes originales.
+La vista previa de Manager utiliza el mismo encuadre.
 
-En el marcador ambas banderas comparten ancho visible. El máximo es 1,5 veces
-su altura: 141 px con el diseño de 94 px de alto, antes de aplicar la escala
-publicada. Las proporciones se conservan y no se recorta ninguna imagen. Si
-una bandera es cuadrada o vertical, se reduce el ancho de ambas para respetar
-la altura. El límite se calcula con las dos imágenes cargadas.
+La presentación BroadcastFlow incorpora animaciones más fluidas y una ceremonia
+de gol con los colores del equipo y el idioma elegido. Tras el replay o la
+espera configurada, la introducción enlaza con el goleador y las asistencias,
+respetando su duración completa. Al retirar el bottom vuelve el marcador;
+limpiar emisión cancela los gráficos pendientes. Se mantienen los colores,
+fuentes y tamaños editables en Manager, los nombres completos de previa y
+descanso y el ancho adaptable de sus bloques.
 
-Los goles incorporan una ceremonia de 2,2 segundos con tipografía en capas,
-líneas de acento y barrido de luz con los colores del equipo: GOL / GOAL / MÅL / GÓL / MAALI / TOR según el idioma de Live.
-Se muestra tras la vuelta confirmada del replay o la espera configurada. Una transición de 640 ms retira la capa de color y descubre los nombres. Luego
-el goleador y la asistencia permanecen todo el tiempo configurado en Manager;
-al retirar el bottom vuelve el marcador. Limpiar emisión cancela la secuencia.
-
-Estado de esta entrega: implementación de código local y pruebas automatizadas.
-No se han generado ni publicado instaladores nuevos. Pendientes la validación
-nativa en Windows, la revisión visual y la prueba real con OBS/cámaras.
-
-La presentación incorpora un acabado de luz y profundidad basado en el diseño
-actual, con entradas por capas, datos escalonados y salidas breves en todos los
-gráficos. Se conservan las paletas, tamaños y fuentes de Manager. La vista
-previa de Identidad visual incluye «Reproducir animación». Véase
-`CINEMATIC_OVERLAY_BETA11.md` para el detalle y las comprobaciones pendientes.
+Los seis instaladores proceden de la compilación `761bedd33610735d5d7cb5d826c4ca4ed190ccf7`.
+Las comprobaciones automatizadas de regresión e instalación nativa han pasado
+en las tres plataformas. El usuario ha confirmado las pruebas en sus dispositivos
+y las comprobaciones pendientes de recuperación de cuenta, publicación simultánea
+de temas y restauración de una copia. Cada descarga incluye su archivo SHA-256.
