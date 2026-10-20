@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "prebuild": "node scripts/download-routes.mjs",
+    "postbuild": "node scripts/verify-download-pages.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

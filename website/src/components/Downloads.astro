@@ -2,6 +2,8 @@
 import releases from '../lib/downloads.json';
 const { lang = 'es' } = Astro.props;
 const es = lang === 'es';
+const current = releases.filter((release) => release.channel === 'current');
+const legacy = releases.filter((release) => release.channel === 'legacy');
 const labels: Record<string, string> = {
   'windows-x64': 'Windows · x64',
   'macos-arm64': 'Mac · Apple Silicon',
@@ -38,7 +40,7 @@ const size = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
             <p class="muted download-meta" data-download-meta></p>
           </div>
           <div class="download-options" aria-label={es ? 'Todos los instaladores' : 'All installers'}>
-            {releases.filter((release) => release.product === product).map((release) => (
+            {current.filter((release) => release.product === product).map((release) => (
               <a href={release.path} data-platform={release.platform} data-meta={`Beta ${release.version.split('.').at(-1)} · ${size(release.bytes)} · ${release.file.endsWith('.exe') ? '.exe' : '.dmg'}`}>
                 <span><strong>{labels[release.platform]}</strong><small>Beta {release.version.split('.').at(-1)} · {size(release.bytes)}</small></span>
                 <span class="download-arrow" aria-hidden="true">↓</span>
@@ -49,7 +51,27 @@ const size = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
         </article>
       ))}
     </div>
-    <p class="muted download-footnote">{es ? 'La descarga empieza desde esta página. No necesitas visitar otra web. Los números de beta pueden variar entre Windows y Mac.' : 'Your download starts from this page. No need to visit another website. Beta numbers may differ between Windows and Mac.'}</p>
+    <p class="muted download-footnote">{es ? 'Beta 11 para Windows y Mac. La descarga empieza desde esta página, sin visitar otra web.' : 'Beta 11 for Windows and Mac. Your download starts from this page, without visiting another website.'}</p>
+    <details class="card download-legacy" id="legacy">
+      <summary>Legacy · {es ? 'Versiones anteriores' : 'Previous versions'}</summary>
+      <p class="muted">{es ? 'Instaladores anteriores, conservados por compatibilidad. Para empezar, utiliza la beta 11 de arriba.' : 'Earlier installers, kept for compatibility. To get started, use beta 11 above.'}</p>
+      <div class="grid-2 legacy-grid">
+        {['live', 'manager'].map((product) => (
+          <section aria-labelledby={`legacy-${product}`}>
+            <h3 id={`legacy-${product}`}>SecretariatPro {product === 'live' ? 'Live' : 'Manager'}</h3>
+            <div class="download-options">
+              {legacy.filter((release) => release.product === product).map((release) => (
+                <a href={release.path}>
+                  <span><strong>{labels[release.platform]}</strong><small>Beta {release.version.split('.').at(-1)} · {size(release.bytes)} · Legacy</small></span>
+                  <span class="download-arrow" aria-hidden="true">↓</span>
+                  <span class="sr-only">{es ? 'Descargar' : 'Download'} SecretariatPro {product === 'live' ? 'Live' : 'Manager'}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </details>
   </div>
 </section>
 <script>
@@ -73,7 +95,12 @@ const size = (bytes: number) => `${Math.round(bytes / 1_000_000)} MB`;
   .download-options small{display:block;font-size:.8rem;color:var(--muted);margin-top:4px}
   .download-arrow{color:var(--aqua);font-size:1.6rem}
   .download-footnote{font-size:.9rem;max-width:800px;margin-top:26px}
+  .download-legacy{margin-top:42px;padding:28px 36px;scroll-margin-top:100px}
+  .download-legacy summary{font-weight:750;font-size:1.15rem;cursor:pointer}
+  .download-legacy>p{margin-top:20px;max-width:800px}
+  .legacy-grid{gap:36px;margin-top:28px}
+  .legacy-grid h3{font-size:1.25rem}
   [hidden]{display:none!important}
-  @media(max-width:700px){.download-grid{grid-template-columns:1fr}.download-card{padding:26px}}
-  a:focus-visible,select:focus-visible{outline:2px solid var(--aqua);outline-offset:5px}
+  @media(max-width:700px){.download-grid,.legacy-grid{grid-template-columns:1fr}.download-card,.download-legacy{padding:26px}}
+  a:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--aqua);outline-offset:5px}
 </style>
