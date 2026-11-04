@@ -421,31 +421,86 @@
   }
 
   let federationPreviewId = null;
+  let federationTicket = null;
+  function closeFederationWizard() {
+    federationTicket=null;
+    $("#federation-wizard").hidden=true;
+    $("#federation-code-form").hidden=false;
+    $("#federation-connect-form").hidden=true;
+    $("#federation-code").value="";
+    $("#federation-wizard-status").textContent="";
+    $("#federation-verify").disabled=false;
+    $("#federation-connect-save").disabled=false;
+  }
+  async function verifyFederationInvitation(event) {
+    event.preventDefault();const input=$("#federation-code");const button=$("#federation-verify");
+    const workspace=state.session.workspace?.id;button.disabled=true;
+    $("#federation-wizard-status").textContent="Comprobando la invitación…";
+    try {
+      const data=await api("/api/integrations/federations/connect/preview",{method:"POST",body:JSON.stringify({code:input.value.trim()})});
+      input.value="";if(workspace!==state.session.workspace?.id)return;
+      federationTicket=data.ticketId;
+      $("#federation-target-workspace").textContent=`Espacio de destino: ${state.session.workspace?.name || "espacio actual"}`;
+      $("#federation-verified-name").textContent=`Invitación verificada: ${data.name}`;
+      const select=$("#federation-competition");select.innerHTML="";
+      for(const competition of data.competitions){const option=document.createElement("option");option.value=competition.id;option.textContent=`${competition.name} · ${competition.season || ""}`;select.append(option);}
+      $("#federation-enable-capture").checked=!!data.canCapture;$("#federation-enable-capture").disabled=!data.canCapture;
+      $("#federation-auto-import").checked=false;
+      $("#federation-code-form").hidden=true;$("#federation-connect-form").hidden=false;
+      $("#federation-wizard-status").textContent="Elige la competición que quieres conectar.";select.focus();
+    }catch(error){$("#federation-wizard-status").textContent=error.message;}finally{button.disabled=false;}
+  }
+  async function saveFederationConnection(event) {
+    event.preventDefault();if(!federationTicket)return;const button=$("#federation-connect-save");button.disabled=true;
+    $("#federation-wizard-status").textContent="Guardando la conexión…";
+    try {
+      const result=await api("/api/integrations/federations/connect/confirm",{method:"POST",body:JSON.stringify({ticket_id:federationTicket,competition_id:$("#federation-competition").value,capture:$("#federation-enable-capture").checked,auto_import:$("#federation-auto-import").checked})});
+      closeFederationWizard();await loadFederations();
+      try{await api(`/api/integrations/federations/${encodeURIComponent(result.id)}/sync`,{method:"POST"});await loadFederations();showToast("Federación conectada. Revisa el catálogo para importar sus jugadores y partidos.");}
+      catch(error){showToast("Conexión guardada. Puedes sincronizarla cuando recuperes la conexión.",true);}
+    }catch(error){$("#federation-wizard-status").textContent=error.message;}finally{button.disabled=false;}
+  }
   async function loadFederations() {
     federationPreviewId = null;
     $("#federation-preview").hidden = true;
+    closeFederationWizard();
+    $("#federation-add").disabled = !state.session.permissions?.write_allowed;
+    $("#federation-add").onclick = () => { closeFederationWizard(); $("#federation-wizard").hidden = false; $("#federation-code").focus(); };
+    $("#federation-cancel").onclick = closeFederationWizard;
+    $("#federation-code-form").onsubmit = verifyFederationInvitation;
+    $("#federation-connect-form").onsubmit = saveFederationConnection;
     const data = await api("/api/integrations/federations");
     const host = $("#federation-connections");
     host.innerHTML = "";
+    host.classList.toggle("empty-state",!data.connections?.length);
     if (!data.connections?.length) {
-      host.textContent = "No hay conexiones activas en este espacio. Puedes seguir usando Manager y Live de forma independiente. Configura SP_FEDERATION_CONNECTIONS para conectar una federación.";
+      host.textContent = "Todavía no hay federaciones conectadas. Pulsa «Conectar federación» y pega la invitación que te haya entregado tu federación.";
       return;
     }
     for (const connection of data.connections) {
-      const card = document.createElement("div"); card.className = "panel";
-      const title = document.createElement("h3"); title.textContent = connection.namespace || connection.id; card.append(title);
+      const card = document.createElement("div"); card.className = "panel federation-connection-card";
+      const title = document.createElement("h3"); title.textContent = connection.name || connection.namespace || connection.id; card.append(title);
       const status = document.createElement("p");
       const receipt = connection.lastReceipt?.reason || "Sin entregas confirmadas";
-      status.textContent = `${connection.cached || 0} registros · ${connection.pending || 0} envíos pendientes · ${receipt}. ${connection.message || ""}`;
+      status.textContent = `${connection.competitionName || connection.competitionId} · ${connection.enabled === false ? "Desconectada" : "Guardada"} · ${connection.cached || 0} registros · ${connection.pending || 0} envíos pendientes · ${receipt}. ${connection.message || ""}`;
       card.append(status);
+      const actions=document.createElement("div");actions.className="federation-connection-actions";
       const sync = document.createElement("button"); sync.type = "button"; sync.textContent = "Sincronizar cambios";
-      sync.disabled = !state.session.permissions?.write_allowed;
+      sync.disabled = !state.session.permissions?.write_allowed || connection.enabled === false;
       sync.onclick = async () => { sync.disabled = true; try { await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/sync`, {method:"POST"}); await loadFederations(); showToast("Catálogo sincronizado; la importación se revisa por separado."); } catch(error) { showToast(error.message,true); sync.disabled=false; } };
-      card.append(sync);
+      actions.append(sync);
       const preview = document.createElement("button"); preview.type="button"; preview.className="ghost"; preview.textContent="Revisar catálogo para importar";
-      preview.disabled = !state.session.permissions?.write_allowed || !(connection.modules || []).includes("catalog");
+      preview.disabled = !state.session.permissions?.write_allowed || connection.enabled === false || !(connection.modules || []).includes("catalog");
       preview.onclick=async()=>{try { const plan=await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/preview`); federationPreviewId=connection.id; $("#federation-preview-text").textContent=`${plan.competition.name} · ${plan.competition.season}: ${plan.counts.teams} equipos, ${plan.counts.players} jugadores, ${plan.counts.matches} partidos. ${plan.policy}`; $("#federation-preview").hidden=false; } catch(error) {showToast(error.message,true);} };
-      card.append(preview); host.append(card);
+      actions.append(preview);
+      if (connection.managed) {
+        const toggle = document.createElement("button"); toggle.type="button"; toggle.className="ghost";
+        toggle.textContent=connection.enabled === false ? "Volver a conectar" : "Desconectar";
+        toggle.disabled=!state.session.permissions?.write_allowed;
+        toggle.onclick=async()=>{toggle.disabled=true;try{await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/${connection.enabled === false ? "reconnect" : "disconnect"}`,{method:"POST"});await loadFederations();showToast(connection.enabled === false ? "Conexión recuperada." : "Federación desconectada. Los datos locales se conservan.");}catch(error){showToast(error.message,true);toggle.disabled=false;}};
+        actions.append(toggle);
+      }
+      card.append(actions);host.append(card);
     }
     $("#federation-import-confirm").onclick=async()=>{if(!federationPreviewId)return; const button=$("#federation-import-confirm");button.disabled=true;try {await api(`/api/integrations/federations/${encodeURIComponent(federationPreviewId)}/import`,{method:"POST"});state.cache={};await loadFederations();showToast("Copia federativa actualizada. Sus fichas deportivas se corrigen en origen.");}catch(error){showToast(error.message,true);}finally{button.disabled=false;}};
   }

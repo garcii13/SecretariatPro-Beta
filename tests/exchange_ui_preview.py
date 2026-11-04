@@ -14,8 +14,14 @@ with tempfile.TemporaryDirectory(prefix='secretariat-federation-ui-') as folder:
  client,db=FederationTests().client()
  client.manager_dashboard_counts.return_value={'competitions':1,'teams':2,'players':4,'matches':2}
  client.manager_list_matches.return_value=[]
+ if '--connection-wizard' in sys.argv:
+  os.environ['SP_FEDERATION_CONNECTIONS']='[]'
+  from secretariat_core.exchange import connections as connection_store
+  from tests.test_federation_connections import info,credential
+  connection_store.remote=lambda base,path,payload: info() if path.endswith('/inspect') else credential()
+ client.user_id='preview-ui-user'
  from manager_api import main
  main.runtime.require_connected=lambda:client
  main.runtime.require_write=lambda:client
- main.runtime.state=lambda:{'connected':True,'profile':{'display_name':'Pruebas de integración','email':'preview@example.test'},'workspaces':[{'id':'ws','name':'Espacio de pruebas'}],'workspace':{'id':'ws','name':'Espacio de pruebas','role':'owner'},'subscription':{},'access':{'allowed':True,'entitlements':{}},'permissions':{'write_allowed':True,'can_manage':True},'application':{'version':'Vista de prueba','build':'Sports Exchange'}}
+ main.runtime.state=lambda:{'connected':True,'profile':{'display_name':'Pruebas de integración','email':'preview@example.test'},'workspaces':[{'id':'ws','name':'Asociación de pruebas · Sandbox'}],'workspace':{'id':'ws','name':'Asociación de pruebas · Sandbox','role':'owner'},'subscription':{},'access':{'allowed':True,'entitlements':{}},'permissions':{'write_allowed':True,'can_manage':True},'application':{'version':'Vista de prueba','build':'Sports Exchange'}}
  uvicorn.run(main.app,host='127.0.0.1',port=8784,log_level='warning')

@@ -56,6 +56,8 @@ paddleocr>=2.7.3 ; sys_platform != "darwin" and sys_platform != "win32"
 # Supabase y configuración
 supabase>=2.0.0
 python-dotenv>=1.0.0
+# Private desktop connection credentials (already used by the authentication stack).
+cryptography==50.0.1
 
 # OBS WebSocket
 obsws-python

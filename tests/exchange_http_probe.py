@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from secretariat_core.exchange.client import ExchangeClient
 from secretariat_core.exchange import federation as fed
+from secretariat_core.exchange import connections as wizard
 from tests.test_federation_exchange import FederationTests
 base=os.environ['EXCHANGE_HTTP_URL'];secret=os.environ['EXCHANGE_HTTP_SECRET'];checks=0
 config={'id':'test','url':base,'namespace':'fed.test','clientId':'producer','secretEnv':'EXCHANGE_HTTP_SECRET','competitionId':'liga-oro','workspaceId':'ws','enabled':True,'modules':['catalog','captures','statistics']}
@@ -61,5 +62,22 @@ try:
  e.pull();check(e.enqueue(mid,capture) is not None);check(e.flush()[0]['accepted'])
  e.pull();check(next(m for m in e.snapshot('match') if m['id']==mid)['reviewStatus']=='provisional')
  check('players' in db);check(not any('email' in p for p in db['players'].values()))
+ # Customer workflow: issue in the federation UI/API, paste in Manager, choose
+ # competition and persist privately. No environment configuration is changed.
+ client.user_id='wizard-http-user'
+ issued=api('/api/exchange/v1/invitations',{'name':'Manager HTTP test','competitions':['liga-oro'],'capture':True});check(issued['code'].startswith('SX1.'))
+ verified=wizard.inspect(client,issued['code']);check(verified['competitions'][0]['name'])
+ connected=wizard.finish(client,verified['ticketId'],'liga-oro');check(connected['ok'])
+ managed=next(c for c in fed.configurations('ws') if c['id']==connected['id']);check(managed['managed'])
+ native=fed.connect(managed)
+ try:check(native.bootstrap()>0)
+ finally:native.close()
+ check(not any('storedSecret' in c for c in fed.public_status(client)['connections']))
+ wizard.set_enabled(client,connected['id'],False);check(not any(c['id']==connected['id'] for c in fed.configurations('ws')))
+ wizard.set_enabled(client,connected['id'],True);check(any(c['id']==connected['id'] for c in fed.configurations('ws')))
+ api('/api/exchange/v1/revoke',{'id':managed['clientId']});wizard.set_enabled(client,connected['id'],False)
+ try:wizard.set_enabled(client,connected['id'],True);raise AssertionError('Revocation ignored')
+ except RuntimeError:check(True)
+
  print(f'Sports Exchange: {checks} comprobaciones reales por HTTP; cliente nativo Python ↔ servidor Astro. Sin modificar Supabase real.')
 finally:e.close();fed.stop_worker()

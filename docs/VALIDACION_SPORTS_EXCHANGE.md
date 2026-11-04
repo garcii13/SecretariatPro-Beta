@@ -1,3 +1,15 @@
+# Validación 2.4 · conexión desde interfaz y espaciado
+
+- 44 pruebas de la web correctas; compilación Astro sin errores.
+- 478 pruebas Python de SecretariatPro correctas (dos exclusivas Win32 omitidas en Mac), 29 JavaScript y tres controles de seguridad SQL correctos.
+- 36 comprobaciones cruzadas por HTTP: incluye creación de invitación, verificación, canje, guardado cifrado, conexión sin variables, desconexión, reconexión y revocación.
+- 130 comprobaciones HTTP existentes de la web correctas.
+- Revisión visual con datos sintéticos: botón Conectar federación, invitación verificada, competición por nombre y espacio Sandbox. Separación de 18 px entre bloques, 16 px entre campos y 10 px entre botones; casillas alineadas con texto. Captura en outputs/manager-asistente-federacion.png.
+- La asociación y los datos reales de SecretariatPro permanecen sin modificaciones; solo se han usado bases y credenciales temporales para las pruebas.
+- Se mantiene la limitación de entrega por código local: no se han reemplazado instaladores estables ni validado Windows/Intel/OBS/cámaras reales en esta actualización.
+
+---
+
 # Validación de la versión 2.3 local
 
 - Astro Check y compilación Node: sin errores; se conserva el aviso existente de tamaño del bundle.

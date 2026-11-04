@@ -108,9 +108,28 @@
 
       <section class="view" id="view-federations">
         <div class="page-heading"><div><span class="eyebrow">CONEXIONES OPCIONALES</span><h1>Federaciones</h1><p>Jugadores, rosters y calendario desde su federación. Las jugadas de la mesa se envían como provisionales; la revisión federativa no bloquea Live.</p></div></div>
+        <div class="heading-actions"><button type="button" id="federation-add">Conectar federación</button></div>
+        <article class="panel" id="federation-wizard" hidden>
+          <div class="panel-head"><h2>Conecta con tu federación</h2><button type="button" class="ghost" id="federation-cancel">Cancelar</button></div>
+          <p>Tu federación te entregará una invitación. Pégala aquí para comprobar el acceso y elegir la competición.</p>
+          <form id="federation-code-form">
+            <label>Invitación de la federación<input id="federation-code" type="password" autocomplete="off" spellcheck="false" maxlength="4096" placeholder="Pega aquí tu invitación" required></label>
+            <button type="submit" id="federation-verify">Verificar invitación</button>
+          </form>
+          <form id="federation-connect-form" hidden>
+            <p id="federation-target-workspace"></p>
+            <p id="federation-verified-name"></p>
+            <label>Competición<select id="federation-competition" required></select></label>
+            <label class="federation-check"><input id="federation-enable-capture" type="checkbox" checked>Enviar las jugadas de la mesa a la federación</label>
+            <label class="federation-check"><input id="federation-auto-import" type="checkbox">Actualizar jugadores y calendario automáticamente después de la primera importación</label>
+            <p>La conexión se guardará en este ordenador para Manager y Live. Podrás desconectarla cuando quieras.</p>
+            <button type="submit" id="federation-connect-save">Conectar competición</button>
+          </form>
+          <p id="federation-wizard-status" role="status" aria-live="polite"></p>
+        </article>
         <article class="panel"><div id="federation-connections" class="empty-state">Cargando conexiones…</div></article>
         <article class="panel" id="federation-preview" hidden><h2>Catálogo federativo</h2><p id="federation-preview-text"></p><button type="button" id="federation-import-confirm">Importar / actualizar copia deportiva</button></article>
-        <p>La URL, el espacio, los módulos y las credenciales se configuran en el entorno privado de este ordenador. Cada federación conserva su base y su política de actas.</p>
+        <p>Cada federación conserva su base y su política de actas. Las invitaciones se crean desde el panel de gestión de la federación.</p>
       </section>
       <section class="view" id="view-competitions">
         <div class="heading"><div><span class="eyebrow">TEMPORADAS Y LIGAS</span><h1>Competiciones</h1><p>Crea temporadas, ligas y sistemas de puntuación. La competición activa alimentará calendario, clasificación y overlays.</p></div><div class="heading-actions"><button class="secondary" data-create="season">Nueva temporada</button><button data-create="competition">Nueva competición</button></div></div>

@@ -29,14 +29,16 @@ def configurations(workspace):
         if not required.issubset(row) or not set(row.get('modules',[]))<={'catalog','captures','statistics'}:
             raise ValueError('Configuración de federación incompleta.')
         selected.append(row)
-    return selected
+    from .connections import stored
+    return selected+stored(workspace)
 
 def cache_path():
     from secretariat_core.app_environment import data_directory
     return Path(os.getenv('SP_EXCHANGE_CACHE') or data_directory(Path(__file__).resolve().parents[2])/'federation_exchange'/'cache.sqlite')
 
 def connect(config):
-    return ExchangeClient(config['url'],config['clientId'],os.getenv(config['secretEnv'],''),config['namespace'],config['competitionId'],cache_path(),config.get('sourceNamespace'))
+    from .connections import secret
+    return ExchangeClient(config['url'],config['clientId'],secret(config),config['namespace'],config['competitionId'],cache_path(),config.get('sourceNamespace'))
 
 def local_id(workspace,namespace,kind,external):
     return str(uuid.uuid5(uuid.NAMESPACE_URL,json.dumps([workspace,namespace,kind,str(external)],separators=(',',':'))))
@@ -48,14 +50,17 @@ def connection_for(client,ident):
     return config
 
 def public_status(client):
+    from .connections import stored
     output=[]
-    for config in configurations(client._active_workspace_id()):
+    configs=configurations(client._active_workspace_id())
+    configs += [c for c in stored(client._active_workspace_id(),True) if not c['enabled']]
+    for config in configs:
         try:
             exchange=connect(config)
             try:status=exchange.status()
             finally:exchange.close()
-            output.append({'id':config['id'],'modules':config.get('modules',[]),**status,'message':(_service.errors.get((str(client._active_workspace_id()),config['id']),'')) if _service else ''})
-        except Exception:output.append({'id':config['id'],'namespace':config['namespace'],'configured':False,'message':'Revisa URL, secreto y configuración local.'})
+            output.append({'id':config['id'],'name':config.get('name') or config['namespace'],'competitionName':config.get('competitionName') or config['competitionId'],'enabled':config.get('enabled',True),'managed':config.get('managed',False),'modules':config.get('modules',[]),**status,'message':(_service.errors.get((str(client._active_workspace_id()),config['id']),'')) if _service else ''})
+        except Exception:output.append({'id':config['id'],'namespace':config['namespace'],'configured':False,'message':'No se pudo verificar la conexión. Solicita una nueva invitación a tu federación.'})
     return {'schema':'sports.exchange.v1','playerAuthority':'federation','connections':output,'independent':True}
 
 def synchronise(client,ident):

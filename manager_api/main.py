@@ -18,6 +18,7 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from secretariat_core.local_access import LocalAccessMiddleware
 from secretariat_core.exchange import federation as federation_exchange
+from secretariat_core.exchange import connections as federation_connections_store
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -1270,6 +1271,35 @@ app.add_middleware(LocalAccessMiddleware, cookie_name="sp_manager_session")
 async def federation_connections():
     client=runtime.require_connected()
     return await run_read(federation_exchange.public_status,client)
+
+class FederationCodePayload(BaseModel):
+    code: str = Field(min_length=1,max_length=4096,repr=False)
+
+class FederationConnectPayload(BaseModel):
+    ticket_id: str = Field(min_length=1,max_length=80)
+    competition_id: str = Field(min_length=1,max_length=200)
+    capture: bool = True
+    auto_import: bool = False
+
+@app.post("/api/integrations/federations/connect/preview")
+async def federation_connection_preview(payload: FederationCodePayload):
+    client=runtime.require_connected()
+    return await run_write(federation_connections_store.inspect,client,payload.code)
+
+@app.post("/api/integrations/federations/connect/confirm")
+async def federation_connection_confirm(payload: FederationConnectPayload):
+    client=runtime.require_connected()
+    return await run_write(federation_connections_store.finish,client,payload.ticket_id,payload.competition_id,payload.capture,payload.auto_import)
+
+@app.post("/api/integrations/federations/{connection_id}/disconnect")
+async def federation_connection_disconnect(connection_id: str):
+    client=runtime.require_connected()
+    return await run_write(federation_connections_store.set_enabled,client,connection_id,False)
+
+@app.post("/api/integrations/federations/{connection_id}/reconnect")
+async def federation_connection_reconnect(connection_id: str):
+    client=runtime.require_connected()
+    return await run_write(federation_connections_store.set_enabled,client,connection_id,True)
 
 @app.post("/api/integrations/federations/{connection_id}/sync")
 async def federation_sync(connection_id: str):

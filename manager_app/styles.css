@@ -1278,3 +1278,25 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 .team-national-flag {width:92px;min-height:48px;display:grid;place-items:center;text-align:center;}
 .team-national-flag img {width:92px;height:64px;object-fit:contain;}
 .preview-competition-select {display:grid;gap:6px;margin:16px 0;}
+
+/* Federation setup uses the same spacing rhythm as the existing Manager forms. */
+#view-federations.active {display:grid;gap:18px;align-content:start;}
+#view-federations .page-heading {display:grid;gap:10px;}
+#view-federations .page-heading h1 {margin-bottom:10px;}
+#view-federations p {margin:0;line-height:1.55;}
+#view-federations .heading-actions {margin:0;gap:10px;}
+#federation-wizard:not([hidden]),
+#federation-preview:not([hidden]),
+#federation-code-form:not([hidden]),
+#federation-connect-form:not([hidden]) {display:grid;gap:16px;}
+#federation-wizard .panel-head {margin:0;gap:16px;}
+#federation-wizard form > label {gap:8px;}
+#federation-wizard form > button,
+#federation-preview > button {justify-self:start;max-width:100%;}
+#federation-connect-form .federation-check {display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+#federation-connect-form .federation-check input[type="checkbox"] {flex:0 0 18px;width:18px;height:18px;min-height:18px;margin:2px 0 0;padding:0;}
+#federation-wizard-status:empty {display:none;}
+#federation-connections:not(.empty-state) {display:grid;gap:14px;}
+#view-federations .federation-connection-card {display:grid;gap:12px;text-align:left;}
+#view-federations .federation-connection-card h3 {margin:0;}
+#view-federations .federation-connection-actions {display:flex;flex-wrap:wrap;gap:10px;align-items:center;}

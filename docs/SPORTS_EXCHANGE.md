@@ -2,6 +2,26 @@
 
 Este contrato es propio, publicado y versionado. No es una norma federativa ni depende de AEUF, Astro, Supabase o del formato interno de SecretariatPro. El vocabulario deportivo inicial cubre competiciones, equipos, rosters por temporada, convocatorias, goles, asistencias, sanciones y portería. Un deporte que necesite otros eventos requiere ampliar capacidades/versionar el contrato; no debe reinterpretar un campo existente.
 
+## Conectar desde la interfaz (recomendado)
+
+El cliente ya no necesita editar `SP_FEDERATION_CONNECTIONS` ni archivos de configuración.
+
+1. En la web federativa: **Gestión → Integraciones → Invita a SecretariatPro u otro proveedor**. Elegir competición y permiso para enviar jugadas; crear y copiar la invitación.
+2. En Manager: seleccionar el espacio correcto, por ejemplo **Asociación de pruebas · Sandbox**, y abrir **Federaciones → Conectar federación**.
+3. Pegar la invitación y pulsar **Verificar invitación**. Se muestran nombres de competiciones y el espacio de destino, sin pedir IDs técnicos.
+4. Elegir competición y opciones; pulsar **Conectar competición**. Manager guarda la conexión para Manager y Live y descarga el catálogo cuando hay red.
+5. Revisar el catálogo antes de la primera importación. Desde el mismo panel se puede **Desconectar / Volver a conectar**; la federación también puede **Revocar acceso**.
+
+Las invitaciones caducan en 15 minutos, sirven para un solo ordenador y deben tratarse como credenciales. El intercambio usa un ID de canje persistente para recuperar una respuesta perdida sin emitir otra credencial. La prueba de invitación no la consume; la confirmación la canjea. Los tickets temporales quedan ligados a la cuenta y al workspace de Manager. No se concede acceso a otros espacios ni se importan datos automáticamente en el paso de conexión.
+
+Manager guarda perfiles y tickets cifrados con Fernet en el directorio privado `federation_exchange/`, con permisos locales restringidos. Su clave `connection-settings.key` debe conservarse con `connection-settings.sqlite` en una copia privada. No se guardan claves en el navegador ni se devuelven en listados de conexión. Una cuenta de sistema operativo comprometida puede leer ese almacén; no se presenta como un llavero ligado al hardware.
+
+La web cifra los secretos de proveedor con AES-256-GCM. En la instalación local su clave queda en `.data/exchange-key.bin` y se incluye en los respaldos privados. Un alojamiento con PostgreSQL remoto debe provisionar una clave estable en su almacén de secretos; esa tarea de despliegue no corresponde al cliente de Manager.
+
+El mecanismo opcional `invitation-code-v1` utiliza `SX1.` seguido de JSON base64url `{v:1,url,token}`. La URL es el origen federativo HTTPS (o loopback de desarrollo); el token tiene 256 bits y solo su hash queda en base. Los endpoints son `POST /api/exchange/v1/invitations/inspect` y `POST /api/exchange/v1/enroll`; este último requiere el token y un `redemptionId` UUID estable. La respuesta de canje entrega las credenciales al proceso nativo, nunca al JavaScript del navegador de Manager. La creación y revocación en AEUF requieren administración autenticada y protección de origen.
+
+La configuración por entorno se conserva para instalaciones técnicas anteriores; no es el recorrido del cliente.
+
 ## Responsabilidades
 
 - La federación es el origen de la identidad deportiva de jugadores, equipos, rosters y calendario. Un jugador recibido no es una cuenta de acceso a SecretariatPro. No se envían contraseñas, roles, invitaciones ni correos.

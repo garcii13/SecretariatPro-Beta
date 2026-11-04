@@ -265,6 +265,210 @@
           }
         }
       }
+    },
+    "/api/exchange/v1/invitations/inspect": {
+      "post": {
+        "operationId": "inspectInvitation",
+        "description": "Verify an unconsumed short-lived invitation without exposing its credential.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema": {
+                      "const": "sports.exchange.v1"
+                    },
+                    "namespace": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "competitions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "name",
+                          "season"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "season": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "scopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid contract"
+          },
+          "401": {
+            "description": "Invalid signature or expired delivery"
+          },
+          "403": {
+            "description": "Connection scope does not include this operation/competition"
+          },
+          "409": {
+            "description": "Identity/delivery conflict"
+          }
+        }
+      }
+    },
+    "/api/exchange/v1/enroll": {
+      "post": {
+        "operationId": "enrollConnection",
+        "description": "Redeem once. Retry the same redemptionId within the invitation lifetime if a response is lost. Response is for the native client only.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "token",
+                  "redemptionId"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$"
+                  },
+                  "redemptionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema": {
+                      "const": "sports.exchange.v1"
+                    },
+                    "namespace": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "competitions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "name",
+                          "season"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "season": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "scopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "clientId": {
+                      "type": "string"
+                    },
+                    "sourceNamespace": {
+                      "type": "string"
+                    },
+                    "secret": {
+                      "type": "string",
+                      "minLength": 32,
+                      "writeOnly": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid contract"
+          },
+          "401": {
+            "description": "Invalid signature or expired delivery"
+          },
+          "403": {
+            "description": "Connection scope does not include this operation/competition"
+          },
+          "409": {
+            "description": "Identity/delivery conflict"
+          }
+        }
+      }
     }
   },
   "components": {
