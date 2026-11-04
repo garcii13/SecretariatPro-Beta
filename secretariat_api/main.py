@@ -22,6 +22,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from secretariat_core.local_access import LocalAccessMiddleware
+from secretariat_core.exchange.federation import observe_runtime, stop_worker
 
 import qrcode
 import qrcode.image.svg
@@ -185,6 +186,10 @@ _replay_exports: set[asyncio.Task] = set()
 async def broadcast_state() -> dict[str, Any]:
     snapshot = await run_in_threadpool(runtime.snapshot)
     await manager.broadcast({"type": "state", "payload": snapshot})
+    # Optional non-blocking wakeup. Network, retries and cache writes are outside
+    # goal presentation, OCR, OBS and replay. An unavailable federation never
+    # changes the result of a successfully persisted local action.
+    observe_runtime(runtime, snapshot)
     return snapshot
 
 
@@ -266,6 +271,7 @@ async def lifespan(_: FastAPI):
     if _replay_exports:
         await asyncio.gather(*list(_replay_exports), return_exceptions=True)
     await run_in_threadpool(runtime.shutdown)
+    stop_worker()
     if runtime.obs is not None:
         await run_in_threadpool(runtime.obs.disconnect)
 

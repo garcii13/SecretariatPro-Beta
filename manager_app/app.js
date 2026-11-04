@@ -420,6 +420,36 @@
     loadView(name).catch((error) => showToast(error.message, true));
   }
 
+  let federationPreviewId = null;
+  async function loadFederations() {
+    federationPreviewId = null;
+    $("#federation-preview").hidden = true;
+    const data = await api("/api/integrations/federations");
+    const host = $("#federation-connections");
+    host.innerHTML = "";
+    if (!data.connections?.length) {
+      host.textContent = "No hay conexiones activas en este espacio. Puedes seguir usando Manager y Live de forma independiente. Configura SP_FEDERATION_CONNECTIONS para conectar una federación.";
+      return;
+    }
+    for (const connection of data.connections) {
+      const card = document.createElement("div"); card.className = "panel";
+      const title = document.createElement("h3"); title.textContent = connection.namespace || connection.id; card.append(title);
+      const status = document.createElement("p");
+      const receipt = connection.lastReceipt?.reason || "Sin entregas confirmadas";
+      status.textContent = `${connection.cached || 0} registros · ${connection.pending || 0} envíos pendientes · ${receipt}. ${connection.message || ""}`;
+      card.append(status);
+      const sync = document.createElement("button"); sync.type = "button"; sync.textContent = "Sincronizar cambios";
+      sync.disabled = !state.session.permissions?.write_allowed;
+      sync.onclick = async () => { sync.disabled = true; try { await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/sync`, {method:"POST"}); await loadFederations(); showToast("Catálogo sincronizado; la importación se revisa por separado."); } catch(error) { showToast(error.message,true); sync.disabled=false; } };
+      card.append(sync);
+      const preview = document.createElement("button"); preview.type="button"; preview.className="ghost"; preview.textContent="Revisar catálogo para importar";
+      preview.disabled = !state.session.permissions?.write_allowed || !(connection.modules || []).includes("catalog");
+      preview.onclick=async()=>{try { const plan=await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/preview`); federationPreviewId=connection.id; $("#federation-preview-text").textContent=`${plan.competition.name} · ${plan.competition.season}: ${plan.counts.teams} equipos, ${plan.counts.players} jugadores, ${plan.counts.matches} partidos. ${plan.policy}`; $("#federation-preview").hidden=false; } catch(error) {showToast(error.message,true);} };
+      card.append(preview); host.append(card);
+    }
+    $("#federation-import-confirm").onclick=async()=>{if(!federationPreviewId)return; const button=$("#federation-import-confirm");button.disabled=true;try {await api(`/api/integrations/federations/${encodeURIComponent(federationPreviewId)}/import`,{method:"POST"});state.cache={};await loadFederations();showToast("Copia federativa actualizada. Sus fichas deportivas se corrigen en origen.");}catch(error){showToast(error.message,true);}finally{button.disabled=false;}};
+  }
+
   async function loadView(name, force = false) {
     const loaders = {
       dashboard: loadDashboard,
@@ -428,6 +458,7 @@
       players: loadPlayers,
       matches: loadMatches,
       members: loadMembers,
+      federations: loadFederations,
       imports: loadImportScope,
       identity: loadThemes,
       profile: async () => renderProfileView(),
@@ -1191,7 +1222,7 @@
           { name: "match_date", label: "Fecha y hora", type: "datetime-local", required: true },
           { name: "time_confirmed", label: "Hora confirmada", type: "select", options: [[true, "Sí"], [false, "No"]], value: true },
           { name: "venue", label: "Pabellón" },
-          { name: "assigned_to", label: "Realizador", type: "select", options: [["", "Sin asignar"], ...members], full: true },
+          { name: "assigned_to", label: "Realizador (opcional)", type: "select", options: [["", "Pendiente de asignar · permite programar la emisión"], ...members], full: true },
           { name: "broadcast_enabled", label: "Uso del partido", type: "select", options: [[true, "Retransmitir / operar en Live"], [false, "Solo registro administrativo (no Live)"]], value: true, full: true },
           { name: "status", label: "Estado", type: "select", options: [["scheduled", "Programado"], ["live", "En directo"], ["finished", "Finalizado"], ["postponed", "Aplazado"], ["cancelled", "Cancelado"]], value: "scheduled" },
           { name: "home_score", label: "Resultado local", type: "number", value: 0 },

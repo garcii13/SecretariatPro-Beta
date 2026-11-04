@@ -1,0 +1,1133 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sports Exchange",
+    "version": "1.0.0",
+    "description": "Independent sporting exchange contract. Federation controls player identities and rosters; producers submit provisional snapshots. Original capture and federation review are independent.\nAuthentication hmac-sha256-v1: HMAC-SHA256(secret, timestamp + LF + delivery + LF + METHOD + LF + exact pathnameAndQuery + LF + lowercase SHA256(rawBody)). Secret length >=32, timestamp Unix seconds, tolerance 300s. Every connection is scoped to a federation, operations and competitions. Browser/user authentication is separate. POST retries keep delivery ID and exact body; timestamp/signature may refresh. HTTPS required outside loopback."
+  },
+  "paths": {
+    "/api/exchange/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid contract"
+          },
+          "401": {
+            "description": "Invalid signature or expired delivery"
+          },
+          "403": {
+            "description": "Connection scope does not include this operation/competition"
+          },
+          "409": {
+            "description": "Identity/delivery conflict"
+          }
+        }
+      }
+    },
+    "/api/exchange/v1/snapshot": {
+      "get": {
+        "operationId": "snapshot",
+        "parameters": [
+          {
+            "name": "X-Exchange-Client",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Delivery",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid contract"
+          },
+          "401": {
+            "description": "Invalid signature or expired delivery"
+          },
+          "403": {
+            "description": "Connection scope does not include this operation/competition"
+          },
+          "409": {
+            "description": "Identity/delivery conflict"
+          }
+        }
+      }
+    },
+    "/api/exchange/v1/changes": {
+      "get": {
+        "operationId": "changes",
+        "parameters": [
+          {
+            "name": "X-Exchange-Client",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Delivery",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "competition",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,18}$",
+              "default": "0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid contract"
+          },
+          "401": {
+            "description": "Invalid signature or expired delivery"
+          },
+          "403": {
+            "description": "Connection scope does not include this operation/competition"
+          },
+          "409": {
+            "description": "Identity/delivery conflict"
+          }
+        }
+      }
+    },
+    "/api/exchange/v1/captures": {
+      "post": {
+        "operationId": "submitCapture",
+        "parameters": [
+          {
+            "name": "X-Exchange-Client",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Delivery",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Exchange-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Capture"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CloudEvent"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid contract"
+          },
+          "401": {
+            "description": "Invalid signature or expired delivery"
+          },
+          "403": {
+            "description": "Connection scope does not include this operation/competition"
+          },
+          "409": {
+            "description": "Identity/delivery conflict"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Capture": {
+        "type": "object",
+        "properties": {
+          "schema": {
+            "type": "string",
+            "const": "sports.exchange.v1"
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1
+          },
+          "matchId": {
+            "type": "string",
+            "pattern": "^[\\w-]{1,120}$"
+          },
+          "revision": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "match": {
+            "type": "object",
+            "properties": {
+              "homeTeamId": {
+                "type": "string"
+              },
+              "awayTeamId": {
+                "type": "string"
+              },
+              "matchStatus": {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "live",
+                  "finished",
+                  "postponed"
+                ]
+              },
+              "home": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 99
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "away": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 99
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "clock": {
+                "type": "string",
+                "pattern": "^\\d{1,3}:[0-5]\\d$"
+              },
+              "period": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "lineup": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "teamId": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "playerId": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 120
+                        },
+                        "number": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 99
+                        },
+                        "position": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 30
+                        }
+                      },
+                      "required": [
+                        "teamId",
+                        "playerId",
+                        "name",
+                        "number",
+                        "position"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "events": {
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "teamId": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "goal",
+                            "penalty"
+                          ]
+                        },
+                        "seconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 14400
+                        },
+                        "period": {
+                          "default": "",
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100000
+                        },
+                        "timeBasis": {
+                          "default": "elapsed",
+                          "type": "string",
+                          "enum": [
+                            "elapsed",
+                            "source_clock"
+                          ]
+                        },
+                        "sourceCreatedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "playerId": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "assistantId": {
+                          "default": "",
+                          "type": "string",
+                          "pattern": "^[\\w-]{0,120}$"
+                        },
+                        "ownGoal": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "shootout": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "penaltyType": {
+                          "default": "",
+                          "type": "string",
+                          "enum": [
+                            "2",
+                            "5",
+                            "",
+                            "2+2",
+                            "2+10",
+                            "match"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "teamId",
+                        "type",
+                        "seconds",
+                        "period",
+                        "timeBasis",
+                        "playerId",
+                        "assistantId",
+                        "ownGoal",
+                        "shootout",
+                        "penaltyType"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "keepers": {
+                    "maxItems": 12,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "teamId": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "playerId": {
+                          "type": "string",
+                          "pattern": "^[\\w-]{1,120}$"
+                        },
+                        "seconds": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 14400
+                        },
+                        "shots": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 500
+                        },
+                        "saves": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 500
+                        }
+                      },
+                      "required": [
+                        "teamId",
+                        "playerId",
+                        "seconds",
+                        "shots",
+                        "saves"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "lineup",
+                  "events",
+                  "keepers"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "homeTeamId",
+              "awayTeamId",
+              "matchStatus",
+              "home",
+              "away",
+              "clock",
+              "period",
+              "report"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema",
+          "namespace",
+          "matchId",
+          "revision",
+          "match"
+        ],
+        "additionalProperties": false
+      },
+      "CloudEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "specversion",
+          "id",
+          "source",
+          "type",
+          "subject",
+          "data"
+        ],
+        "properties": {
+          "specversion": {
+            "const": "1.0"
+          },
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "type": {
+            "const": "sports.match.capture.v1"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "datacontenttype": {
+            "const": "application/json"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Capture"
+          }
+        }
+      },
+      "Competition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "season"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "pointsWin": {
+            "type": "integer"
+          },
+          "pointsDraw": {
+            "type": "integer"
+          },
+          "pointsLoss": {
+            "type": "integer"
+          }
+        }
+      },
+      "Team": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string"
+          }
+        }
+      },
+      "Roster": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "teamId",
+          "season",
+          "archived",
+          "players"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "name",
+                "number",
+                "position"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "number": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "position": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Match": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "competitionId",
+          "homeTeamId",
+          "awayTeamId",
+          "reviewStatus"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "competitionId": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string"
+          },
+          "homeTeamId": {
+            "type": "string"
+          },
+          "awayTeamId": {
+            "type": "string"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "venue": {
+            "type": "string"
+          },
+          "matchStatus": {
+            "enum": [
+              "scheduled",
+              "live",
+              "finished",
+              "postponed",
+              "cancelled"
+            ]
+          },
+          "home": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 99
+          },
+          "away": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 99
+          },
+          "clock": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "reviewStatus": {
+            "enum": [
+              "provisional",
+              "confirmed",
+              "official"
+            ]
+          },
+          "captureAllowed": {
+            "type": "boolean"
+          },
+          "lineup": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 120
+                },
+                "number": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 99
+                },
+                "position": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 30
+                }
+              },
+              "required": [
+                "teamId",
+                "playerId",
+                "name",
+                "number",
+                "position"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "events": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "goal",
+                    "penalty"
+                  ]
+                },
+                "seconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 14400
+                },
+                "period": {
+                  "default": "",
+                  "type": "string",
+                  "maxLength": 20
+                },
+                "sequence": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100000
+                },
+                "timeBasis": {
+                  "default": "elapsed",
+                  "type": "string",
+                  "enum": [
+                    "elapsed",
+                    "source_clock"
+                  ]
+                },
+                "sourceCreatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "assistantId": {
+                  "default": "",
+                  "type": "string",
+                  "pattern": "^[\\w-]{0,120}$"
+                },
+                "ownGoal": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "shootout": {
+                  "default": false,
+                  "type": "boolean"
+                },
+                "penaltyType": {
+                  "default": "",
+                  "type": "string",
+                  "enum": [
+                    "2",
+                    "5",
+                    "",
+                    "2+2",
+                    "2+10",
+                    "match"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "teamId",
+                "type",
+                "seconds",
+                "period",
+                "timeBasis",
+                "playerId",
+                "assistantId",
+                "ownGoal",
+                "shootout",
+                "penaltyType"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "keepers": {
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teamId": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "playerId": {
+                  "type": "string",
+                  "pattern": "^[\\w-]{1,120}$"
+                },
+                "seconds": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 14400
+                },
+                "shots": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 500
+                },
+                "saves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 500
+                }
+              },
+              "required": [
+                "teamId",
+                "playerId",
+                "seconds",
+                "shots",
+                "saves"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "Entity": {
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "revision",
+          "data"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "competition",
+              "team",
+              "roster",
+              "match"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Competition"
+              },
+              {
+                "$ref": "#/components/schemas/Team"
+              },
+              {
+                "$ref": "#/components/schemas/Roster"
+              },
+              {
+                "$ref": "#/components/schemas/Match"
+              }
+            ]
+          }
+        }
+      },
+      "Snapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "namespace",
+          "competitionId",
+          "entities",
+          "nextCursor"
+        ],
+        "properties": {
+          "schema": {
+            "const": "sports.exchange.v1"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "competitionId": {
+            "type": "string"
+          },
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            }
+          },
+          "captureCheckpoints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "matchId",
+                "revision"
+              ],
+              "properties": {
+                "matchId": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        }
+      },
+      "Changes": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "namespace",
+          "competitionId",
+          "changes",
+          "nextCursor",
+          "hasMore"
+        ],
+        "properties": {
+          "schema": {
+            "const": "sports.exchange.v1"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "competitionId": {
+            "type": "string"
+          },
+          "changes": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Entity"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "cursor"
+                  ],
+                  "properties": {
+                    "cursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ok",
+          "accepted",
+          "reason",
+          "revision",
+          "deskMayContinue"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "reason": {
+            "enum": [
+              "accepted",
+              "older_revision",
+              "another_capture_provider",
+              "official_locked",
+              "review_pending",
+              "manual_capture"
+            ]
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "deskMayContinue": {
+            "const": true
+          },
+          "duplicate": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

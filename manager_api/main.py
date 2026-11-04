@@ -17,6 +17,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from secretariat_core.local_access import LocalAccessMiddleware
+from secretariat_core.exchange import federation as federation_exchange
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -524,14 +525,18 @@ async def match_events(match_id: str) -> dict[str, Any]:
 async def create_match_event(match_id: str, payload: MatchEventPayload) -> dict[str, Any]:
     client = runtime.require_connected()
     result = await run_write(client.manager_create_match_event, match_id, payload.data)
-    return {"result": result, "context": await run_read(client.manager_match_event_context, match_id)}
+    context = await run_read(client.manager_match_event_context, match_id)
+    federation_exchange.manager_capture(client, context)
+    return {"result": result, "context": context}
 
 
 @app.delete("/api/matches/{match_id}/events/{event_id}")
 async def cancel_match_event(match_id: str, event_id: str) -> dict[str, Any]:
     client = runtime.require_connected()
     await run_write(client.manager_cancel_match_event, match_id, event_id)
-    return await run_read(client.manager_match_event_context, match_id)
+    context = await run_read(client.manager_match_event_context, match_id)
+    federation_exchange.manager_capture(client, context)
+    return context
 
 
 def _match_event_template_bytes(context: dict[str, Any]) -> bytes:
@@ -605,7 +610,9 @@ async def download_match_event_template(match_id: str) -> dict[str, Any]:
 async def finalize_match_event_act(match_id: str) -> dict[str, Any]:
     client = runtime.require_connected()
     match = await run_write(client.manager_finalize_match_act, match_id)
-    return {"match": match, "context": await run_read(client.manager_match_event_context, match_id)}
+    context = await run_read(client.manager_match_event_context, match_id)
+    federation_exchange.manager_capture(client, context)
+    return {"match": match, "context": context}
 
 
 def _parse_event_import(content: bytes, context: dict[str, Any]) -> list[dict[str, Any]]:
@@ -687,6 +694,7 @@ async def confirm_match_event_import(match_id: str, payload: MatchEventImportPay
         await run_write(client.manager_finalize_match_act, match_id)
         context = await run_read(client.manager_match_event_context, match_id)
         auto_finalized = True
+    federation_exchange.manager_capture(client, context)
     return {"created": created, "errors": errors, "auto_finalized": auto_finalized, "context": context}
 
 
@@ -1256,3 +1264,29 @@ async def scoped_template_download(kind: str) -> dict[str, Any]:
 
 # Outermost boundary: validate the browser origin before any API side effects.
 app.add_middleware(LocalAccessMiddleware, cookie_name="sp_manager_session")
+
+
+@app.get("/api/integrations/federations")
+async def federation_connections():
+    client=runtime.require_connected()
+    return await run_read(federation_exchange.public_status,client)
+
+@app.post("/api/integrations/federations/{connection_id}/sync")
+async def federation_sync(connection_id: str):
+    client=runtime.require_connected()
+    return await run_write(federation_exchange.synchronise,client,connection_id)
+
+@app.get("/api/integrations/federations/{connection_id}/preview")
+async def federation_preview(connection_id: str):
+    client=runtime.require_connected()
+    return await run_read(federation_exchange.catalog_plan,client,connection_id)
+
+@app.post("/api/integrations/federations/{connection_id}/import")
+async def federation_import(connection_id: str):
+    client=runtime.require_connected()
+    return await run_write(federation_exchange.import_catalog,client,connection_id,lambda: runtime.require_write() is client)
+
+@app.get("/api/exchange/v1/snapshot")
+async def federation_export(connection: str):
+    client=runtime.require_connected()
+    return await run_read(federation_exchange.export_snapshot,client,connection)

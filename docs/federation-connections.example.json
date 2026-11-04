@@ -1,0 +1,15 @@
+[
+  {
+    "id": "federation-demo",
+    "enabled": false,
+    "workspaceId": "ID_DEL_WORKSPACE_SECRETARIATPRO",
+    "namespace": "aeuf.es",
+    "competitionId": "ID_DE_LA_COMPETICION_FEDERATIVA",
+    "url": "http://127.0.0.1:4321",
+    "clientId": "mesa-sp",
+    "sourceNamespace": "urn:exchange-client:mesa-sp",
+    "secretEnv": "SPORTS_DESK_SECRET",
+    "modules": ["catalog", "captures", "statistics"],
+    "autoImport": false
+  }
+]

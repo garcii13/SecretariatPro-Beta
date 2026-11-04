@@ -916,6 +916,20 @@ class ApplicationRuntime:
             competition_id,
             [str(home.get("id") or ""), str(away.get("id") or "")],
         )
+        # Optional federation projection. It replaces this competition's read
+        # model; imported matches are never added to the same events twice.
+        from secretariat_core.exchange.federation import statistics as federation_statistics
+        try:
+            projection = federation_statistics(client, competition_id, {
+                "online": {"match": self.active_match, "rosters": self.rosters,
+                           "attendance": {key: list(value) for key,value in self.attendance.items()},
+                           "events": self.events},
+                "scores": self.scores(), "state": {"match": self.read_state().get("match", {})},
+            })
+            if projection is not None:
+                standings, leaders = projection["standings"], projection["leaders"]
+        except Exception:
+            projection = None  # Existing independent statistics remain usable.
 
         def display_name(player: dict[str, Any]) -> str:
             return (

@@ -34,3 +34,4 @@ source-manifest.json
 secretariatpro-ocr-models-*.zip
 
 supabase/.temp/
+federation_exchange/

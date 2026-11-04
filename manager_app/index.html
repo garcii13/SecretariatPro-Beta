@@ -53,6 +53,7 @@
         <button data-view="players"><span class="nav-icon">♙</span>Jugadores</button>
         <button data-view="matches"><span class="nav-icon">▣</span>Partidos</button>
         <button data-view="members"><span class="nav-icon">◎</span>Usuarios</button>
+        <button data-view="federations"><span class="nav-icon">⇄</span>Federaciones</button>
         <button data-view="imports"><span class="nav-icon">⇧</span>Importación masiva</button>
         <button data-view="identity"><span class="nav-icon">✦</span>Identidad visual</button>
         <button data-view="profile"><span class="nav-icon">♙</span>Mi perfil</button>
@@ -105,6 +106,12 @@
         </div>
       </section>
 
+      <section class="view" id="view-federations">
+        <div class="page-heading"><div><span class="eyebrow">CONEXIONES OPCIONALES</span><h1>Federaciones</h1><p>Jugadores, rosters y calendario desde su federación. Las jugadas de la mesa se envían como provisionales; la revisión federativa no bloquea Live.</p></div></div>
+        <article class="panel"><div id="federation-connections" class="empty-state">Cargando conexiones…</div></article>
+        <article class="panel" id="federation-preview" hidden><h2>Catálogo federativo</h2><p id="federation-preview-text"></p><button type="button" id="federation-import-confirm">Importar / actualizar copia deportiva</button></article>
+        <p>La URL, el espacio, los módulos y las credenciales se configuran en el entorno privado de este ordenador. Cada federación conserva su base y su política de actas.</p>
+      </section>
       <section class="view" id="view-competitions">
         <div class="heading"><div><span class="eyebrow">TEMPORADAS Y LIGAS</span><h1>Competiciones</h1><p>Crea temporadas, ligas y sistemas de puntuación. La competición activa alimentará calendario, clasificación y overlays.</p></div><div class="heading-actions"><button class="secondary" data-create="season">Nueva temporada</button><button data-create="competition">Nueva competición</button></div></div>
         <div class="split-panels"><article class="panel"><div class="panel-head"><h2>Temporadas</h2><span class="count" id="season-count">0</span></div><div id="seasons-list"></div></article><article class="panel wide"><div class="panel-head"><h2>Competiciones</h2><span class="count" id="competition-count">0</span></div><div id="competitions-list"></div></article></div>

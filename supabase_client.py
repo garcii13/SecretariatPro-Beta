@@ -673,6 +673,9 @@ class ScoreboardSupabaseClient:
 
     def manager_update_competition(self, competition_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
+        if set(payload) & {'season_id', 'points_win', 'name', 'points_loss', 'points_draw', 'category'}:
+            from secretariat_core.exchange.federation import assert_local_write
+            assert_local_write(self, "competition", competition_id)
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(
             payload,
@@ -731,6 +734,9 @@ class ScoreboardSupabaseClient:
 
     def manager_update_team(self, team_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
+        if set(payload) & {'name', 'short_name'}:
+            from secretariat_core.exchange.federation import assert_local_write
+            assert_local_write(self, "team", team_id)
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(
             payload,
@@ -786,6 +792,8 @@ class ScoreboardSupabaseClient:
 
     def manager_update_player(self, player_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
+        from secretariat_core.exchange.federation import assert_local_write
+        assert_local_write(self, "player", player_id)
         workspace_id = self._active_workspace_id()
         clean = self._clean_payload(payload, {"first_name", "last_name", "display_name", "position", "birth_date", "nationality", "is_coach"})
         clean.update(self._import_person_details(clean))
@@ -807,6 +815,8 @@ class ScoreboardSupabaseClient:
 
     def manager_delete_player(self, player_id: str) -> dict[str, Any]:
         self._require_competition_manager()
+        from secretariat_core.exchange.federation import assert_local_write
+        assert_local_write(self, "player", player_id)
         workspace_id = self._active_workspace_id()
         called_up = self._manager_count_rows("match_players", workspace_id=workspace_id, player_id=str(player_id))
         events = self._manager_count_rows("match_events", workspace_id=workspace_id, player_id=str(player_id))
@@ -836,6 +846,9 @@ class ScoreboardSupabaseClient:
     def manager_create_match(self, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
         workspace_id = self._active_workspace_id()
+        payload = dict(payload)
+        if "assigned_to" in payload and not str(payload["assigned_to"] or "").strip():
+            payload["assigned_to"] = None
         clean = self._clean_payload(
             payload,
             {"competition_id", "match_date", "time_confirmed", "scheduled_date", "venue", "status", "home_score", "away_score", "assigned_to", "home_team_id", "away_team_id", "broadcast_enabled"},
@@ -855,7 +868,13 @@ class ScoreboardSupabaseClient:
 
     def manager_update_match(self, match_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
+        if set(payload) & {'venue', 'home_team_id', 'competition_id', 'match_date', 'away_team_id'}:
+            from secretariat_core.exchange.federation import assert_local_write
+            assert_local_write(self, "match", match_id)
         workspace_id = self._active_workspace_id()
+        payload = dict(payload)
+        if "assigned_to" in payload and not str(payload["assigned_to"] or "").strip():
+            payload["assigned_to"] = None
         clean = self._clean_payload(
             payload,
             {"competition_id", "match_date", "time_confirmed", "scheduled_date", "venue", "status", "home_score", "away_score", "assigned_to", "home_team_id", "away_team_id", "broadcast_enabled"},
@@ -1265,12 +1284,16 @@ class ScoreboardSupabaseClient:
 
     def manager_create_roster(self, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
+        from secretariat_core.exchange.federation import assert_local_write
+        assert_local_write(self, "competition", payload.get("competition_id", ""))
         clean = self._validate_roster_assignment(payload)
         response = self.client.table("rosters").insert(clean).execute()
         return dict((response.data or [{}])[0])
 
     def manager_update_roster(self, roster_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         self._require_competition_manager()
+        from secretariat_core.exchange.federation import assert_local_write
+        assert_local_write(self, "membership", roster_id)
         workspace_id = self._active_workspace_id()
         current_rows = (
             self.client.table("rosters")
@@ -1297,6 +1320,8 @@ class ScoreboardSupabaseClient:
     def manager_remove_roster(self, roster_id: str) -> dict[str, Any]:
         """Soft-delete a membership so it remains available for historical reports."""
         self._require_competition_manager()
+        from secretariat_core.exchange.federation import assert_local_write
+        assert_local_write(self, "membership", roster_id)
         workspace_id = self._active_workspace_id()
         response = (
             self.client.table("rosters")
