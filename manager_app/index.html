@@ -22,7 +22,7 @@
     })();
   </script>
   <!-- Compatibility: styles.css?v=phase42 -->
-  <link rel="stylesheet" href="/manager/styles.css?v=phase56-competition-flags">
+  <link rel="stylesheet" href="/manager/styles.css?v=phase56-exchange-2">
 </head>
 <body data-compat-build="phase38" data-manager-release="phase56">
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -121,14 +121,14 @@
             <p id="federation-verified-name"></p>
             <label>Competición<select id="federation-competition" required></select></label>
             <label class="federation-check"><input id="federation-enable-capture" type="checkbox" checked>Enviar las jugadas de la mesa a la federación</label>
-            <label class="federation-check"><input id="federation-auto-import" type="checkbox">Actualizar jugadores y calendario automáticamente después de la primera importación</label>
+            <p>Jugadores, rosters y calendario se actualizarán automáticamente mientras Manager esté conectado con permisos de gestión. No necesitas importar archivos ni pulsar botones.</p>
             <p>La conexión se guardará en este ordenador para Manager y Live. Podrás desconectarla cuando quieras.</p>
             <button type="submit" id="federation-connect-save">Conectar competición</button>
           </form>
           <p id="federation-wizard-status" role="status" aria-live="polite"></p>
         </article>
         <article class="panel"><div id="federation-connections" class="empty-state">Cargando conexiones…</div></article>
-        <article class="panel" id="federation-preview" hidden><h2>Catálogo federativo</h2><p id="federation-preview-text"></p><button type="button" id="federation-import-confirm">Importar / actualizar copia deportiva</button></article>
+        <article class="panel" id="federation-preview" hidden><h2>Catálogo federativo</h2><p id="federation-preview-text"></p></article>
         <p>Cada federación conserva su base y su política de actas. Las invitaciones se crean desde el panel de gestión de la federación.</p>
       </section>
       <section class="view" id="view-competitions">
@@ -346,6 +346,7 @@
 
   <div class="toast" id="toast" hidden></div>
   <!-- Compatibility: app.js?v=phase42 -->
-  <script src="/manager/app.js?v=phase56-competition-flags"></script>
+  <script src="/manager/federation-i18n.js?v=phase56-exchange-2"></script>
+  <script src="/manager/app.js?v=phase56-exchange-2"></script>
 </body>
 </html>

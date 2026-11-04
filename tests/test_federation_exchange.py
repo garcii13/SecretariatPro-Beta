@@ -31,7 +31,9 @@ class Table:
     def execute(self):
         rows=self.db.setdefault(self.name,{})
         if self.action=='upsert':
-            p=self.payload;rows[p['id']]={**rows.get(p['id'],{}),**p};return SimpleNamespace(data=[rows[p['id']]])
+            p=self.payload
+            if self.name=='players' and p.get('position') not in (None,'goalkeeper','defender','centre','forward','unknown'):raise ValueError('players_position_check')
+            rows[p['id']]={**rows.get(p['id'],{}),**p};return SimpleNamespace(data=[rows[p['id']]])
         selected=[r for r in rows.values() if all(r.get(k)==v for k,v in self.filters.items())]
         if self.action=='update':
             for row in selected:row.update(self.payload)
@@ -123,3 +125,179 @@ class FederationTests(unittest.TestCase):
             result=c.manager_create_match({'id':'ignored','competition_id':'c','home_team_id':'h','away_team_id':'a','match_date':'2026-11-04T18:00:00Z','assigned_to':assigned,'broadcast_enabled':True})
             self.assertIsNone(result['assigned_to']);self.assertTrue(result['broadcast_enabled'])
         c.manager_update_match('generated',{'assigned_to':'','broadcast_enabled':True})
+
+class AutomaticCatalogTests(unittest.TestCase):
+    setUp=FederationTests.setUp
+    tearDown=FederationTests.tearDown
+    exchange=FederationTests.exchange
+    seed=FederationTests.seed
+    client=FederationTests.client
+    def worker(self,client,authorized=lambda:True):
+        self.config['autoImport']=True
+        os.environ['SP_FEDERATION_CONNECTIONS']=json.dumps([self.config])
+        worker=object.__new__(fed.FederationWorker)
+        worker.catalog_clients={('ws','one'):(client,authorized)};worker.errors={};worker.last_pull={};worker.contexts={}
+        return worker
+    def test_database_position_enum_and_structured_personal_fields(self):
+        self.seed();client,db=self.client();e=self.exchange()
+        data=catalog();p=data['entities'][2]['data']['players'][1]
+        p.update(firstName='Ana',lastName='García López',birthDate='2001-03-04',nationality='España',isCoach=True)
+        e.import_snapshot(data);e.close();fed.import_catalog(client,'one')
+        row=db['players'][fed.local_id('ws','fed.test','player','h7')]
+        self.assertEqual(row['position'],'centre');self.assertEqual(row['first_name'],'Ana');self.assertEqual(row['last_name'],'García López')
+        self.assertEqual(row['birth_date'],'2001-03-04');self.assertEqual(row['nationality'],'España');self.assertTrue(row['is_coach'])
+        for value in ['Centro','centre','center','midfielder','unknown','','something-else']:
+            self.assertIn(fed.player_payload({'name':'Legacy alias','position':value})['position'],('goalkeeper','defender','centre','forward','unknown'))
+    def test_bad_date_isolated_before_player_write_while_calendar_continues(self):
+        self.seed();client,db=self.client();e=self.exchange();data=catalog();data['entities'][2]['data']['players'][0]['birthDate']='2001-02-30';e.import_snapshot(data);e.close()
+        result=fed.import_catalog(client,'one')
+        self.assertFalse(result['ok']);self.assertNotIn(fed.local_id('ws','fed.test','player','h9'),db['players'])
+        self.assertEqual(len(db['players']),3);self.assertEqual(len(db['matches']),2)
+        self.assertTrue(any(i['code']=='invalid_player' for i in result['issues']))
+        self.assertTrue(any(i['kind']=='roster' for i in result['issues']))
+        self.assertTrue(all(r['team_id']==fed.local_id('ws','fed.test','team','a') for r in db['rosters'].values()))
+    def test_automatic_first_copy_retry_empty_feed_restart_and_live_score_no_reimport(self):
+        self.seed();client,db=self.client();worker=self.worker(client)
+        real_import=fed.import_catalog
+        with patch.object(ExchangeClient,'pull',return_value=0),patch.object(fed,'import_catalog',side_effect=RuntimeError('temporary write failure')):
+            worker.process('ws',{})
+        self.assertIn(('ws','one'),worker.errors);self.assertEqual(db,{})
+        worker.last_pull={}
+        with patch.object(ExchangeClient,'pull',return_value=0),patch.object(fed,'import_catalog',wraps=real_import) as imported:
+            worker.process('ws',{'online':{'match':{'id':'unlinked-local-game'}}})
+            imported.assert_called_once();self.assertEqual(len(db['players']),4)
+        # Applied digest persists across workers, and live facts do not rewrite rosters.
+        worker=self.worker(client);e=self.exchange();row=catalog()['entities'][-2];row['revision']=2;row['data']['home']=99
+        with e.db:e._store(row)
+        e.close()
+        with patch.object(ExchangeClient,'pull',return_value=0),patch.object(fed,'import_catalog') as imported:
+            worker.process('ws',{});imported.assert_not_called()
+        # A sporting profile edit does trigger a new automatic materialization.
+        e=self.exchange();row=catalog()['entities'][2];row['revision']=2;row['data']['players'][0]['firstName']='Updated'
+        with e.db:e._store(row)
+        e.close();worker.last_pull={}
+        with patch.object(ExchangeClient,'pull',return_value=0),patch.object(fed,'import_catalog',wraps=real_import) as imported:
+            worker.process('ws',{});imported.assert_called_once()
+        self.assertEqual(db['players'][fed.local_id('ws','fed.test','player','h9')]['first_name'],'Updated')
+    def test_logged_out_or_switched_workspace_never_materializes(self):
+        self.seed();client,db=self.client();worker=self.worker(client,lambda:False)
+        with patch.object(ExchangeClient,'pull',return_value=0):worker.process('ws',{})
+        self.assertEqual(db,{})
+        worker.catalog_clients[('ws','one')]=(client,lambda:True);client._active_workspace_id.return_value='other';worker.last_pull={}
+        with patch.object(ExchangeClient,'pull',return_value=0):worker.process('ws',{})
+        self.assertEqual(db,{})
+    def test_current_manager_registers_without_manual_import(self):
+        self.seed();client,db=self.client();worker=self.worker(client);worker.catalog_clients={};worker.contexts={'ws':{'live':'preserved'}}
+        with patch.object(fed,'_service',worker):fed.ensure_automatic(client,lambda:True)
+        self.assertEqual(worker.catalog_clients[('ws','one')][0],client);self.assertEqual(worker.contexts['ws'],{'live':'preserved'})
+
+    def test_partial_remote_copy_recovers_same_ids_without_manual_import(self):
+        self.seed();client,db=self.client();worker=self.worker(client)
+        original=client.client.table.side_effect
+        failed=[False]
+        def table(name):
+            result=original(name);execute=result.execute
+            def run():
+                if name=='players' and len(db.get('players',{}))==1 and not failed[0]:
+                    failed[0]=True;raise RuntimeError('interrupted after first player')
+                return execute()
+            result.execute=run
+            return result
+        client.client.table.side_effect=table
+        with patch.object(ExchangeClient,'pull',return_value=0):worker.process('ws',{})
+        self.assertEqual(len(db['players']),3);first_id=next(iter(db['players']))
+        e=self.exchange();self.assertIsNone(e.applied('ws'));e.close();worker.last_pull={}
+        with patch.object(ExchangeClient,'pull',return_value=0):worker.process('ws',{})
+        self.assertEqual(len(db['players']),4);self.assertIn(first_id,db['players']);self.assertNotIn(('ws','one'),worker.errors)
+        # Profile edits do not deactivate rosters or reset local captain flags.
+        row=next(iter(db['rosters'].values()));row['captain']=True
+        e=self.exchange();change=catalog()['entities'][2];change['revision']=2;change['data']['players'][0]['firstName']='Updated'
+        with e.db:e._store(change)
+        e.close();worker.last_pull={}
+        with patch.object(ExchangeClient,'pull',return_value=0):worker.process('ws',{})
+        self.assertTrue(row['active']);self.assertTrue(row['captain'])
+
+    def test_optional_nulls_positions_and_numeric_shirts_are_normalized(self):
+        self.seed();client,db=self.client();e=self.exchange();data=catalog();p=data['entities'][2]['data']['players'][0]
+        p.update(number=' 09 ',position='  FORWARD  ',firstName=None,lastName=None,nationality=None,isCoach=None)
+        e.import_snapshot(data);e.close();result=fed.import_catalog(client,'one');self.assertTrue(result['ok'])
+        player=db['players'][fed.local_id('ws','fed.test','player','h9')];self.assertEqual(player['position'],'forward')
+        self.assertTrue(any(r['shirt_number']==9 for r in db['rosters'].values()))
+    def test_unknown_position_warns_without_blocking_or_inventing_position(self):
+        self.seed();client,db=self.client();e=self.exchange();data=catalog();data['entities'][2]['data']['players'][0]['position']='unsupported-specialist'
+        e.import_snapshot(data);e.close();result=fed.import_catalog(client,'one');self.assertTrue(result['ok'])
+        self.assertTrue(any(i['level']=='warning' for i in result['issues']));self.assertEqual(db['players'][fed.local_id('ws','fed.test','player','h9')]['position'],'unknown')
+    def test_rejected_player_preserves_valid_roster_and_recovers_on_source_correction(self):
+        self.seed();client,db=self.client();fed.import_catalog(client,'one');before=copy.deepcopy(db['rosters']);e=self.exchange();row=catalog()['entities'][2]
+        row['revision']=2;row['data']['players'][0]['birthDate']='invalid'
+        with e.db:e._store(row)
+        e.close();result=fed.import_catalog(client,'one');self.assertFalse(result['ok']);self.assertEqual(db['rosters'],before)
+        e=self.exchange();self.assertGreater(e.catalog_health('ws')['catalogPending'],0);row['revision']=3;row['data']['players'][0]['birthDate']='2001-03-04'
+        with e.db:e._store(row)
+        e.close();result=fed.import_catalog(client,'one');self.assertTrue(result['ok']);e=self.exchange();self.assertEqual(e.catalog_health('ws')['catalogPending'],0);e.close()
+    def test_failed_roster_retry_keeps_captain_even_after_deactivation(self):
+        self.seed();client,db=self.client();fed.import_catalog(client,'one');captain=next(r for r in db['rosters'].values() if r['team_id']==fed.local_id('ws','fed.test','team','h'));captain['captain']=True
+        e=self.exchange();row=catalog()['entities'][2];row['revision']=2;row['data']['players'][0]['number']=19
+        with e.db:e._store(row)
+        e.close();original=client.client.table.side_effect
+        def table(name):
+            result=original(name);execute=result.execute
+            def run():
+                if name=='rosters' and result.action=='upsert':raise RuntimeError('offline during roster update')
+                return execute()
+            result.execute=run;return result
+        client.client.table.side_effect=table;result=fed.import_catalog(client,'one');self.assertFalse(result['ok']);self.assertFalse(captain['active'])
+        client.client.table.side_effect=original;result=fed.import_catalog(client,'one');self.assertTrue(result['ok']);self.assertTrue(db['rosters'][captain['id']]['captain'])
+
+    def test_unicode_data_and_known_position_aliases_do_not_depend_on_interface_language(self):
+        for position,expected in [('målvakt','goalkeeper'),('brankář','goalkeeper'),('maalivahti','goalkeeper'),('Torhüter','goalkeeper'),('obránce','defender'),('puolustaja','defender'),('försvarare','defender'),('keskushyökkääjä','centre'),('Mittelstürmer','centre'),('útočník','forward'),('hyökkääjä','forward'),('Stürmer','forward')]:
+            self.assertEqual(fed.player_payload({'name':'Åsa Černá','position':position})['position'],expected)
+        self.seed();client,db=self.client();e=self.exchange();data=catalog();p=data['entities'][2]['data']['players'][0]
+        p.update(name='Åsa Černá',firstName='Åsa',lastName='Černá',nationality='Sverige',birthDate='2001-03-04',position='målvakt')
+        data['entities'][1]['data']['name']='Örnsköldsvik'
+        e.import_snapshot(data);e.close();self.assertTrue(fed.import_catalog(client,'one')['ok'])
+        player=db['players'][fed.local_id('ws','fed.test','player','h9')];self.assertEqual(player['last_name'],'Černá');self.assertEqual(player['nationality'],'Sverige')
+        self.assertEqual(db['teams'][fed.local_id('ws','fed.test','team','h')]['name'],'Örnsköldsvik')
+
+    def test_binding_cache_rebuild_recovers_only_exact_deterministic_ids(self):
+        self.seed();client,db=self.client();fed.import_catalog(client,'one');before=set(db['rosters']);e=self.exchange()
+        with e.db:
+            e.db.execute('DELETE FROM bindings');e.db.execute('DELETE FROM materializations');e.db.execute('DELETE FROM catalog_sections')
+        e.close();self.assertTrue(fed.import_catalog(client,'one')['ok']);self.assertEqual(set(db['rosters']),before)
+        # An unrelated local row with an occupied shirt is never merged by name.
+        e=self.exchange()
+        with e.db:e.db.execute("DELETE FROM catalog_sections WHERE section LIKE 'roster:%'")
+        e.close();team=fed.local_id('ws','fed.test','team','h');comp=fed.local_id('ws','fed.test','competition','c')
+        db['rosters']['unrelated']={'id':'unrelated','team_id':team,'competition_id':comp,'shirt_number':9,'active':True}
+        before=copy.deepcopy(db['rosters']);result=fed.import_catalog(client,'one');self.assertFalse(result['ok']);self.assertEqual(db['rosters'],before)
+
+    def test_rich_player_fields_are_requested_only_when_provider_advertises_feature(self):
+        e=self.exchange();data=catalog()
+        def reply(method,path,*args):
+            if path.endswith('/capabilities'):return {'schema':SCHEMA,'namespace':'fed.test','features':['player-details-v1']}
+            self.assertIn('features=player-details-v1',path);return data
+        e.request=Mock(side_effect=reply);e.bootstrap();self.assertEqual(len(e.snapshot('roster')),2);e.close()
+        e=self.exchange();self.assertEqual(e.negotiated_features(),['player-details-v1']);e.close()
+    def test_older_provider_works_without_feature_query_and_keeps_known_local_identity(self):
+        e=self.exchange();seen=[]
+        def reply(method,path,*args):
+            seen.append(path)
+            if path.endswith('/capabilities'):raise RuntimeError('not supported')
+            return catalog()
+        e.request=reply;e.bootstrap();self.assertFalse(any('features=' in path for path in seen));e.close()
+        client,db=self.client();fed.import_catalog(client,'one');pid=fed.local_id('ws','fed.test','player','h9');db['players'][pid].update(first_name='Åsa',last_name='Černá',is_coach=True,birth_date='2001-03-04')
+        self.assertTrue(fed.import_catalog(client,'one')['ok']);self.assertEqual(db['players'][pid]['last_name'],'Černá');self.assertTrue(db['players'][pid]['is_coach']);self.assertEqual(db['players'][pid]['birth_date'],'2001-03-04')
+    def test_capability_upgrade_refreshes_snapshot_without_losing_outbox(self):
+        self.seed();e=self.exchange();delivery=e.enqueue('m',{'clock':'01:00'})
+        with e.db:e.db.execute('DELETE FROM capabilities_cache')
+        def reply(method,path,*args):
+            if path.endswith('/capabilities'):return {'schema':SCHEMA,'namespace':'fed.test','features':['player-details-v1']}
+            self.assertIn('/snapshot?',path);return catalog()
+        e.request=reply;e.pull();self.assertEqual(e.status()['pending'],1);self.assertEqual(e.db.execute('SELECT delivery FROM outbox').fetchone()[0],delivery);e.close()
+
+    def test_malformed_optional_capabilities_fall_back_to_basic_contract(self):
+        for advertised in ([],{'schema':SCHEMA,'namespace':'fed.test','features':None},{'schema':SCHEMA,'namespace':'fed.test','features':'player-details-v1'}):
+            e=self.exchange()
+            with e.db:e.db.execute('DELETE FROM capabilities_cache')
+            e.request=lambda method,path: advertised if path.endswith('/capabilities') else catalog()
+            self.assertGreater(e.bootstrap(),0);self.assertEqual(e.negotiated_features(),[]);e.close()

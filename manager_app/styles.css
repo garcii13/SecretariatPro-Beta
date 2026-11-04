@@ -1300,3 +1300,10 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 #view-federations .federation-connection-card {display:grid;gap:12px;text-align:left;}
 #view-federations .federation-connection-card h3 {margin:0;}
 #view-federations .federation-connection-actions {display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+
+#view-federations .federation-issues { margin:16px 0; padding:14px 16px; border:1px solid var(--border, #cad9dc); border-radius:12px; }
+#view-federations .federation-issues summary { cursor:pointer; font-weight:600; }
+#view-federations .federation-issues li { margin-top:10px; overflow-wrap:anywhere; }
+#view-federations .federation-connection-card { min-width:0; }
+#view-federations .federation-connection-card h3,
+#view-federations .federation-connection-card p { overflow-wrap:anywhere; }

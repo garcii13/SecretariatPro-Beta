@@ -126,7 +126,17 @@ class ManagerRuntime:
             raise PermissionError("Tu rol no permite modificar este espacio")
         return client
 
+    def start_federation_sync(self):
+        if not self.write_allowed:return
+        client=self.client;workspace=str(self.workspace.get("id") or "")
+        def authorized():
+            try:return self.require_write() is client and str(client._active_workspace_id())==workspace
+            except (PermissionError,RuntimeError):return False
+        try:federation_exchange.ensure_automatic(client,authorized)
+        except Exception:pass  # An optional connection must never block login.
+
     def state(self) -> dict[str, Any]:
+        self.start_federation_sync()
         with self._lock:
             profile = self.client.user_profile() if self.client else {}
             return {
@@ -219,7 +229,10 @@ app.mount("/manager", StaticFiles(directory=WEB_DIR, html=True), name="manager")
 def api_error(exc: Exception, status: int = 400) -> HTTPException:
     if isinstance(exc, PermissionError):
         status = 403
-    return HTTPException(status_code=status, detail=str(exc))
+    message=str(exc)
+    if getattr(exc,'code',None)=='23514' and 'players_position_check' in message:
+        message='La posición del jugador no es compatible. Actualiza el conector y se reintentará automáticamente.'
+    return HTTPException(status_code=status, detail=message)
 
 
 async def run_read(method: Callable[..., Any], *args: Any) -> Any:
@@ -1270,6 +1283,7 @@ app.add_middleware(LocalAccessMiddleware, cookie_name="sp_manager_session")
 @app.get("/api/integrations/federations")
 async def federation_connections():
     client=runtime.require_connected()
+    runtime.start_federation_sync()
     return await run_read(federation_exchange.public_status,client)
 
 class FederationCodePayload(BaseModel):
@@ -1279,7 +1293,7 @@ class FederationConnectPayload(BaseModel):
     ticket_id: str = Field(min_length=1,max_length=80)
     competition_id: str = Field(min_length=1,max_length=200)
     capture: bool = True
-    auto_import: bool = False
+    auto_import: bool = True
 
 @app.post("/api/integrations/federations/connect/preview")
 async def federation_connection_preview(payload: FederationCodePayload):
@@ -1289,7 +1303,9 @@ async def federation_connection_preview(payload: FederationCodePayload):
 @app.post("/api/integrations/federations/connect/confirm")
 async def federation_connection_confirm(payload: FederationConnectPayload):
     client=runtime.require_connected()
-    return await run_write(federation_connections_store.finish,client,payload.ticket_id,payload.competition_id,payload.capture,payload.auto_import)
+    result=await run_write(federation_connections_store.finish,client,payload.ticket_id,payload.competition_id,payload.capture,True)
+    runtime.start_federation_sync()
+    return result
 
 @app.post("/api/integrations/federations/{connection_id}/disconnect")
 async def federation_connection_disconnect(connection_id: str):
@@ -1299,7 +1315,9 @@ async def federation_connection_disconnect(connection_id: str):
 @app.post("/api/integrations/federations/{connection_id}/reconnect")
 async def federation_connection_reconnect(connection_id: str):
     client=runtime.require_connected()
-    return await run_write(federation_connections_store.set_enabled,client,connection_id,True)
+    result=await run_write(federation_connections_store.set_enabled,client,connection_id,True)
+    runtime.start_federation_sync()
+    return result
 
 @app.post("/api/integrations/federations/{connection_id}/sync")
 async def federation_sync(connection_id: str):

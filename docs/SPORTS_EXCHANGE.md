@@ -10,9 +10,9 @@ El cliente ya no necesita editar `SP_FEDERATION_CONNECTIONS` ni archivos de conf
 2. En Manager: seleccionar el espacio correcto, por ejemplo **Asociación de pruebas · Sandbox**, y abrir **Federaciones → Conectar federación**.
 3. Pegar la invitación y pulsar **Verificar invitación**. Se muestran nombres de competiciones y el espacio de destino, sin pedir IDs técnicos.
 4. Elegir competición y opciones; pulsar **Conectar competición**. Manager guarda la conexión para Manager y Live y descarga el catálogo cuando hay red.
-5. Revisar el catálogo antes de la primera importación. Desde el mismo panel se puede **Desconectar / Volver a conectar**; la federación también puede **Revocar acceso**.
+5. La copia de jugadores, rosters y calendario se crea y actualiza automáticamente cada cinco segundos con Manager conectado y permisos vigentes. No hay un paso de importar. Desde el mismo panel se puede **Desconectar / Volver a conectar**; la federación también puede **Revocar acceso**.
 
-Las invitaciones caducan en 15 minutos, sirven para un solo ordenador y deben tratarse como credenciales. El intercambio usa un ID de canje persistente para recuperar una respuesta perdida sin emitir otra credencial. La prueba de invitación no la consume; la confirmación la canjea. Los tickets temporales quedan ligados a la cuenta y al workspace de Manager. No se concede acceso a otros espacios ni se importan datos automáticamente en el paso de conexión.
+Las invitaciones caducan en 15 minutos, sirven para un solo ordenador y deben tratarse como credenciales. El intercambio usa un ID de canje persistente para recuperar una respuesta perdida sin emitir otra credencial. La prueba de invitación no la consume; la confirmación la canjea. Los tickets temporales quedan ligados a la cuenta y al workspace de Manager. No se concede acceso a otros espacios. Al confirmar la conexión se autoriza la actualización automática del catálogo en el espacio elegido.
 
 Manager guarda perfiles y tickets cifrados con Fernet en el directorio privado `federation_exchange/`, con permisos locales restringidos. Su clave `connection-settings.key` debe conservarse con `connection-settings.sqlite` en una copia privada. No se guardan claves en el navegador ni se devuelven en listados de conexión. Una cuenta de sistema operativo comprometida puede leer ese almacén; no se presenta como un llavero ligado al hardware.
 
@@ -49,7 +49,7 @@ flowchart LR
 | `GET /api/exchange/v1/changes?competition=ID&after=CURSOR` | Hasta 100 cambios por página, ordenados por cursor; continuar si `hasMore`. |
 | `POST /api/exchange/v1/captures` | Recibe una instantánea de mesa. Nunca crea jugadores ni la hace oficial. |
 
-El contrato exacto está en [sports-exchange-openapi.json](sports-exchange-openapi.json), que se regenera con `npm run exchange:contract`. Los tipos de entidad usan `{kind,id,revision,data}`. Los IDs son opacos, pertenecen al `namespace` federativo y no se comparan por similitud de nombre.
+El contrato exacto está en [sports-exchange-openapi.json](../public/downloads/sports-exchange-openapi.json), que se regenera con `npm run exchange:contract`. Los tipos de entidad usan `{kind,id,revision,data}`. Los IDs son opacos, pertenecen al `namespace` federativo y no se comparan por similitud de nombre.
 
 Una captura utiliza identidades **de destino**: `namespace` federativo, `matchId`, `revision` creciente del productor y `match`. Este último contiene identidad de equipos, marcador, estado/reloj/periodo y `report` con convocatoria, eventos y porteros. El adaptador de SecretariatPro traduce sus UUID locales a los IDs federativos vinculados.
 
@@ -85,21 +85,40 @@ Desactivar una conexión o rotar su secreto revoca esa relación y conserva el h
 
 `secretariat_core/exchange/client.py` es el cliente genérico de biblioteca estándar, independiente de Supabase y AEUF. `federation.py` adapta ese contrato a Live/Manager. El código no incorpora una URL AEUF fija ni exige que la otra federación use esta web.
 
-Configurar `SP_FEDERATION_CONNECTIONS` en el entorno privado de SecretariatPro con una lista como la de `docs/federation-connections.example.json`. El secreto se introduce en la variable indicada por `secretEnv`. La conexión está desactivada en el ejemplo; activar solo después de revisar workspace, URL y competición. **No se han configurado credenciales de producción automáticamente.**
+Las conexiones se crean desde el asistente de Manager. Para instalaciones técnicas anteriores se conserva `SP_FEDERATION_CONNECTIONS` y el ejemplo desactivado de `docs/federation-connections.example.json`; no forma parte del recorrido normal del cliente.
 
 En Manager aparece **Federaciones**:
 
-1. Sincronizar cambios: recupera catálogo y cursor sin crear cuentas ni modificar Supabase.
-2. Revisar catálogo: muestra competición, temporada y cantidades.
-3. Importar / actualizar copia deportiva: exige la sesión y permisos de gestión del workspace actual. Usa su cliente Supabase existente y sus RLS. No utiliza `service_role` ni introduce políticas nuevas.
+1. Estado de actualización automática y última aplicación correcta.
+2. Ver catálogo conectado: muestra competición, temporada y cantidades.
+3. Actualizar ahora (opcional) y Desconectar / Volver a conectar. La actualización utiliza el cliente Supabase de la sesión vigente y sus RLS; no utiliza `service_role` ni introduce políticas nuevas.
 
 Los IDs de copia son UUID deterministas por `workspace + federation namespace + kind + externalId`. Los reintentos reutilizan la misma identidad; dos federaciones pueden usar el mismo ID externo. Dos jugadores con igual nombre no se fusionan. La correspondencia se conserva en SQLite; si se vuelve a importar, los UUID deterministas permiten recuperar las mismas copias.
 
 Las fichas y rosters federativos importados son de consulta mientras la conexión está activa; se corrigen en origen. Los colores, banderas, fotos de producción, temas y OBS siguen siendo locales. El importador no mete actas ajenas en `match_events`: los otros partidos alimentan una proyección separada. El calendario recibido actualiza datos de programación; no sustituye el resultado que está capturando la mesa.
 
-`autoImport: true` permite refrescar la copia deportiva después de una primera importación explícita en Manager, con esa sesión/rol todavía válidos. Por defecto es `false`. El catálogo se aplica mediante operaciones RLS existentes, no mediante una transacción remota única: si falla una operación, debe revisarse el error y repetirse la importación. No presentar una importación parcial como completada. Los datos locales no vinculados no se sustituyen por nombre.
+Las conexiones creadas desde Manager actualizan el catálogo automáticamente desde la primera conexión y también al volver a iniciar sesión, incluidas las conexiones guardadas por la versión anterior. No se edita código ni se pulsa Importar. Las configuraciones técnicas antiguas por entorno conservan su opción explícita `autoImport`. Manager registra una sesión con permisos de gestión en el espacio elegido; la copia se consulta cada cinco segundos y solo se aplica si cambia el catálogo. Cerrar sesión o cambiar de espacio impide nuevas escrituras de esa sesión.
+
+El catálogo se aplica mediante operaciones RLS existentes, no mediante una transacción remota única. Una huella persistente se marca como aplicada solo al completar todas las operaciones. Los errores se aíslan por registro, se muestran como pendientes y se reintentan incluso si el cursor ya había descargado los cambios. Una ficha inválida no impide actualizar otros jugadores o el calendario. Su roster dependiente no se sustituye con datos incompletos. Cada entidad válida tiene su propia huella persistente y no se reescribe en cada reintento. Un diario local conserva las marcas de capitán durante una actualización de roster interrumpida. Las escrituras de roster siguen siendo varias operaciones remotas, no una transacción única; una interrupción intermedia se declara parcial y se recupera al reintentar. Los UUID deterministas recuperan una copia parcial sin duplicados. Los cambios de goles o reloj no reescriben el catálogo; los cambios personales tampoco desactivan rosters sin cambios deportivos. Los datos locales no vinculados no se sustituyen por nombre.
+
+Las fichas privadas de AEUF recogen nombre, apellidos, nombre deportivo, fecha de nacimiento, nacionalidad, posición y etiqueta de entrenador; el dorsal pertenece a cada roster. El roster firmado incorpora opcionalmente `firstName`, `lastName`, `birthDate` (ISO o null), `nationality` e `isCoach`. Las extensiones son opcionales y se negocian: `capabilities.features` anuncia `player-details-v1`; el cliente pide `features=player-details-v1` en snapshot/changes. Sin esa petición se mantienen exactamente los cuatro campos originales del jugador (`id`, `name`, `number`, `position`), para que clientes v1 estrictos no fallen por campos nuevos. El SDK guarda las capacidades y vuelve a descargar una instantánea al activar una función nueva, sin perder su cola. Un proveedor anterior sin esa función sigue funcionando con el catálogo básico. Las fechas y apellidos desconocidos no se inventan. No se publican nacimiento o nacionalidad en actas, SSE o fichas públicas. En SecretariatPro se emplean los campos existentes y las posiciones `goalkeeper`, `defender`, `centre`, `forward`, `unknown`; «Centro» y el alias anterior `midfielder` se convierten a `centre`. No se altera la restricción SQL de la beta.
 
 Los endpoints locales nuevos de Manager son `/api/integrations/federations`, `/{id}/sync`, `/{id}/preview`, `/{id}/import` y `/api/exchange/v1/snapshot?connection=ID` para exportar la copia JSON. Conservan Host/Origin, autenticación local, membresía y permisos existentes. **No hay que publicar el puerto de Live/Manager en Internet.** El conector realiza conexiones salientes al servidor federativo.
+
+## Idiomas y datos de federaciones extranjeras
+
+Manager utiliza español, inglés, sueco, checo, finés y alemán también en Federaciones: asistente, estado, catálogo, avisos y errores de conexión. El catálogo `manager_app/federation-i18n.js` contiene las traducciones; los valores interpolados de nombres, competiciones e IDs se conservan. Cambiar el idioma no cambia las identidades, el idioma de la base ni las fechas almacenadas.
+
+SecretariatPro no inspecciona ni adivina columnas de una base remota. El adaptador del proveedor expone el contrato estable, cualquiera que sea su esquema:
+
+| Campo en la federación (ejemplo) | API común | SecretariatPro |
+| --- | --- | --- |
+| `födelsedatum`, `syntymäaika`, `fecha_nacimiento` | `birthDate`, ISO `YYYY-MM-DD` | `players.birth_date` |
+| `förnamn`, `Vorname`, `nombre` | `firstName` | `players.first_name` |
+| `efternamn`, `Nachname`, `apellidos` | `lastName` | `players.last_name` |
+| Posición «målvakt», «brankář», «Torhüter» | preferentemente `goalkeeper` | `players.position = goalkeeper` |
+
+Los nombres Unicode se conservan. El adaptador nativo reconoce equivalencias de posición explícitas de los seis idiomas, además de códigos canónicos, espacios y mayúsculas; no emplea traducción automática para inferir identidades. Una posición desconocida se guarda como `unknown` con aviso. Las fechas imposibles, identidades contradictorias y dorsales conflictivos quedan pendientes; no se inventan ni se fusionan por nombre. Los campos opcionales omitidos por un proveedor anterior no borran una identidad local más completa. Las diferencias estructurales se resuelven una vez en el adaptador de la federación; no se exige editar código al usuario de Manager.
 
 ## Directo, revisión y recuperación
 

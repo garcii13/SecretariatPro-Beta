@@ -18,6 +18,7 @@ from .client import ExchangeClient
 
 LOG=logging.getLogger(__name__)
 _service=None
+_catalog_lock=threading.RLock()
 
 def configurations(workspace):
     rows=json.loads(os.getenv('SP_FEDERATION_CONNECTIONS','[]'))
@@ -57,7 +58,11 @@ def public_status(client):
     for config in configs:
         try:
             exchange=connect(config)
-            try:status=exchange.status()
+            try:
+                status=exchange.status();applied=exchange.applied(client._active_workspace_id())
+                status['lastAppliedAt']=applied['at'] if applied else None
+                status['automatic']=config.get('autoImport',False)
+                status.update(exchange.catalog_health(client._active_workspace_id()))
             finally:exchange.close()
             output.append({'id':config['id'],'name':config.get('name') or config['namespace'],'competitionName':config.get('competitionName') or config['competitionId'],'enabled':config.get('enabled',True),'managed':config.get('managed',False),'modules':config.get('modules',[]),**status,'message':(_service.errors.get((str(client._active_workspace_id()),config['id']),'')) if _service else ''})
         except Exception:output.append({'id':config['id'],'namespace':config['namespace'],'configured':False,'message':'No se pudo verificar la conexión. Solicita una nueva invitación a tu federación.'})
@@ -69,7 +74,7 @@ def synchronise(client,ident):
         count=exchange.pull();receipts=exchange.flush()
         global _service
         if _service is None:_service=FederationWorker()
-        _service.submit(client._active_workspace_id(),{})
+        _service.contexts.setdefault(str(client._active_workspace_id()),{})
         return {'changed':count,'receipts':receipts,**exchange.status()}
     finally:exchange.close()
 
@@ -109,7 +114,7 @@ def assert_local_write(client,kind,ident):
         try:
             try:exchange.mapped(kind,str(ident),reverse=True)
             except ValueError:continue
-            raise PermissionError('Este dato deportivo procede de la federación. Corrígelo en origen y sincroniza el catálogo.')
+            raise PermissionError('Este dato deportivo procede de la federación. Corrígelo en origen; se actualizará automáticamente.')
         finally:exchange.close()
 
 def statistics(client,competition_id,current_snapshot=None):
@@ -172,63 +177,164 @@ def catalog_plan(client,ident):
                 'policy':'La federación controla identidad deportiva, roster y calendario. No se importan cuentas ni se sustituyen eventos locales.'}
     finally:exchange.close()
 
+def player_payload(p):
+    import datetime,unicodedata
+    p=dict(p)
+    for field in ('firstName','lastName','nationality'):
+        if p.get(field) is None and field in p:p[field]=''
+    if p.get('isCoach') is None and 'isCoach' in p:p['isCoach']=False
+    if not isinstance(p.get('name'),str) or not p['name'].strip():raise ValueError('El jugador no tiene un nombre válido.')
+    for field in ('firstName','lastName','nationality'):
+        if field in p and not isinstance(p[field],str):raise ValueError('La ficha del jugador tiene un campo de texto no válido.')
+    if 'isCoach' in p and type(p['isCoach']) is not bool:raise ValueError('La etiqueta de entrenador no es válida.')
+    aliases={'portería':'goalkeeper','porteria':'goalkeeper','goalkeeper':'goalkeeper','defensa':'defender','defender':'defender','centro':'centre','centre':'centre','center':'centre','midfielder':'centre','delantera':'forward','delantero':'forward','forward':'forward','unknown':'unknown'}
+    aliases.update({'portero':'goalkeeper','guardameta':'goalkeeper','goalie':'goalkeeper','malvakt':'goalkeeper','brankar':'goalkeeper','maalivahti':'goalkeeper','torhuter':'goalkeeper','defensor':'defender','forsvarare':'defender','back':'defender','obrance':'defender','puolustaja':'defender','verteidiger':'defender','centr':'centre','keskushyokkaaja':'centre','mittelsturmer':'centre','anfallare':'forward','utocnik':'forward','hyokkaaja':'forward','sturmer':'forward'})
+    position=''.join(c for c in unicodedata.normalize('NFKD',str(p.get('position') or '').strip().lower()) if not unicodedata.combining(c))
+    result={'display_name':p['name'].strip(),'first_name':p.get('firstName') or p['name'],'last_name':p.get('lastName') or '', 'position':aliases.get(position,'unknown'),'is_coach':bool(p.get('isCoach',False))}
+    if 'birthDate' in p:
+        birth=p['birthDate'].strip() if isinstance(p['birthDate'],str) else p['birthDate']
+        birth=birth or None
+        if birth:
+            try:
+                date=datetime.date.fromisoformat(birth)
+                if date.isoformat()!=birth or date<datetime.date(1900,1,1) or date>datetime.date.today():raise ValueError()
+            except (ValueError,TypeError):raise ValueError('Fecha de nacimiento no válida en el catálogo federativo.') from None
+        result['birth_date']=birth
+    if 'nationality' in p:result['nationality']=p['nationality'] or None
+    return result
+
 def import_catalog(client,ident,authorize=None):
-    # Deliberately explicit, owner/competition-manager operation, using the existing
-    # authenticated Supabase client and its RLS. No service_role and no new grants.
+    with _catalog_lock:return _import_catalog(client,ident,authorize)
+
+def _import_catalog(client,ident,authorize=None):
+    # Independent entity checkpoints: one rejected player must not stop the calendar.
     plan=catalog_plan(client,ident);config=connection_for(client,ident);workspace=client._active_workspace_id();exchange=connect(config)
+    issues=[]
+    labels={'player':{},'team':{str(t['id']):t['name'] for t in plan['teams']},'competition':{str(plan['competition']['id']):plan['competition']['name']}}
+    for roster in plan['rosters']:
+        for player in roster['players']:labels['player'].setdefault(str(player['id']),player['name'])
+    def check():
+        if str(client._active_workspace_id())!=str(workspace) or (authorize is not None and not authorize()):raise PermissionError('La sesión o el espacio de trabajo cambió. Vuelve a iniciar sesión.')
+        client._require_competition_manager()
     def uid(kind,external):return local_id(workspace,config['namespace'],kind,external)
+    def problem(kind,external,code,message,level='error'):
+        issues.append({'kind':kind,'id':str(external),'code':code,'message':message,'level':level,'label':labels.get(kind,{}).get(str(external),str(external))})
+    def fail(kind,external,exc):
+        if isinstance(exc,PermissionError):raise exc
+        code=str(getattr(exc,'code','') or 'write_pending')
+        message={'23514':'El registro no cumple las reglas de destino. Corrige el dato en la federación.', '23505':'El registro entra en conflicto con un dato local. Revisa su identidad o dorsal.', '23503':'Falta una referencia de equipo, jugador o competición.'}.get(code,'No se pudo actualizar este registro. Se reintentará automáticamente.')
+        problem(kind,external,code,message)
     def upsert(table,kind,external,payload):
-        ident=uid(kind,external)
-        response=client.client.table(table).upsert({'id':ident,'workspace_id':workspace,**payload}).execute()
-        if not response.data:raise RuntimeError('La federación no pudo materializarse en el espacio activo.')
-        exchange.bind(kind,str(external),ident)
-        return ident
+        check();local=uid(kind,external);section='record:'+kind+':'+str(external)
+        digest=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+        try:
+            if exchange.section_digest(workspace,section)!=digest:
+                response=client.client.table(table).upsert({'id':local,'workspace_id':workspace,**payload}).execute()
+                if not response.data:raise RuntimeError('write_pending')
+                exchange.bind(kind,str(external),local);exchange.mark_section(workspace,section,digest)
+            else:exchange.bind(kind,str(external),local)
+            return local
+        except Exception as exc:fail(kind,external,exc);return None
+    def finish(digest):
+        check();exchange.mark_health(workspace,issues)
+        pending=sum(i['level']=='error' for i in issues)
+        if not pending:exchange.mark_applied(workspace,digest)
+        return {'ok':not pending,**plan['counts'],'competitionId':uid('competition',plan['competition']['id']),'namespace':config['namespace'],'pending':pending,'issues':issues}
     try:
-        c=plan['competition'];season=upsert('seasons','season',c['season'],{'name':c['season']})
-        comp=upsert('competitions','competition',c['id'],{'name':c['name'],'season_id':season,'category':c.get('category') or '', 'active':True,'points_win':c.get('pointsWin',2),'points_draw':c.get('pointsDraw',1),'points_loss':c.get('pointsLoss',0)})
-        # Only federation-owned identity fields are refreshed. Photos, colours,
-        # flags, themes, operators, OBS settings and local events remain local.
-        for t in plan['teams']:upsert('teams','team',t['id'],{'name':t['name'],'short_name':t.get('shortName') or t['name'][:12]})
-        people={}
+        check();digest=exchange.catalog_digest();people={};invalid=set();roster_errors={}
+        # Validate and normalize before modifying a roster. Unknown optional positions
+        # are stored as unknown, but invalid identities/dates remain pending in isolation.
         for r in plan['rosters']:
-            for p in r['players']:
-                previous=people.get(p['id'])
-                if previous and previous['name']!=p['name']:raise ValueError('Identidad federativa ambigua entre rosters; revisa el catálogo.')
-                people[p['id']]=p
+            numbers=set()
+            for source in r['players']:
+                p=copy.deepcopy(source);pid=p['id'];number=p.get('number')
+                if isinstance(number,str) and number.strip().isascii() and number.strip().isdigit():number=int(number.strip())
+                p['number']=number
+                if number is not None:
+                    if type(number) is not int or not 0<=number<=99 or number in numbers:roster_errors[r['id']]='Dorsales repetidos o no válidos en el roster federativo.'
+                    numbers.add(str(number)) if type(number) is not int else numbers.add(number)
+                previous=people.get(pid)
+                if previous and any(previous.get(k)!=p.get(k) for k in ('name','firstName','lastName','birthDate','nationality','isCoach')):
+                    invalid.add(pid);problem('player',pid,'ambiguous_identity','Identidad federativa ambigua entre rosters; revisa el catálogo.')
+                people[pid]=p
         for match in plan['matches']:
-            for p in match.get('lineup',[]):
-                people.setdefault(p['playerId'],{'id':p['playerId'],'name':p['name'],'position':p.get('position','')})
-        position_map={'Portería':'goalkeeper','Defensa':'defender','Centro':'midfielder','Delantera':'forward'}
-        for p in people.values():upsert('players','player',p['id'],{'display_name':p['name'],'first_name':p['name'],'last_name':'','position':position_map.get(p.get('position'),p.get('position') or None),'is_coach':False})
-        for r in plan['rosters']:
+            for p in match.get('lineup',[]):people.setdefault(p['playerId'],{'id':p['playerId'],'name':p['name'],'position':p.get('position','')})
+        players={}
+        for pid,p in people.items():
+            if pid in invalid:continue
+            try:
+                players[pid]=player_payload(p)
+                if p.get('position') and players[pid]['position']=='unknown' and str(p['position']).strip().lower()!='unknown':problem('player',pid,'position_unknown','Posición no reconocida; guardada como desconocida sin bloquear la actualización.','warning')
+            except ValueError as exc:invalid.add(pid);problem('player',pid,'invalid_player',str(exc))
+        c=plan['competition'];season=upsert('seasons','season',c['season'],{'name':c['season']})
+        if not season:return finish(digest)
+        comp=upsert('competitions','competition',c['id'],{'name':c['name'],'season_id':season,'category':c.get('category') or '', 'active':True,'points_win':c.get('pointsWin',2),'points_draw':c.get('pointsDraw',1),'points_loss':c.get('pointsLoss',0)})
+        if not comp:return finish(digest)
+        teams={t['id']:upsert('teams','team',t['id'],{'name':t['name'],'short_name':t.get('shortName') or t['name'][:12]}) for t in plan['teams']}
+        for pid,payload in players.items():
+            source=people[pid]
+            # Missing optional profile fields in an older provider are not commands
+            # to erase a richer existing local identity.
+            missing={column for field,column in (('firstName','first_name'),('lastName','last_name'),('isCoach','is_coach')) if field not in source}
+            if missing:
+                check()
+                try:
+                    existing=client.client.table('players').select('id').eq('id',uid('player',pid)).eq('workspace_id',workspace).execute().data
+                    if existing:payload={k:v for k,v in payload.items() if k not in missing}
+                except Exception as exc:fail('player',pid,exc);invalid.add(pid);continue
+            if not upsert('players','player',pid,payload):invalid.add(pid)
+        for source in plan['rosters']:
+            r={**source,'players':[{**p,'number':int(p['number'].strip()) if isinstance(p.get('number'),str) and p['number'].strip().isascii() and p['number'].strip().isdigit() else p.get('number')} for p in source['players']]}
+            rid=r['id'];check()
+            if rid in roster_errors:problem('roster',rid,'invalid_roster',roster_errors[rid]);continue
+            if not teams.get(r['teamId']) or any(p['id'] in invalid for p in r['players']):
+                problem('roster',rid,'dependency_pending','Roster pendiente de corregir un jugador o equipo. Se conserva la última copia válida.');continue
             tid=uid('team',r['teamId'])
-            client.manager_create_roster_group(tid,comp)
-            # Remove only memberships previously imported by this connector, before
-            # number swaps. A local membership with the same number causes a visible
-            # conflict; it is never silently reassigned by a name match.
-            existing=client.manager_list_team_rosters(tid,comp)
-            for old in existing:
-                try:external=exchange.mapped('membership',str(old['id']),reverse=True)
-                except ValueError:continue
-                client.client.table('rosters').update({'active':False}).eq('id',old['id']).eq('workspace_id',workspace).execute()
-            for p in r['players']:
-                if p.get('number') is None:continue
-                external=r['id']+':'+p['id']
-                upsert('rosters','membership',external,{'competition_id':comp,'team_id':tid,'player_id':uid('player',p['id']),'shirt_number':p['number'],'member_type':'player','captain':False,'active':not r.get('archived',False)})
-            exchange.bind('roster',r['id'],uid('roster',r['id']))
-        # Dropped federation memberships remain inactive; local events/history survive.
+            memberships=sorted([{'id':p['id'],'number':p.get('number'),'type':'coach' if p.get('isCoach') and player_payload(p)['position']=='unknown' else 'player'} for p in r['players']],key=lambda p:p['id'])
+            roster_digest=hashlib.sha256(json.dumps([r.get('archived',False),memberships],sort_keys=True).encode()).hexdigest();section='roster:'+rid
+            if exchange.section_digest(workspace,section)==roster_digest:continue
+            try:
+                existing=client.manager_list_team_rosters(tid,comp)
+                imported=[]
+                expected={uid('membership',rid+':'+p['id']):rid+':'+p['id'] for p in r['players']}
+                for old in existing:
+                    try:exchange.mapped('membership',str(old['id']),reverse=True);imported.append(old)
+                    except ValueError:
+                        if str(old['id']) in expected:
+                            exchange.bind('membership',expected[str(old['id'])],str(old['id']));imported.append(old)
+                        elif any(p.get('number')==old.get('shirt_number') for p in r['players']):raise ValueError('Un dorsal del roster está ocupado por un registro local. Revisa la vinculación.')
+                client.manager_create_roster_group(tid,comp)
+                captains=exchange.journal(workspace,section) or {str(old['id']):bool(old.get('captain',False)) for old in existing}
+                exchange.write_journal(workspace,section,captains)
+                for old in imported:
+                    check();client.client.table('rosters').update({'active':False}).eq('id',old['id']).eq('workspace_id',workspace).execute()
+                for p in r['players']:
+                    if p.get('number') is None:continue
+                    external=rid+':'+p['id'];check()
+                    # Membership writes run after deactivation even if their data digest
+                    # was seen before; this preserves number swaps on a retry.
+                    payload={'id':uid('membership',external),'workspace_id':workspace,'competition_id':comp,'team_id':tid,'player_id':uid('player',p['id']),'shirt_number':p['number'],'member_type':'coach' if p.get('isCoach') and players[p['id']]['position']=='unknown' else 'player','captain':captains.get(uid('membership',external),False),'active':not r.get('archived',False)}
+                    response=client.client.table('rosters').upsert(payload).execute()
+                    if not response.data:raise RuntimeError('write_pending')
+                    exchange.bind('membership',external,payload['id'])
+                exchange.bind('roster',rid,uid('roster',rid));exchange.mark_section(workspace,section,roster_digest);exchange.clear_journal(workspace,section)
+            except Exception as exc:
+                if isinstance(exc,ValueError):problem('roster',rid,'invalid_roster',str(exc))
+                else:fail('roster',rid,exc)
         for m in plan['matches']:
-            ident=uid('match',m['id']);existing=client.client.table('matches').select('id').eq('id',ident).eq('workspace_id',workspace).execute().data
+            check();mid=m['id']
+            if not teams.get(m['homeTeamId']) or not teams.get(m['awayTeamId']):problem('match',mid,'dependency_pending','Partido pendiente de un equipo válido. Se conserva el calendario anterior.');continue
             schedule={'competition_id':comp,'home_team_id':uid('team',m['homeTeamId']),'away_team_id':uid('team',m['awayTeamId']),'match_date':m['startsAt'],'venue':m.get('venue') or ''}
-            if existing:
-                client.client.table('matches').update(schedule).eq('id',ident).eq('workspace_id',workspace).execute();exchange.bind('match',m['id'],ident)
-            else:upsert('matches','match',m['id'],{**schedule,'status':'scheduled','home_score':0,'away_score':0})
-        global _service
-        if config.get('autoImport',False) and authorize is not None:
-            if _service is None:_service=FederationWorker()
-            _service.catalog_clients[(str(workspace),config['id'])]=(client,authorize)
-            if str(workspace) not in _service.contexts:_service.submit(workspace,{})
-        return {'ok':True,**plan['counts'],'competitionId':comp,'namespace':config['namespace']}
+            section='schedule:'+mid;mark=hashlib.sha256(json.dumps(schedule,sort_keys=True).encode()).hexdigest()
+            if exchange.section_digest(workspace,section)==mark:continue
+            try:
+                local=uid('match',mid);existing=client.client.table('matches').select('id').eq('id',local).eq('workspace_id',workspace).execute().data
+                if existing:
+                    check();client.client.table('matches').update(schedule).eq('id',local).eq('workspace_id',workspace).execute();exchange.bind('match',mid,local)
+                elif not upsert('matches','match',mid,{**schedule,'status':'scheduled','home_score':0,'away_score':0}):continue
+                exchange.mark_section(workspace,section,mark)
+            except Exception as exc:fail('match',mid,exc)
+        return finish(digest)
     finally:exchange.close()
 
 def convert_capture(snapshot,exchange):
@@ -267,6 +373,16 @@ def sporting_snapshot(snapshot):
             'scores':{key:(snapshot.get('scores') or {}).get(key) for key in ('team1_score','team2_score','time')},
             'state':{'match':{'period':(snapshot.get('state') or {}).get('match',{}).get('period')}}}
 
+def ensure_automatic(client,authorize):
+    """Register the current authenticated Manager session; no network on the UI thread."""
+    global _service
+    workspace=str(client._active_workspace_id())
+    configs=[c for c in configurations(workspace) if c.get('autoImport') and 'catalog' in c.get('modules',[])]
+    if not configs:return
+    if _service is None:_service=FederationWorker()
+    for config in configs:_service.catalog_clients[(workspace,config['id'])]=(client,authorize)
+    _service.contexts.setdefault(workspace,{})
+
 class FederationWorker:
     def __init__(self):
         self.jobs=queue.Queue(maxsize=32);self.stop=threading.Event();self.contexts={};self.errors={};self.catalog_clients={}
@@ -291,34 +407,41 @@ class FederationWorker:
             while True:
                 try:ws,latest=self.jobs.get_nowait();self.contexts[ws]=latest
                 except queue.Empty:break
-            for ws,saved in list(self.contexts.items()):
-                try:configs=configurations(ws)
-                except Exception:continue
-                for config in configs:
-                    exchange=None
-                    try:
-                        exchange=connect(config)
-                        if 'captures' in config.get('modules',[]):
-                            try:mid,data=convert_capture(saved,exchange)
-                            except ValueError:
-                                if (saved.get('online') or {}).get('match'):raise
-                                mid=None
-                            if mid:exchange.enqueue(mid,data)
-                        exchange.flush()
-                        key=(ws,config['id']);last=getattr(self,'last_pull',{})
-                        if time.monotonic()-last.get(key,0)>5:
-                            count=exchange.pull();last[key]=time.monotonic();self.last_pull=last
-                            registration=self.catalog_clients.get(key)
-                            client,authorized=registration if registration else (None,None)
-                            if count and config.get('autoImport',False) and client is not None and authorized() and str(client._active_workspace_id())==str(ws):
-                                # Reuses current authenticated workspace/RLS. A
-                                # revoked/expired Manager session cannot import.
-                                client._require_competition_manager()
-                                import_catalog(client,config['id'],authorized)
-                        self.errors.pop(key,None)
-                    except Exception:self.errors[(ws,config['id'])]='Conexión pendiente; la mesa continúa de forma independiente.'
-                    finally:
-                        if exchange:exchange.close()
+            for ws,saved in list(self.contexts.items()):self.process(ws,saved)
+    def process(self,ws,saved):
+        try:configs=configurations(ws)
+        except Exception:return
+        for config in configs:
+            exchange=None
+            try:
+                exchange=connect(config)
+                key=(ws,config['id']);last=getattr(self,'last_pull',{})
+                if time.monotonic()-last.get(key,0)>5:
+                    # Pull first: an unlinked Live match must not block catalogue repair.
+                    last[key]=time.monotonic();self.last_pull=last
+                    exchange.pull()
+                    registration=self.catalog_clients.get(key)
+                    client,authorized=registration if registration else (None,None)
+                    applied=exchange.applied(ws)
+                    if config.get('autoImport') and client is not None and authorized() and str(client._active_workspace_id())==str(ws) and (not applied or applied['digest']!=exchange.catalog_digest() or exchange.catalog_health(ws)['catalogPending']):
+                        # Retry a failed materialization even if the next feed is empty.
+                        import_catalog(client,config['id'],authorized)
+                capture_error=False
+                if 'captures' in config.get('modules',[]):
+                    try:mid,data=convert_capture(saved,exchange)
+                    except ValueError:
+                        mid=None;capture_error=bool((saved.get('online') or {}).get('match'))
+                    if mid:exchange.enqueue(mid,data)
+                exchange.flush()
+                if capture_error:
+                    self.errors[key]='Mesa sin vincular: el catálogo se actualiza, pero sus jugadas aún no se pueden enviar.'
+                    continue
+                self.errors.pop(key,None)
+            except Exception as exc:
+                self.errors[(ws,config['id'])]='Actualización pendiente; se reintentará automáticamente. La mesa continúa de forma independiente.'
+                if isinstance(exc,ValueError):self.errors[(ws,config['id'])]=str(exc)
+            finally:
+                if exchange:exchange.close()
     def close(self):self.stop.set();self.thread.join(timeout=1)
 
 def observe_runtime(runtime,snapshot):

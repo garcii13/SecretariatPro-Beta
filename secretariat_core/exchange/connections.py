@@ -45,7 +45,7 @@ def stored(workspace,include_disabled=False):
     try:
         rows=db.execute('SELECT config,enabled FROM profiles WHERE workspace=?'+('' if include_disabled else ' AND enabled=1'),(str(workspace),)).fetchall()
         if not rows:return []
-        key=cipher();return [{**json.loads(key.decrypt(row[0])), 'enabled':bool(row[1]),'managed':True} for row in rows]
+        key=cipher();return [{**json.loads(key.decrypt(row[0])), 'enabled':bool(row[1]),'managed':True,'autoImport':True} for row in rows]
     finally:db.close()
 
 def secret(config):
@@ -87,7 +87,7 @@ def inspect(client,code):
     finally:db.close()
     return {'ticketId':ticket,'name':str(info.get('name') or info['namespace']),'namespace':info['namespace'],'competitions':[{'id':c['id'],'name':c['name'],'season':str(c.get('season') or '')} for c in competitions],'canCapture':'captures:write' in info.get('scopes',[])}
 
-def finish(client,ticket_id,competition_id,capture=True,auto_import=False):
+def finish(client,ticket_id,competition_id,capture=True,auto_import=True):
     client._require_competition_manager();workspace=str(client._active_workspace_id());db=database()
     try:
         row=db.execute('SELECT state FROM pending WHERE id=? AND workspace=? AND user_id=? AND expires>?',(ticket_id,workspace,str(client.user_id),time.time())).fetchone()
@@ -101,7 +101,7 @@ def finish(client,ticket_id,competition_id,capture=True,auto_import=False):
         if capture and 'captures:write' not in reply.get('scopes',[]):raise PermissionError('La federación no ha autorizado el envío de jugadas.')
         if str(client._active_workspace_id())!=workspace:raise ValueError('Vuelve al espacio donde verificaste la invitación para completar la conexión.')
         ident='gui-'+uuid.uuid5(uuid.NAMESPACE_URL,json.dumps([workspace,state['url'],reply['namespace'],reply['clientId'],competition_id])).hex
-        config={'id':ident,'url':state['url'],'clientId':reply['clientId'],'sourceNamespace':reply['sourceNamespace'],'storedSecret':reply['secret'],'namespace':reply['namespace'],'competitionId':competition_id,'workspaceId':workspace,'name':info.get('name') or info['namespace'],'competitionName':next(c['name'] for c in info['competitions'] if c['id']==competition_id),'modules':['catalog','statistics']+(['captures'] if capture else []),'autoImport':bool(auto_import),'enabled':True}
+        config={'id':ident,'url':state['url'],'clientId':reply['clientId'],'sourceNamespace':reply['sourceNamespace'],'storedSecret':reply['secret'],'namespace':reply['namespace'],'competitionId':competition_id,'workspaceId':workspace,'name':info.get('name') or info['namespace'],'competitionName':next(c['name'] for c in info['competitions'] if c['id']==competition_id),'modules':['catalog','statistics']+(['captures'] if capture else []),'autoImport':True,'enabled':True}
         # Persist before any sporting download. A network failure preserves a
         # recoverable connection; it does not create a second remote credential.
         with db:

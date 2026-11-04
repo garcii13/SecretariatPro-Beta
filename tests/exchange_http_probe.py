@@ -18,10 +18,10 @@ def check(value):
  assert value
  checks+=1
 
-def api(path,data=None):
+def api(path,data=None,method=None,session=None):
  raw=json.dumps(data).encode() if data is not None else None
- headers={'Origin':base,'Content-Type':'application/json','Cookie':'aeuf_session='+os.environ['EXCHANGE_HTTP_SESSION']}
- with urllib.request.urlopen(urllib.request.Request(base+path,data=raw,headers=headers,method='POST' if raw else 'GET')) as r:return json.load(r)
+ headers={'Origin':base,'Content-Type':'application/json','Cookie':'aeuf_session='+(session or os.environ['EXCHANGE_HTTP_SESSION'])}
+ with urllib.request.urlopen(urllib.request.Request(base+path,data=raw,headers=headers,method=method or ('POST' if raw else 'GET'))) as r:return json.load(r)
 
 e=ExchangeClient(base,'producer',secret,'fed.test','liga-oro',os.environ['SP_EXCHANGE_CACHE'])
 try:
@@ -72,6 +72,16 @@ try:
  native=fed.connect(managed)
  try:check(native.bootstrap()>0)
  finally:native.close()
+ # No manual import: the authorized worker materializes and follows a real HTTP profile edit.
+ worker=object.__new__(fed.FederationWorker);worker.catalog_clients={('ws',managed['id']):(client,lambda:True)};worker.errors={};worker.last_pull={};worker.contexts={}
+ worker.process('ws',{});check(('ws',managed['id']) not in worker.errors)
+ status=next(c for c in fed.public_status(client)['connections'] if c['id']==managed['id']);check(status['catalogPending']==0);check(bool(status['lastAppliedAt']))
+ api('/api/profile',{'name':'A. Prueba','firstName':'Ana','lastName':'García Prueba','birthDate':'2001-03-04','nationality':'España','isCoach':True,'position':'Centro','bio':''},method='PUT',session=os.environ['EXCHANGE_HTTP_PLAYER_SESSION'])
+ worker.last_pull={};worker.process('ws',{});check(('ws',managed['id']) not in worker.errors)
+ status=next(c for c in fed.public_status(client)['connections'] if c['id']==managed['id']);check(status['catalogPending']==0);check(bool(status['lastAppliedAt']))
+ athlete=db['players'][fed.local_id('ws','fed.test','player','qa-scorer')]
+ check(athlete['first_name']=='Ana');check(athlete['last_name']=='García Prueba');check(athlete['birth_date']=='2001-03-04');check(athlete['nationality']=='España');check(athlete['is_coach'])
+ check('2001-03-04' not in json.dumps(api('/api/match-report?match=exchange-match')))
  check(not any('storedSecret' in c for c in fed.public_status(client)['connections']))
  wizard.set_enabled(client,connected['id'],False);check(not any(c['id']==connected['id'] for c in fed.configurations('ws')))
  wizard.set_enabled(client,connected['id'],True);check(any(c['id']==connected['id'] for c in fed.configurations('ws')))

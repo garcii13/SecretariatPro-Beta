@@ -9,8 +9,10 @@ import uvicorn
 with tempfile.TemporaryDirectory(prefix='secretariat-federation-ui-') as folder:
  os.environ['SP_EXCHANGE_CACHE']=str(Path(folder)/'cache.sqlite')
  os.environ['UI_PREVIEW_SECRET']='disposable-secret-with-at-least-32-characters'
- os.environ['SP_FEDERATION_CONNECTIONS']=json.dumps([{'id':'preview','enabled':True,'workspaceId':'ws','namespace':'fed.test','competitionId':'c','url':'http://127.0.0.1:5435','clientId':'preview','secretEnv':'UI_PREVIEW_SECRET','modules':['catalog','captures','statistics']}])
- e=ExchangeClient('http://127.0.0.1:5435','preview',os.environ['UI_PREVIEW_SECRET'],'fed.test','c',os.environ['SP_EXCHANGE_CACHE']);e.request=Mock(return_value=catalog());e.bootstrap();e.close()
+ os.environ['SP_FEDERATION_CONNECTIONS']=json.dumps([{'id':'preview','enabled':True,'workspaceId':'ws','namespace':'fed.test','competitionId':'c','url':'http://127.0.0.1:5435','clientId':'preview','secretEnv':'UI_PREVIEW_SECRET','modules':['catalog','captures','statistics'],'autoImport':True}])
+ e=ExchangeClient('http://127.0.0.1:5435','preview',os.environ['UI_PREVIEW_SECRET'],'fed.test','c',os.environ['SP_EXCHANGE_CACHE']);data=catalog()
+ if '--pending-catalog' in sys.argv:data['entities'][2]['data']['players'][0]['birthDate']='invalid'
+ e.request=Mock(return_value=data);e.bootstrap();e.close()
  client,db=FederationTests().client()
  client.manager_dashboard_counts.return_value={'competitions':1,'teams':2,'players':4,'matches':2}
  client.manager_list_matches.return_value=[]
@@ -19,6 +21,8 @@ with tempfile.TemporaryDirectory(prefix='secretariat-federation-ui-') as folder:
   from secretariat_core.exchange import connections as connection_store
   from tests.test_federation_connections import info,credential
   connection_store.remote=lambda base,path,payload: info() if path.endswith('/inspect') else credential()
+ from secretariat_core.exchange import federation as fed
+ if '--automatic-catalog' in sys.argv or '--pending-catalog' in sys.argv:fed.import_catalog(client,'preview')
  client.user_id='preview-ui-user'
  from manager_api import main
  main.runtime.require_connected=lambda:client

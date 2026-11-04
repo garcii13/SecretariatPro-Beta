@@ -62,6 +62,11 @@ class ExchangeClient:
         CREATE TABLE IF NOT EXISTS receipts(delivery TEXT PRIMARY KEY,scope TEXT,body TEXT,created REAL);
         CREATE TABLE IF NOT EXISTS bindings(scope TEXT,kind TEXT,external_id TEXT,local_id TEXT,PRIMARY KEY(scope,kind,external_id),UNIQUE(scope,kind,local_id));
         CREATE TABLE IF NOT EXISTS sync_status(scope TEXT PRIMARY KEY,last_pull REAL);
+        CREATE TABLE IF NOT EXISTS materializations(scope TEXT,workspace TEXT,digest TEXT,applied REAL,PRIMARY KEY(scope,workspace));
+        CREATE TABLE IF NOT EXISTS catalog_sections(scope TEXT,workspace TEXT,section TEXT,digest TEXT,PRIMARY KEY(scope,workspace,section));
+        CREATE TABLE IF NOT EXISTS catalog_health(scope TEXT,workspace TEXT,attempted REAL,issues TEXT,PRIMARY KEY(scope,workspace));
+        CREATE TABLE IF NOT EXISTS catalog_journal(scope TEXT,workspace TEXT,section TEXT,payload TEXT,PRIMARY KEY(scope,workspace,section));
+        CREATE TABLE IF NOT EXISTS capabilities_cache(scope TEXT PRIMARY KEY,checked REAL,features TEXT);
         ''');self.db.commit()
         self.scope=json.dumps([self.base,client_id,namespace,competition_id],separators=(',',':'))
         self.opener=urllib.request.build_opener(NoRedirect)
@@ -90,7 +95,7 @@ class ExchangeClient:
         if kind=='match' and data.get('competitionId')!=self.competition:
             raise ValueError('Partido de otra competición.')
         if kind=='roster':
-            if any(set(p)-{'id','name','number','position'} for p in data.get('players',[])):
+            if any(set(p)-{'id','name','number','position','firstName','lastName','birthDate','nationality','isCoach'} for p in data.get('players',[])):
                 raise ValueError('El roster contiene campos ajenos al contrato deportivo.')
         if kind=='match':
             for group,allowed in REPORT_FIELDS.items():
@@ -104,8 +109,27 @@ class ExchangeClient:
             DO UPDATE SET revision=excluded.revision,payload=excluded.payload WHERE excluded.revision>=entities.revision''',
             (self.scope,kind,ident,rev,json.dumps(data,ensure_ascii=False)))
 
+    def negotiated_features(self):
+        row=self.db.execute('SELECT checked,features FROM capabilities_cache WHERE scope=?',(self.scope,)).fetchone()
+        if row and time.time()-row[0]<(3600 if json.loads(row[1]) else 60):return json.loads(row[1])
+        try:
+            advertised=self.request('GET',PREFIX+'/capabilities')
+            features=['player-details-v1'] if isinstance(advertised,dict) and advertised.get('schema')==SCHEMA and advertised.get('namespace')==self.namespace and isinstance(advertised.get('features'),list) and 'player-details-v1' in advertised['features'] else []
+        except RuntimeError:
+            # Older providers can omit the optional capabilities endpoint.
+            features=[]
+        with self.db:
+            self.db.execute('INSERT OR REPLACE INTO capabilities_cache VALUES(?,?,?)',(self.scope,time.time(),json.dumps(features)))
+            if features!=(json.loads(row[1]) if row else []):self.db.execute('DELETE FROM meta WHERE scope=?',(self.scope,))
+        return features
+
+    def catalog_query(self,params):
+        features=self.negotiated_features()
+        if features:params={**params,'features':','.join(features)}
+        return urllib.parse.urlencode(params)
+
     def bootstrap(self):
-        data=self.request('GET',PREFIX+'/snapshot?'+urllib.parse.urlencode({'competition':self.competition}))
+        data=self.request('GET',PREFIX+'/snapshot?'+self.catalog_query({'competition':self.competition}))
         return self.import_snapshot(data)
 
     def import_snapshot(self,data):
@@ -125,11 +149,12 @@ class ExchangeClient:
         return len(data['entities'])
 
     def pull(self):
+        self.negotiated_features()
         cursor=self.db.execute('SELECT cursor FROM meta WHERE scope=?',(self.scope,)).fetchone()
         if not cursor:return self.bootstrap()
         count=0;after=cursor[0]
         for _ in range(100):
-            data=self.request('GET',PREFIX+'/changes?'+urllib.parse.urlencode({'competition':self.competition,'after':after}));self._check(data)
+            data=self.request('GET',PREFIX+'/changes?'+self.catalog_query({'competition':self.competition,'after':after}));self._check(data)
             with self.db:
                 for row in data['changes']:self._store(row);count+=1
                 next_cursor=str(data['nextCursor'])
@@ -141,6 +166,45 @@ class ExchangeClient:
 
     def snapshot(self,kind):
         return [json.loads(r[0]) for r in self.db.execute('SELECT payload FROM entities WHERE scope=? AND kind=? ORDER BY id',(self.scope,kind))]
+
+    def catalog_digest(self):
+        # Live scores/events change frequently; they do not alter the local catalogue.
+        fields=('id','competitionId','homeTeamId','awayTeamId','startsAt','venue')
+        data={k:self.snapshot(k) for k in ('competition','team','roster')}
+        data['match']=[{k:m.get(k) for k in fields} for m in self.snapshot('match')]
+        return hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
+
+    def applied(self,workspace):
+        row=self.db.execute('SELECT digest,applied FROM materializations WHERE scope=? AND workspace=?',(self.scope,str(workspace))).fetchone()
+        return {'digest':row[0],'at':row[1]} if row else None
+
+    def mark_applied(self,workspace,digest):
+        with self.db:self.db.execute('INSERT OR REPLACE INTO materializations VALUES(?,?,?,?)',(self.scope,str(workspace),digest,time.time()))
+
+    def section_digest(self,workspace,section):
+        row=self.db.execute('SELECT digest FROM catalog_sections WHERE scope=? AND workspace=? AND section=?',(self.scope,str(workspace),section)).fetchone()
+        return row[0] if row else None
+
+    def mark_section(self,workspace,section,digest):
+        with self.db:self.db.execute('INSERT OR REPLACE INTO catalog_sections VALUES(?,?,?,?)',(self.scope,str(workspace),section,digest))
+
+    def catalog_health(self,workspace):
+        row=self.db.execute('SELECT attempted,issues FROM catalog_health WHERE scope=? AND workspace=?',(self.scope,str(workspace))).fetchone()
+        issues=json.loads(row[1]) if row else []
+        return {'lastAttemptAt':row[0] if row else None,'catalogIssues':issues[:100], 'catalogPending':sum(i.get('level')=='error' for i in issues),'catalogWarnings':sum(i.get('level')=='warning' for i in issues)}
+
+    def mark_health(self,workspace,issues):
+        with self.db:self.db.execute('INSERT OR REPLACE INTO catalog_health VALUES(?,?,?,?)',(self.scope,str(workspace),time.time(),json.dumps(issues,ensure_ascii=False)))
+
+    def journal(self,workspace,section):
+        row=self.db.execute('SELECT payload FROM catalog_journal WHERE scope=? AND workspace=? AND section=?',(self.scope,str(workspace),section)).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def write_journal(self,workspace,section,payload):
+        with self.db:self.db.execute('INSERT OR REPLACE INTO catalog_journal VALUES(?,?,?,?)',(self.scope,str(workspace),section,json.dumps(payload)))
+
+    def clear_journal(self,workspace,section):
+        with self.db:self.db.execute('DELETE FROM catalog_journal WHERE scope=? AND workspace=? AND section=?',(self.scope,str(workspace),section))
 
     def bind(self,kind,external_id,local_id):
         with self.db:self.db.execute('INSERT INTO bindings VALUES(?,?,?,?) ON CONFLICT(scope,kind,external_id) DO UPDATE SET local_id=excluded.local_id',(self.scope,kind,external_id,local_id))

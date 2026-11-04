@@ -158,13 +158,29 @@
   Object.assign(UI_TRANSLATIONS.fi, {"Reproducir animación": "Toista animaatio", "Prueba las entradas con tus colores, tamaños y tipografías antes de publicar.": "Esikatsele sisääntulot omilla väreillä, ko’oilla ja fonteilla ennen julkaisua."});
   Object.assign(UI_TRANSLATIONS.de, {"Reproducir animación": "Animation abspielen", "Prueba las entradas con tus colores, tamaños y tipografías antes de publicar.": "Prüfe die Einblendungen mit deinen Farben, Größen und Schriftarten vor der Veröffentlichung."});
   const translatedTextNodes = new WeakMap();
-  const translationExclusions = ".row-title,.row-subtitle,.match-teams,.profile,.workspace-control,.team-card h3,.player-card h3,.theme-card h3,.account-profile-copy,.logo-placeholder,#workspace-name,#profile-name,#profile-email";
+  const translationExclusions = ".row-title,.row-subtitle,.match-teams,.profile,#workspace-select,.team-card h3,.player-card h3,.theme-card h3,.account-profile-copy,.logo-placeholder,#workspace-name,#profile-name,#profile-email";
 
   Object.assign(UI_TRANSLATIONS.en, {"Particularidades de la competición": "Competition specifics", "Bandera de la selección": "National team flag", "Bandera pendiente": "Flag missing", "Internacional": "International", "Competición para previsualizar": "Preview competition", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Change international mode in the competition specifics. Attach flags in each team profile.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Each team uses its flag in this competition. Attach it in the team profile; club competitions keep the crest.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Used in every international competition for this team. The primary and alternate crests are saved separately."});
   Object.assign(UI_TRANSLATIONS.sv, {"Particularidades de la competición": "Tävlingsinställningar", "Bandera de la selección": "Landslagets flagga", "Bandera pendiente": "Flagga saknas", "Internacional": "Internationell", "Competición para previsualizar": "Förhandsvisa tävling", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Ändra internationellt läge i tävlingsinställningarna. Bifoga flaggor i lagens profiler.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Varje lag använder sin flagga i denna tävling. Bifoga den i lagets profil; klubbtävlingar behåller klubbmärket.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Används i lagets internationella tävlingar. Ordinarie och alternativa klubbmärken sparas separat."});
   Object.assign(UI_TRANSLATIONS.cs, {"Particularidades de la competición": "Nastavení soutěže", "Bandera de la selección": "Vlajka reprezentace", "Bandera pendiente": "Chybí vlajka", "Internacional": "Mezinárodní", "Competición para previsualizar": "Náhled soutěže", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Mezinárodní režim změňte v nastavení soutěže. Vlajky připojte v profilech týmů.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Každý tým používá v této soutěži vlajku. Připojte ji v profilu týmu; klubové soutěže zachovají znak.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Používá se v mezinárodních soutěžích týmu. Hlavní a alternativní znaky se ukládají samostatně."});
   Object.assign(UI_TRANSLATIONS.fi, {"Particularidades de la competición": "Kilpailun asetukset", "Bandera de la selección": "Maajoukkueen lippu", "Bandera pendiente": "Lippu puuttuu", "Internacional": "Kansainvälinen", "Competición para previsualizar": "Esikatseltava kilpailu", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Vaihda kansainvälinen tila kilpailun asetuksissa. Lisää liput joukkueiden profiileihin.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Jokainen joukkue käyttää lippua tässä kilpailussa. Lisää se joukkueen profiiliin; seurakilpailut säilyttävät tunnuksen.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Käytetään joukkueen kansainvälisissä kilpailuissa. Pää- ja vaihtoehtoiset tunnukset tallennetaan erikseen."});
   Object.assign(UI_TRANSLATIONS.de, {"Particularidades de la competición": "Wettbewerbseinstellungen", "Bandera de la selección": "Nationalmannschaftsflagge", "Bandera pendiente": "Flagge fehlt", "Internacional": "International", "Competición para previsualizar": "Wettbewerb für Vorschau", "El modo internacional se cambia en las particularidades de la competición. Las banderas se adjuntan en la ficha de cada equipo.": "Ändere den internationalen Modus in den Wettbewerbseinstellungen. Füge Flaggen im jeweiligen Teamprofil hinzu.", "Cada equipo utiliza su bandera en esta competición. Adjunta la bandera en la ficha del equipo; el escudo se conserva para las competiciones de clubes.": "Jedes Team nutzt seine Flagge in diesem Wettbewerb. Füge sie im Teamprofil hinzu; Vereinswettbewerbe behalten das Wappen.", "Se utiliza en todas las competiciones internacionales de este equipo. El escudo principal y el alternativo se guardan por separado.": "Wird in den internationalen Wettbewerben dieses Teams verwendet. Haupt- und Alternativwappen werden getrennt gespeichert."});
+  const FEDERATION_I18N = globalThis.SPFederationI18n;
+  if (FEDERATION_I18N) for (const language of SUPPORTED_LANGUAGES) {
+    if(language!=="es") Object.assign(UI_TRANSLATIONS[language],FEDERATION_I18N.messages[language]);
+  }
+  function federationText(node,key,values={}) {
+    node.dataset.federationI18n=JSON.stringify([key,values]);
+    node.textContent=FEDERATION_I18N ? FEDERATION_I18N.format(state.preferences.language,key,values) : key;
+  }
+  function translateFederationStrings() {
+    document.querySelectorAll("[data-federation-i18n]").forEach(node=>{
+      const [key,values]=JSON.parse(node.dataset.federationI18n);federationText(node,key,values);
+    });
+    if($("#federation-code"))$("#federation-code").placeholder=tr("Pega aquí tu invitación");
+    if($("#sidebar-toggle"))$("#sidebar-toggle").title=tr("Abrir o cerrar menú");
+    if($("#profile-button"))$("#profile-button").setAttribute("aria-label",tr("Abrir cuenta de usuario"));
+  }
   function tr(value) {
     const text = String(value ?? "");
     if (state.preferences.language === "es") return text;
@@ -173,7 +189,7 @@
 
   function translateTextNode(node) {
     const parent = node.parentElement;
-    if (!parent || parent.closest(translationExclusions) || parent.closest("#settings-language")) return;
+    if (!parent || parent.closest("[data-federation-i18n],[translate=no]") || parent.closest(translationExclusions) || parent.closest("#settings-language")) return;
     const current = node.data;
     const trimmed = current.trim();
     if (!trimmed) return;
@@ -221,6 +237,7 @@
     if (persist) localStorage.setItem(PREFERENCE_KEYS.language, normalized);
     if ($("#settings-language")) $("#settings-language").value = normalized;
     translateManagerUI();
+    translateFederationStrings();
   }
 
   function systemLanguage() {
@@ -440,12 +457,11 @@
       const data=await api("/api/integrations/federations/connect/preview",{method:"POST",body:JSON.stringify({code:input.value.trim()})});
       input.value="";if(workspace!==state.session.workspace?.id)return;
       federationTicket=data.ticketId;
-      $("#federation-target-workspace").textContent=`Espacio de destino: ${state.session.workspace?.name || "espacio actual"}`;
-      $("#federation-verified-name").textContent=`Invitación verificada: ${data.name}`;
+      federationText($("#federation-target-workspace"),"Espacio de destino: {workspace}",{workspace:state.session.workspace?.name || "—"});
+      federationText($("#federation-verified-name"),"Invitación verificada: {federation}",{federation:data.name});
       const select=$("#federation-competition");select.innerHTML="";
-      for(const competition of data.competitions){const option=document.createElement("option");option.value=competition.id;option.textContent=`${competition.name} · ${competition.season || ""}`;select.append(option);}
+      for(const competition of data.competitions){const option=document.createElement("option");option.value=competition.id;option.translate=false;option.textContent=`${competition.name} · ${competition.season || ""}`;select.append(option);}
       $("#federation-enable-capture").checked=!!data.canCapture;$("#federation-enable-capture").disabled=!data.canCapture;
-      $("#federation-auto-import").checked=false;
       $("#federation-code-form").hidden=true;$("#federation-connect-form").hidden=false;
       $("#federation-wizard-status").textContent="Elige la competición que quieres conectar.";select.focus();
     }catch(error){$("#federation-wizard-status").textContent=error.message;}finally{button.disabled=false;}
@@ -454,13 +470,14 @@
     event.preventDefault();if(!federationTicket)return;const button=$("#federation-connect-save");button.disabled=true;
     $("#federation-wizard-status").textContent="Guardando la conexión…";
     try {
-      const result=await api("/api/integrations/federations/connect/confirm",{method:"POST",body:JSON.stringify({ticket_id:federationTicket,competition_id:$("#federation-competition").value,capture:$("#federation-enable-capture").checked,auto_import:$("#federation-auto-import").checked})});
+      const result=await api("/api/integrations/federations/connect/confirm",{method:"POST",body:JSON.stringify({ticket_id:federationTicket,competition_id:$("#federation-competition").value,capture:$("#federation-enable-capture").checked,auto_import:true})});
       closeFederationWizard();await loadFederations();
-      try{await api(`/api/integrations/federations/${encodeURIComponent(result.id)}/sync`,{method:"POST"});await loadFederations();showToast("Federación conectada. Revisa el catálogo para importar sus jugadores y partidos.");}
-      catch(error){showToast("Conexión guardada. Puedes sincronizarla cuando recuperes la conexión.",true);}
+      try{await api(`/api/integrations/federations/${encodeURIComponent(result.id)}/sync`,{method:"POST"});await loadFederations();showToast("Federación conectada. Jugadores y partidos se actualizan automáticamente.");}
+      catch(error){showToast("Conexión guardada. Se reintentará automáticamente al recuperar la conexión.",true);}
     }catch(error){$("#federation-wizard-status").textContent=error.message;}finally{button.disabled=false;}
   }
-  async function loadFederations() {
+  async function loadFederations(refresh = false) {
+    if (!refresh) {
     federationPreviewId = null;
     $("#federation-preview").hidden = true;
     closeFederationWizard();
@@ -469,8 +486,15 @@
     $("#federation-cancel").onclick = closeFederationWizard;
     $("#federation-code-form").onsubmit = verifyFederationInvitation;
     $("#federation-connect-form").onsubmit = saveFederationConnection;
+    }
     const data = await api("/api/integrations/federations");
+    const applied = JSON.stringify((data.connections || []).map(c => [c.id,c.lastAppliedAt,c.lastAttemptAt]));
+    if (state.federationApplied !== applied) {state.cache={}; state.federationApplied=applied;}
+    const fingerprint=JSON.stringify((data.connections || []).map(({lastAttemptAt,...rest})=>rest));
+    if(refresh && state.federationRendered===fingerprint)return;
+    state.federationRendered=fingerprint;
     const host = $("#federation-connections");
+    const opened=new Set(Array.from(host.querySelectorAll("[data-federation-issues][open]")).map(node=>node.dataset.federationIssues));
     host.innerHTML = "";
     host.classList.toggle("empty-state",!data.connections?.length);
     if (!data.connections?.length) {
@@ -479,19 +503,31 @@
     }
     for (const connection of data.connections) {
       const card = document.createElement("div"); card.className = "panel federation-connection-card";
-      const title = document.createElement("h3"); title.textContent = connection.name || connection.namespace || connection.id; card.append(title);
+      const title = document.createElement("h3"); title.translate=false; title.textContent = connection.name || connection.namespace || connection.id; card.append(title);
       const status = document.createElement("p");
-      const receipt = connection.lastReceipt?.reason || "Sin entregas confirmadas";
-      status.textContent = `${connection.competitionName || connection.competitionId} · ${connection.enabled === false ? "Desconectada" : "Guardada"} · ${connection.cached || 0} registros · ${connection.pending || 0} envíos pendientes · ${receipt}. ${connection.message || ""}`;
+      const receiptLabels={accepted:"Captura recibida",review_pending:"Pendiente de revisión federativa",official_locked:"Acta oficial protegida",manual_capture:"Captura manual en la federación",older_revision:"Revisión anterior conservada",another_capture_provider:"Otro proveedor tiene asignado el partido"};
+      const receipt=connection.lastReceipt ? receiptLabels[connection.lastReceipt.reason] || "Entrega recibida" : "Sin entregas confirmadas";
+      const connectionState=connection.enabled===false ? "Desconectada" : connection.message ? "Actualización pendiente" : connection.catalogPending ? "Actualización parcial" : connection.catalogWarnings ? "Actualización con avisos" : !connection.automatic ? "Conexión técnica" : connection.lastAppliedAt ? "Actualización automática activa" : "Preparando actualización automática";
+      federationText(status,"{competition} · {state} · {cached} registros · {pending} envíos pendientes · {receipt}.",{competition:connection.competitionName || connection.competitionId,state:{message:connectionState},cached:connection.cached || 0,pending:connection.pending || 0,receipt:{message:receipt}});
       card.append(status);
+      if(connection.message) {const message=document.createElement("p");message.textContent=connection.message;card.append(message);}
+      if (connection.lastAppliedAt) { const updated=document.createElement("p");updated.className="muted";federationText(updated,"Última actualización: {date}",{date:{date:connection.lastAppliedAt}});card.append(updated); }
+      if(connection.catalogIssues?.length) {
+        const details=document.createElement("details");details.className="federation-issues";details.dataset.federationIssues=connection.id;details.open=opened.has(connection.id);
+        const summary=document.createElement("summary");federationText(summary,"{pending} registros pendientes · {warnings} avisos",{pending:connection.catalogPending || 0,warnings:connection.catalogWarnings || 0});details.append(summary);
+        const list=document.createElement("ul");
+        const kindLabels={player:"Jugador",team:"Equipo",roster:"Roster",match:"Partido",competition:"Competición",season:"Temporada"};
+        for(const issue of connection.catalogIssues) { const row=document.createElement("li");federationText(row,"{kind} · {id}: {message}",{kind:{message:kindLabels[issue.kind] || issue.kind},id:issue.label || issue.id,message:{message:issue.message}});list.append(row); }
+        details.append(list);card.append(details);
+      }
       const actions=document.createElement("div");actions.className="federation-connection-actions";
-      const sync = document.createElement("button"); sync.type = "button"; sync.textContent = "Sincronizar cambios";
+      const sync = document.createElement("button"); sync.type = "button"; sync.textContent = "Actualizar ahora";
       sync.disabled = !state.session.permissions?.write_allowed || connection.enabled === false;
-      sync.onclick = async () => { sync.disabled = true; try { await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/sync`, {method:"POST"}); await loadFederations(); showToast("Catálogo sincronizado; la importación se revisa por separado."); } catch(error) { showToast(error.message,true); sync.disabled=false; } };
+      sync.onclick = async () => { sync.disabled = true; try { await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/sync`, {method:"POST"}); await loadFederations(); showToast("Cambios recibidos. La copia deportiva se actualiza automáticamente."); } catch(error) { showToast(error.message,true); sync.disabled=false; } };
       actions.append(sync);
-      const preview = document.createElement("button"); preview.type="button"; preview.className="ghost"; preview.textContent="Revisar catálogo para importar";
+      const preview = document.createElement("button"); preview.type="button"; preview.className="ghost"; preview.textContent="Ver catálogo conectado";
       preview.disabled = !state.session.permissions?.write_allowed || connection.enabled === false || !(connection.modules || []).includes("catalog");
-      preview.onclick=async()=>{try { const plan=await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/preview`); federationPreviewId=connection.id; $("#federation-preview-text").textContent=`${plan.competition.name} · ${plan.competition.season}: ${plan.counts.teams} equipos, ${plan.counts.players} jugadores, ${plan.counts.matches} partidos. ${plan.policy}`; $("#federation-preview").hidden=false; } catch(error) {showToast(error.message,true);} };
+      preview.onclick=async()=>{try { const plan=await api(`/api/integrations/federations/${encodeURIComponent(connection.id)}/preview`); federationPreviewId=connection.id; federationText($("#federation-preview-text"),"{competition} · {season}: {teams} equipos, {players} jugadores, {matches} partidos. {policy}",{competition:plan.competition.name,season:plan.competition.season,teams:plan.counts.teams,players:plan.counts.players,matches:plan.counts.matches,policy:{message:plan.policy}}); $("#federation-preview").hidden=false; } catch(error) {showToast(error.message,true);} };
       actions.append(preview);
       if (connection.managed) {
         const toggle = document.createElement("button"); toggle.type="button"; toggle.className="ghost";
@@ -502,7 +538,7 @@
       }
       card.append(actions);host.append(card);
     }
-    $("#federation-import-confirm").onclick=async()=>{if(!federationPreviewId)return; const button=$("#federation-import-confirm");button.disabled=true;try {await api(`/api/integrations/federations/${encodeURIComponent(federationPreviewId)}/import`,{method:"POST"});state.cache={};await loadFederations();showToast("Copia federativa actualizada. Sus fichas deportivas se corrigen en origen.");}catch(error){showToast(error.message,true);}finally{button.disabled=false;}};
+
   }
 
   async function loadView(name, force = false) {
@@ -513,7 +549,7 @@
       players: loadPlayers,
       matches: loadMatches,
       members: loadMembers,
-      federations: loadFederations,
+      federations: () => loadFederations(),
       imports: loadImportScope,
       identity: loadThemes,
       profile: async () => renderProfileView(),
@@ -1924,6 +1960,11 @@ ${extra}`)) return;
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    setInterval(async () => {
+      if (!document.hidden && state.session.connected && $("#view-federations")?.classList.contains("active")) {
+        try { await loadFederations(true); state.cache={}; } catch (_) {}
+      }
+    }, 5000);
     initializePreferences();
     initialiseSidebar();
     systemThemeQuery.addEventListener?.("change", () => { if (state.preferences.theme === "system") applyTheme("system", false); });
