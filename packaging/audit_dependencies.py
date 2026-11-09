@@ -1,6 +1,7 @@
 """Audit installed build dependencies without adding the auditor to the product venv."""
 import argparse
 import importlib.metadata
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -21,8 +22,15 @@ def main():
         venv.create(root / 'tool', with_pip=True)
         python = root / 'tool' / ('Scripts/python.exe' if sys.platform == 'win32' else 'bin/python')
         subprocess.run([str(python), '-m', 'pip', 'install', '--quiet', 'pip-audit==2.10.1'], check=True)
-        return subprocess.run([str(python), '-m', 'pip_audit', '--disable-pip', '--no-deps',
-                               '-r', str(requirements), '--format', 'json', '--output', str(args.output.resolve())]).returncode
+        result = subprocess.run([str(python), '-m', 'pip_audit', '--disable-pip', '--no-deps',
+                                 '-r', str(requirements), '--format', 'json', '--output', str(args.output.resolve())])
+        if args.output.is_file():
+            report = json.loads(args.output.read_text())
+            for dependency in report.get('dependencies', []):
+                for vulnerability in dependency.get('vulns', []):
+                    print(f"{dependency['name']}=={dependency['version']}: {vulnerability['id']}; "
+                          f"fixed in {', '.join(vulnerability.get('fix_versions', [])) or 'no published fix'}", flush=True)
+        return result.returncode
 
 
 if __name__ == '__main__':
