@@ -86,6 +86,11 @@ class ReplayMarkRequest(BaseModel):
     post_roll_seconds: float = Field(default=0, ge=0, le=20)
 
 
+class ReplayStorageRequest(BaseModel):
+    directory: str = Field(default="", max_length=1024)
+    max_cache_gb: float = Field(default=8, ge=1, le=200)
+
+
 class ReplaySelectionRequest(BaseModel):
     included: bool = True
     label: str = Field(default="", max_length=120)
@@ -169,6 +174,15 @@ class GoalPayload(BaseModel):
     assistant_id: str | None = None
     match_time: str = ""
     increment_manual_score: bool = False
+
+
+class EventEditPayload(BaseModel):
+    team: Literal["team1", "team2"]
+    player_id: str = Field(min_length=1)
+    assistant_id: str | None = None
+    match_time: str = Field(default="", max_length=20)
+    penalty_type: Literal["2", "2+2", "2+10"] | None = None
+    notes: str = Field(default="", max_length=2000)
 
 
 

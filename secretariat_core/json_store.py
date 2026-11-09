@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import errno
 import os
 import stat
 import tempfile
@@ -115,3 +116,46 @@ class JSONStore:
             mutator(value)
             self.write(value)
             return value
+
+
+def storage_exhausted(error: OSError) -> bool:
+    return error.errno in {errno.ENOSPC, errno.EDQUOT} or getattr(error, "winerror", None) in {39, 112}
+
+
+class LiveJSONStore(JSONStore):
+    """Keep *live operational state* usable if its disk fills up.
+
+    Never use this for credentials/settings or claim that a volatile write was
+    persisted. Callers expose ``pending_persistence`` and recovery retries the
+    latest complete state without replacing the previous on-disk copy.
+    """
+    def __init__(self, path: str | Path) -> None:
+        super().__init__(path)
+        self.pending_persistence = False
+        self.revision = 0
+        self._pending_value: Any = None
+        self._retry_at = 0.0
+
+    def read(self, default: Any) -> Any:
+        with self._lock:
+            if self.pending_persistence:
+                value = deepcopy(self._pending_value)
+                if time.monotonic() >= self._retry_at:
+                    self.write(value)
+                return value
+            return super().read(default)
+
+    def write(self, value: Any) -> None:
+        with self._lock:
+            try:
+                super().write(value)
+            except OSError as exc:
+                if not storage_exhausted(exc):
+                    raise
+                self._pending_value = deepcopy(value)
+                self.pending_persistence = True
+                self._retry_at = time.monotonic() + 5
+            else:
+                self.pending_persistence = False
+                self._pending_value = None
+            self.revision += 1

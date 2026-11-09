@@ -4,7 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from .json_store import JSONStore
+from .json_store import LiveJSONStore
 
 PP_DURATION_SECONDS = 120
 
@@ -101,7 +101,7 @@ def normalize_state(raw: Any) -> dict[str, Any]:
 
 class StateStore:
     def __init__(self, path: str | Path) -> None:
-        self._store = JSONStore(path)
+        self._store = LiveJSONStore(path)
 
     def load(self) -> dict[str, Any]:
         return normalize_state(self._store.read(default_state()))

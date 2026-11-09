@@ -7,7 +7,7 @@ import tempfile
 import threading
 from copy import deepcopy
 
-from .json_store import JSONStore
+from .json_store import JSONStore, LiveJSONStore, storage_exhausted
 from .ocr_geometry import default_perspective, normalize_perspective
 
 
@@ -67,7 +67,9 @@ class ScoreFileStore:
     def __init__(self, scores_dir: str | Path) -> None:
         self.scores_dir = Path(scores_dir)
         self._lock = threading.RLock()
-        self._reconciliation = JSONStore(self.scores_dir / "reconciliation.json")
+        self._reconciliation = LiveJSONStore(self.scores_dir / "reconciliation.json")
+        self._pending_readings: dict[str, str] = {}
+        self.revision = 0
 
     @staticmethod
     def _atomic_write(path: Path, value: str) -> None:
@@ -88,34 +90,74 @@ class ScoreFileStore:
 
     def write_readings(self, readings: dict[str, Any]) -> None:
         with self._lock:
-            self.scores_dir.mkdir(parents=True, exist_ok=True)
             for key, filename in self.FILES.items():
                 value = readings.get(key)
                 if value in (None, ""):
                     continue
                 text = str(value)
-                if self.read(key, default="") != text:
-                    self._atomic_write(self.scores_dir / filename, text)
+                changed = self.read(key, default="") != text
+                if key in self._pending_readings or changed:
+                    try:
+                        self._atomic_write(self.scores_dir / filename, text)
+                    except OSError as exc:
+                        if not storage_exhausted(exc):
+                            raise
+                        self._pending_readings[key] = text
+                    else:
+                        self._pending_readings.pop(key, None)
+                    if changed:
+                        self.revision += 1
 
     def read(self, key: str, default: str = "") -> str:
         filename = self.FILES.get(key, key)
         with self._lock:
+            if key in self._pending_readings:
+                return self._pending_readings[key]
             try:
                 return (self.scores_dir / filename).read_text(encoding="utf-8").strip()
             except OSError:
                 return default
 
-    def confirm_goal(self, key: str, before: int | None = None) -> int:
+    def confirm_goal(self, key: str, before: int | None = None, event_id: str = "") -> int:
         """Advance graphic score only. The scoreboard TXT files remain raw OCR."""
         with self._lock:
             data = self._reconciliation.read({})
+            confirmed = list(data.get("confirmed_events") or [])
+            if event_id and (event_id in confirmed or (data.get("event_goals_initialized") and event_id in data.get("event_goals", {}))):
+                return int(data.get(key, {}).get("internal", self.read(key, "0")) or 0)
             current = max(int(self.read(key, "0") or 0), int(data.get(key, {}).get("internal", 0)))
             target = max(current, int(before) + 1) if before is not None else current + 1
             previous = data.get(key, {})
             floor = max(target, int(previous.get("floor", 0)))
             data[key] = {"internal": target, "ocr": previous.get("ocr", current), "floor": floor, "pending": True}
+            if event_id:
+                data["confirmed_events"] = [*confirmed, event_id]
+                data.setdefault("event_goals", {})[event_id] = key
             self._reconciliation.write(data)
             return target
+
+    def reconcile_event_goals(self, goals: dict[str, str], *, manual: bool = False, seed: bool = False) -> None:
+        """Apply each act correction once, preserving any manual/OCR score offset."""
+        with self._lock:
+            data = self._reconciliation.read({})
+            old = data.get("event_goals", {})
+            initialized = data.get("event_goals_initialized", False)
+            outputs = {}
+            if initialized and not seed:
+                for key in ("team1_score", "team2_score"):
+                    delta = list(goals.values()).count(key) - list(old.values()).count(key)
+                    if delta:
+                        row = data.get(key, {})
+                        current = int(row.get("internal", self.read(key, "0")) or 0)
+                        value = max(0, current + delta)
+                        data[key] = {"internal": value, "floor": value, "ocr": row.get("ocr", self.read(key, "0")), "pending": False}
+                        if manual:
+                            outputs[key] = value
+            data["event_goals"] = dict(goals)
+            data["event_goals_initialized"] = True
+            self._reconciliation.write(data)
+            if outputs:
+                self.write_readings(outputs)
 
     def write_external(self, readings: dict[str, Any]) -> None:
         with self._lock:

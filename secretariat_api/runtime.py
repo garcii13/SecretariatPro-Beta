@@ -738,6 +738,10 @@ class ApplicationRuntime:
         match = self.active_match or {}
         competition = self.active_competition or {}
         return {
+            "storage_health": {
+                "pending_persistence": bool(self.state_store._store.pending_persistence or self.score_store._reconciliation.pending_persistence or self.score_store._pending_readings),
+                "message": "Disco lleno: el directo continúa en memoria. Libera espacio antes de cerrar Live." if (self.state_store._store.pending_persistence or self.score_store._reconciliation.pending_persistence or self.score_store._pending_readings) else "",
+            },
             "state": state,
             "scores": self.scores(),
             "graphic_scores": self.graphic_scores(),
@@ -765,6 +769,16 @@ class ApplicationRuntime:
         }
 
     def replay_snapshot(self) -> dict[str, Any]:
+        try:
+            return self._replay_snapshot()
+        except (OSError, RuntimeError) as exc:
+            # The optional video subsystem must never turn /state, goals or
+            # every overlay command into HTTP 500 when its disk is unavailable.
+            match_id = str((self.active_match or {}).get("id") or "")
+            return {**self.replays.snapshot(match_id), "status": {
+                "available": False, "active": False, "error": str(exc), "backend": "multicam-plugin"}}
+
+    def _replay_snapshot(self) -> dict[str, Any]:
         match_id = str((self.active_match or {}).get("id") or "")
         library = self.replays.snapshot(match_id)
         plugin_status = self.replay_plugin.status()
@@ -775,7 +789,9 @@ class ApplicationRuntime:
             with self._lock:
                 clips = self.replays.snapshot(match_id).get("clips") or []
                 if not plugin_status.get("library_playback") and plugin_status.get("event_ready") and sources and not any(row.get("status") == "pending" for row in clips):
-                    if not any(row.get("source_paths") == sources for row in clips):
+                    source_key = (match_id, *sources)
+                    if source_key not in self.replays._imported_sources and not any(row.get("source_paths") == sources for row in clips):
+                        self.replays._imported_sources.add(source_key)
                         marker = self.replays.create_marker(match_id=match_id, label="Replay", period=int(self.read_state().get("match", {}).get("period") or 1))
                         def import_event():
                             try:
@@ -881,7 +897,8 @@ class ApplicationRuntime:
         client = self.require_supabase()
         if not self.active_match:
             raise RuntimeError("No hay un partido online cargado")
-        events = client.list_events(str(self.active_match.get("id") or ""))
+        match_id = str(self.active_match.get("id") or "")
+        events = client.list_events(match_id)
 
         def mutate(state: dict[str, Any]) -> None:
             apply_events_to_state(
@@ -891,16 +908,41 @@ class ApplicationRuntime:
                 rosters=self.rosters,
             )
 
-        self.mutate_state(mutate)
         with self._lock:
+            if self.supabase is not client or str((self.active_match or {}).get("id") or "") != match_id:
+                raise RuntimeError("El partido ha cambiado; vuelve a abrir el acta")
+            self.score_store.reconcile_event_goals(self._event_goals(events, self.active_match), manual=self.score_mode() == "manual")
+            self.mutate_state(mutate)
             self.events = events
         return events
+
+    @staticmethod
+    def _event_goals(events: list[dict[str, Any]], match: dict[str, Any]) -> dict[str, str]:
+        teams = {str((match.get("home_team") or {}).get("id")): "team1_score",
+                 str((match.get("away_team") or {}).get("id")): "team2_score"}
+        return {str(row["id"]): teams[str(row.get("team_id"))] for row in events
+                if row.get("id") and row.get("event_type") == "goal" and not row.get("cancelled_at") and str(row.get("team_id")) in teams}
 
     def cancel_online_event(self, event_id: str) -> list[dict[str, Any]]:
         client = self.require_supabase()
         if not self.active_match:
             raise RuntimeError("No hay un partido online cargado")
-        client.cancel_event(event_id)
+        client.cancel_match_event(str(self.active_match["id"]), event_id)
+        return self.refresh_online_events()
+
+    def edit_online_event(self, event_id: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
+        client = self.require_supabase()
+        if not self.active_match:
+            raise RuntimeError("No hay un partido online cargado")
+        team_key = payload["team"]
+        team = self.active_match.get("home_team" if team_key == "team1" else "away_team") or {}
+        # Existing acts may include players later removed from the call-up.
+        # Team/competition membership is checked again by the database.
+        client.edit_match_event(str(self.active_match["id"]), event_id, {
+            "team_id": team.get("id"), "player_id": payload["player_id"],
+            "assistant_id": payload.get("assistant_id"), "match_time": payload.get("match_time", ""),
+            "penalty_type": payload.get("penalty_type"), "notes": payload.get("notes", ""),
+        })
         return self.refresh_online_events()
 
     def refresh_statistics(self) -> dict[str, Any]:
@@ -1208,12 +1250,17 @@ class ApplicationRuntime:
         try:
             subscription = client.latest_workspace_subscription(workspace_id)
             access = evaluate_subscription(subscription, online=True)
-            self.subscription_store.save(
-                user_id=client.user_id,
-                workspace=self.active_workspace,
-                subscription=subscription,
-                access=access,
-            )
+            try:
+                self.subscription_store.save(
+                    user_id=client.user_id,
+                    workspace=self.active_workspace,
+                    subscription=subscription,
+                    access=access,
+                )
+            except OSError:
+                # A failed offline-cache write does not invalidate a successful
+                # authoritative online validation (including a revocation).
+                pass
             with self._lock:
                 self.subscription = subscription
                 self.subscription_access = access
@@ -1398,7 +1445,8 @@ class ApplicationRuntime:
 
     def load_match(self, competition_id: str, match_id: str) -> dict[str, Any]:
         client = self.require_supabase()
-        matches = self.matches_by_competition.get(competition_id) or client.list_matches(competition_id)
+        # Assignment may have changed since the selector was opened.
+        matches = client.list_matches(competition_id)
         match = next((item for item in matches if str(item.get("id")) == str(match_id)), None)
         if not match:
             raise RuntimeError("No se encontró el partido entre los asignados de hoy")
@@ -1467,6 +1515,7 @@ class ApplicationRuntime:
             )
 
         self.score_store.reset_reconciliation()
+        self.score_store.reconcile_event_goals(self._event_goals(events, match), seed=True)
         state, _ = self.mutate_state(mutate)
         with self._lock:
             self.competitions = competitions

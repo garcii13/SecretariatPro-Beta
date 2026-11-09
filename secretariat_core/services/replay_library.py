@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -11,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from secretariat_core.json_store import JSONStore
+from secretariat_core.json_store import JSONStore, LiveJSONStore
 
 
 def _now() -> str:
@@ -26,9 +27,15 @@ class ReplayLibrary:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self.exports_dir = Path(exports_dir).resolve() if exports_dir else self.base_dir / "videos"
         self.exports_dir.mkdir(parents=True, exist_ok=True)
-        self.store = JSONStore(self.base_dir / "library.json")
+        self.store = LiveJSONStore(self.base_dir / "library.json")
         self._lock = threading.RLock()
         self._export_lock = threading.Lock()
+        self._storage_config = JSONStore(self.base_dir / "storage.json")
+        self._default_exports = self.exports_dir
+        self._media_lock = threading.RLock()
+        self._storage_error = ""
+        self._imported_sources: set[tuple[str, ...]] = set()
+        self._apply_storage(self._storage_config.read({}))
         if exports_dir is not None:
             self._migrate_exports()
 
@@ -44,10 +51,108 @@ class ReplayLibrary:
         if match_id is not None:
             clips = [item for item in clips if str(item.get("match_id") or "") == str(match_id)]
             highlights = [item for item in highlights if str(item.get("match_id") or "") == str(match_id)]
-        return {"clips": clips, "highlights": highlights, "videos_directory": str(self.exports_dir if match_id is None else self.match_directory(match_id))}
+        return {"clips": clips, "highlights": highlights, "videos_directory": str(self.exports_dir if match_id is None else self.match_directory(match_id, create=False)), "storage": self.storage_status()}
+
+    def _apply_storage(self, config: dict[str, Any]) -> None:
+        self.storage_directory = str(config.get("directory") or "").strip()
+        root = Path(self.storage_directory).expanduser().resolve() if self.storage_directory else None
+        self.cache_dir = root / "SecretariatPro-cache" if root else self.base_dir / "clips"
+        self.exports_dir = root / "Repeticiones" if root else self._default_exports
+        self._export_roots = {self.exports_dir, self._default_exports, self.base_dir / "videos",
+                              *(Path(value).resolve() for value in config.get("export_roots", []))}
+        self._cache_roots = {self.cache_dir, self.base_dir / "clips",
+                             *(Path(value).resolve() for value in config.get("cache_roots", []))}
+        self.max_cache_bytes = int(float(config.get("max_cache_gb") or 8) * 1024 ** 3)
+        self.reserve_bytes = 2 * 1024 ** 3
+
+    def configure_storage(self, directory: str, max_cache_gb: float) -> dict[str, Any]:
+        if not 1 <= max_cache_gb <= 200:
+            raise ValueError("El límite de caché debe estar entre 1 y 200 GB")
+        directory = directory.strip()
+        if directory and not Path(directory).expanduser().is_absolute():
+            raise ValueError("Selecciona una ruta absoluta a una carpeta o unidad externa")
+        with self._export_lock, self._media_lock, self._lock:
+            if any(row.get("status") == "pending" for row in self.store.read(self._default()).get("clips", [])):
+                raise ValueError("Espera a que termine el guardado de cámaras")
+            if directory:
+                target = Path(directory).expanduser().resolve()
+                if not target.is_dir():
+                    raise ValueError("La carpeta no existe o la unidad no está conectada")
+                with tempfile.TemporaryFile(dir=target) as probe:
+                    probe.write(b"SecretariatPro")
+                    probe.flush()
+            config = {"directory": directory, "max_cache_gb": max_cache_gb,
+                      "export_roots": [str(path) for path in sorted(self._export_roots)],
+                      "cache_roots": [str(path) for path in sorted(self._cache_roots)]}
+            self._storage_config.write(config)
+            self._apply_storage(config)
+            self._storage_error = ""
+        return self.storage_status()
+
+    @staticmethod
+    def _volume_path(path: Path) -> Path:
+        while not path.exists() and path != path.parent:
+            path = path.parent
+        return path
+
+    def storage_status(self) -> dict[str, Any]:
+        try:
+            free = shutil.disk_usage(self._volume_path(self.cache_dir)).free
+        except OSError:
+            free = 0
+        if free >= self.reserve_bytes:
+            self._storage_error = ""
+        return {"directory": self.storage_directory, "cache_directory": str(self.cache_dir),
+                "max_cache_gb": self.max_cache_bytes / 1024 ** 3, "free_bytes": free,
+                "reserve_bytes": self.reserve_bytes, "low_space": free < self.reserve_bytes,
+                "pending_persistence": self.store.pending_persistence, "error": self._storage_error}
+
+    def require_space(self, path: Path, required_bytes: int = 0) -> None:
+        if self.storage_directory and not Path(self.storage_directory).expanduser().is_dir():
+            raise RuntimeError("La unidad de repeticiones no está conectada. El directo sigue activo.")
+        free = shutil.disk_usage(self._volume_path(path)).free
+        if free < self.reserve_bytes + required_bytes:
+            self._storage_error = "Espacio insuficiente para guardar repeticiones. Libera espacio o elige otra unidad; el directo sigue activo."
+            raise RuntimeError(self._storage_error)
+
+    def _cache_size(self) -> int:
+        return sum(p.stat().st_size for p in self.cache_dir.glob("*/*") if p.is_file() and not p.is_symlink())
+
+    def _prune_exported_cache(self, required: int = 0) -> None:
+        """Only discard raw copies with a completed, existing exported video.
+
+        Unexported marks and all named library videos are always retained.
+        The newest mark remains available to the compositor.
+        """
+        with self._lock:
+            data = self.store.read(self._default())
+            clips = data.get("clips", [])
+            saved_ids = {clip_id for row in data.get("highlights", [])
+                         if Path(row.get("path") or "").is_file() for clip_id in row.get("clip_ids", [])}
+            changed = False
+            for row in reversed(clips[1:]):
+                free = shutil.disk_usage(self._volume_path(self.cache_dir)).free
+                if self._cache_size() + required <= self.max_cache_bytes and free >= self.reserve_bytes + required:
+                    break
+                archive = self.cache_dir / str(row.get("id") or "")
+                if re.fullmatch(r"[a-f0-9]{32}", str(row.get("id") or "")) and row.get("id") in saved_ids and archive.parent == self.cache_dir and archive.is_dir() and not archive.is_symlink():
+                    shutil.rmtree(archive)
+                    row.update(status="archived", angles=[], path="", size_bytes=0)
+                    changed = True
+            if changed:
+                self.store.write(data)
+
+    def prepare_capture(self, capture_directory: Path | None = None) -> None:
+        with self._media_lock:
+            self._prune_exported_cache()
+            if self._cache_size() >= self.max_cache_bytes:
+                raise RuntimeError("La caché de repeticiones alcanzó su límite. Exporta los eventos pendientes o elige otra unidad.")
+            self.require_space(self.cache_dir)
+            if capture_directory is not None:
+                self.require_space(capture_directory)
 
     def create_highlights(self, *args, **kwargs):
-        with self._export_lock:
+        with self._export_lock, self._media_lock:
             return self._create_highlights(*args, **kwargs)
 
     def _migrate_exports(self):
@@ -72,10 +177,11 @@ class ReplayLibrary:
         if changed:
             self.store.write(payload)
 
-    def match_directory(self, match_id: str) -> Path:
+    def match_directory(self, match_id: str, *, create: bool = True) -> Path:
         name = "".join(c for c in str(match_id) if c.isalnum() or c in "-_")[:100] or "Sin-partido"
         directory = self.exports_dir / name
-        directory.mkdir(parents=True, exist_ok=True)
+        if create:
+            directory.mkdir(parents=True, exist_ok=True)
         return directory
 
     def create_marker(
@@ -118,7 +224,7 @@ class ReplayLibrary:
         with self._lock:
             payload = self.store.read(self._default())
             payload.setdefault("clips", []).insert(0, marker)
-            payload["clips"] = payload["clips"][:200]
+            # Never silently orphan media by dropping its metadata.
             self.store.write(payload)
         return dict(marker)
 
@@ -154,8 +260,18 @@ class ReplayLibrary:
             return dict(marker)
 
     def complete_multicam_marker(self, marker_id: str, saved_paths: list[dict[str, Any] | str]) -> dict[str, Any]:
+        with self._media_lock:
+            return self._complete_multicam_marker(marker_id, saved_paths)
+
+    def _complete_multicam_marker(self, marker_id: str, saved_paths: list[dict[str, Any] | str]) -> dict[str, Any]:
         # Archive marked angles before the plugin clears its temporary buffer.
-        archive = self.base_dir / "clips" / marker_id
+        sources = [Path(str(value.get("path") if isinstance(value, dict) else value)).expanduser().resolve() for value in saved_paths]
+        required = sum(path.stat().st_size for path in sources if path.is_file())
+        self._prune_exported_cache(required)
+        if self._cache_size() + required > self.max_cache_bytes:
+            raise RuntimeError("La caché está llena. Guarda o exporta los eventos pendientes antes de marcar más repeticiones.")
+        self.require_space(self.cache_dir, required)
+        archive = self.cache_dir / marker_id
         archive.mkdir(parents=True, exist_ok=True)
         angles: list[dict[str, Any]] = []
         for index, value in enumerate(saved_paths):
@@ -170,7 +286,16 @@ class ReplayLibrary:
                 raise RuntimeError(f"El clip de CAM {camera} no existe en disco")
             destination = archive / f"cam-{camera}{resolved.suffix}"
             if resolved != destination:
-                shutil.copy2(resolved, destination)
+                try:
+                    # Same-volume hard links keep marked angles safe when OBS
+                    # removes its temporary names without duplicating the video.
+                    os.link(resolved, destination)
+                except OSError:
+                    try:
+                        shutil.copy2(resolved, destination)
+                    except Exception:
+                        shutil.rmtree(archive, ignore_errors=True)
+                        raise
             resolved = destination
             angles.append({
                 "camera": camera,
@@ -199,6 +324,24 @@ class ReplayLibrary:
                 "angles": angles,
             })
             self.store.write(payload)
+            # OBS has completed the next mark and released the previous event.
+            # Retire only old plugin-owned names that point to the exact same
+            # archived inode; arbitrary originals and copied files are untouched.
+            for old in payload.get("clips", []):
+                if old.get("id") == marker_id:
+                    continue
+                for source_path in old.get("source_paths", []):
+                    source = Path(source_path)
+                    if source.parent not in {p.parent for p in sources} or not source.name.startswith("SP-CAM"):
+                        continue
+                    for angle in old.get("angles", []):
+                        archived = Path(angle.get("path") or "")
+                        try:
+                            if source != archived and archived.is_relative_to(self.cache_dir) and source.samefile(archived):
+                                source.unlink()
+                                break
+                        except OSError:
+                            pass  # OBS/Windows may still have a media handle open.
             return dict(marker)
 
     def fail_marker(self, marker_id: str, error: str) -> None:
@@ -269,15 +412,16 @@ class ReplayLibrary:
             row = next((r for r in payload.get("highlights", []) if r.get("id") == item_id and r.get("match_id") == match_id), None)
             if row is None:
                 raise KeyError(item_id)
-            trash = self.exports_dir / "Papelera" / item_id
             moved = []
             try:
                 for key in ("path", "thumbnail"):
                     source = Path(row.get(key) or "").resolve()
                     if not source.is_file():
                         continue
-                    if not (source.is_relative_to(self.exports_dir) or source.is_relative_to(self.base_dir / "videos")):
+                    owner = next((root for root in self._export_roots if source.is_relative_to(root)), None)
+                    if owner is None:
                         raise ValueError("El archivo no pertenece a la carpeta de repeticiones")
+                    trash = owner / "Papelera" / item_id
                     trash.mkdir(parents=True, exist_ok=True)
                     target = trash / source.name
                     source.replace(target)
@@ -357,6 +501,8 @@ class ReplayLibrary:
                 raise ValueError("Selecciona vídeos disponibles del partido actual")
         else:
             clips = self._ready_clips(match_id, clip_ids)
+        required = max(256 * 1024 ** 2, sum(int(c.get("size_bytes") or 0) for c in clips) * 3)
+        self.require_space(self.exports_dir, required)
         directory = self.match_directory(match_id)
         export_id = uuid.uuid4().hex
         clean_title = "".join(ch if ch.isalnum() or ch in "-_ " else "" for ch in str(title or "Highlights")).strip()
@@ -366,7 +512,8 @@ class ReplayLibrary:
             raise RuntimeError("FFmpeg no está disponible para guardar cámaras y velocidades")
         if ffmpeg:
             output = directory / f".{export_id}.mp4"
-            work_dir = Path(tempfile.mkdtemp(prefix="secretariatpro-highlights-"))
+            # Keep export scratch space on the chosen volume, not the system disk.
+            work_dir = Path(tempfile.mkdtemp(prefix=".secretariatpro-highlights-", dir=directory))
             concat_file = work_dir / "clips.txt"
             prepared: list[Path] = []
             try:
@@ -413,6 +560,9 @@ class ReplayLibrary:
                 if process.returncode != 0:
                     raise RuntimeError(process.stderr.strip() or "FFmpeg no pudo unir los clips")
                 method = "ffmpeg-multicam-composition" if any(clip.get("composition") for clip in clips) else "ffmpeg-fullhd-cover"
+            except Exception:
+                output.unlink(missing_ok=True)
+                raise
             finally:
                 shutil.rmtree(work_dir, ignore_errors=True)
         else:
@@ -510,4 +660,5 @@ class ReplayLibrary:
             payload = self.store.read(self._default())
             payload["clips"] = []
             self.store.write(payload)
-            shutil.rmtree(self.base_dir / "clips", ignore_errors=True)
+            for directory in self._cache_roots:
+                shutil.rmtree(directory, ignore_errors=True)

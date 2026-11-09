@@ -1387,6 +1387,11 @@ function renderPeriodControl(state, settings) {
 
 const replayText = (text) => textTranslation(text, app.language);
 function renderReplays(replays = {}) {
+  const storage = replays.storage || {};
+  const directoryInput = $("#replay-storage-directory"), limitInput = $("#replay-storage-limit");
+  if (directoryInput && !app.replayStorageDirty && document.activeElement !== directoryInput) directoryInput.value = storage.directory || "";
+  if (limitInput && !app.replayStorageDirty && document.activeElement !== limitInput) limitInput.value = storage.max_cache_gb || 8;
+  if ($("#replay-storage-status")) $("#replay-storage-status").textContent = storage.error || `${((storage.free_bytes || 0) / 1024 ** 3).toFixed(1)} GB libres · 2 GB de reserva`;
   app.replayLibrary = replays;
   const clips = replays.clips || [];
   const multicam = replays.status?.backend === "multicam-plugin" && Boolean(replays.status?.available);
@@ -1625,6 +1630,13 @@ async function takeGraphicsCue() {
 }
 
 function render(snapshot) {
+  const storageWarning = $("#storage-warning");
+  if (storageWarning) {
+    const storage = snapshot.replays?.storage || {};
+    const message = snapshot.storage_health?.message || storage.error || (storage.low_space ? "Poco espacio para repeticiones. Libera espacio o elige otra unidad." : "");
+    storageWarning.hidden = !message;
+    storageWarning.textContent = message;
+  }
   app.snapshot = snapshot;
   if (snapshot.settings?.language) app.language = snapshot.settings.language;
   const templates = snapshot.settings?.replay_templates || [];
@@ -2404,7 +2416,7 @@ function renderEvents(events) {
       <span class="event-time">${escapeHTML(event.match_time || "--:--")}</span>
       <span class="event-type">${escapeHTML(type)}</span>
       <span class="event-copy"><strong>${escapeHTML(person)}</strong><small>${escapeHTML(team)}${assistName ? ` · ASIST. ${escapeHTML(assistName)}` : ""}</small></span>
-      <button class="event-cancel" data-cancel-event="${escapeHTML(event.id || "")}" title="Anular evento">×</button>`;
+      <span class="event-actions"><button class="text-button" data-edit-event="${escapeHTML(event.id || "")}" title="Editar evento">Editar</button><button class="event-cancel" data-cancel-event="${escapeHTML(event.id || "")}" title="Anular evento">×</button></span>`;
     container.appendChild(row);
   });
 }
@@ -2777,6 +2789,7 @@ async function executeShortcutAction(action) {
 }
 
 async function handleGlobalShortcut(event) {
+  if (event.repeat || app.goalSubmitting) return;
   const target = event.target;
   if (target && (target.closest("input, textarea, select") || target.isContentEditable)) return;
   const combo = normalizeKeyboardEvent(event);
@@ -2821,6 +2834,7 @@ function closeProductionWorkflow() {
 }
 
 function openProductionWorkflow(kind, teamKey) {
+  if (app.goalSubmitting || (app.productionFlow.kind === kind && app.productionFlow.team === teamKey)) return;
   if (!app.snapshot?.online?.match?.id) return toast("Carga primero un partido online.", true);
   const players = kind === "profile" ? profilePlayers(teamKey) : calledUpPlayers(teamKey);
   if (!players.length) return toast(kind === "profile" ? "No hay jugadores disponibles en la plantilla." : "Guarda primero la convocatoria del equipo.", true);
@@ -2981,10 +2995,12 @@ function renderProductionWorkflow() {
 }
 
 async function submitProductionGoal(assistantId = null) {
+  if (app.goalSubmitting) return;
   const flow = app.productionFlow;
   const scorer = playerById(flow.team, flow.scorerId);
   if (!scorer) return toast("El goleador ya no está disponible.", true);
   if (assistantId && assistantId === flow.scorerId) return toast("Goleador y asistente no pueden ser el mismo jugador.", true);
+  app.goalSubmitting = true;
   try {
     const snapshot = await api("/api/events/goal", {
       method: "POST",
@@ -3004,6 +3020,7 @@ async function submitProductionGoal(assistantId = null) {
     toast(`Gol registrado · #${scorer.number || "—"} ${scorer.name}`);
     if (snapshot.goal_replay_flow && snapshot.goal_replay_marker_id) markReplay({goalFlow:true, markerId:snapshot.goal_replay_marker_id});
   } catch (error) { toast(error.message, true); }
+  finally { app.goalSubmitting = false; }
 }
 
 async function submitProductionPenalty(servingId = "") {
@@ -3030,6 +3047,7 @@ async function submitProductionPenalty(servingId = "") {
 }
 
 function handleProductionWorkflowClick(event) {
+  if (app.goalSubmitting) return;
   if (app.productionFlow.kind === "replay") return;
   const target = event.target.closest("[data-flow-action]");
   if (!target) return;
@@ -3365,6 +3383,7 @@ async function refreshOBSProjectorWindows({ announce = false, force = false } = 
 }
 
 function openGoalRegistration(teamKey) {
+  if (app.goalSubmitting || !$("#goal-modal").hidden) return;
   if (!app.snapshot?.online?.match?.id) return toast("Carga primero un partido online.", true);
   const players = calledUpPlayers(teamKey);
   if (!players.length) return toast("No hay jugadores disponibles para este equipo.", true);
@@ -3390,11 +3409,13 @@ function openGoalRegistration(teamKey) {
 
 async function submitGoal(event) {
   event.preventDefault();
+  if (app.goalSubmitting) return;
   const team = $("#goal-team").value;
   const scorerId = $("#goal-scorer").value;
   const assistantId = $("#goal-assistant").value || null;
   if (!scorerId) return toast("Selecciona el goleador.", true);
   if (assistantId && assistantId === scorerId) return toast("Goleador y asistente no pueden ser el mismo jugador.", true);
+  app.goalSubmitting = true;
   try {
     const snapshot = await api("/api/events/goal", {
       method: "POST",
@@ -3414,6 +3435,54 @@ async function submitGoal(event) {
     toast("Gol registrado en el acta.");
     if (snapshot.goal_replay_flow && snapshot.goal_replay_marker_id) markReplay({goalFlow:true, markerId:snapshot.goal_replay_marker_id});
   } catch (error) { toast(error.message, true); }
+  finally { app.goalSubmitting = false; }
+}
+
+function fillEventEditPlayers(playerId = "", assistantId = "") {
+  const team = $("#event-edit-team").value;
+  const options = (app.snapshot?.online?.rosters?.[team] || []).filter(row => row.member_type !== "coach").map(normalizedRosterRow)
+    .map(player => `<option value="${escapeHTML(player.player_id)}">${escapeHTML(playerOption(player))}</option>`).join("");
+  $("#event-edit-player").innerHTML = '<option value="">Selecciona jugador</option>' + options;
+  $("#event-edit-assistant").innerHTML = '<option value="">Sin asistencia</option>' + options;
+  $("#event-edit-player").value = playerId; $("#event-edit-assistant").value = assistantId;
+}
+
+function openEventEdit(eventId) {
+  const rows = app.snapshot?.online?.events || [];
+  const event = rows.find(row => String(row.id) === eventId);
+  if (!event) return;
+  app.editEventMatchId = app.snapshot.online.match.id;
+  $("#event-edit-id").value = eventId;
+  $("#event-edit-team").value = String(event.team_id) === String(app.snapshot.online.match.home_team?.id) ? "team1" : "team2";
+  const assist = rows.find(row => row.event_type === "assist" && row.related_event_id === eventId);
+  fillEventEditPlayers(event.player_id || "", assist?.player_id || "");
+  const penalty = event.event_type === "penalty";
+  $("#event-edit-assistant-wrap").hidden = penalty;
+  $("#event-edit-penalty-wrap").hidden = !penalty;
+  $("#event-edit-penalty-note").hidden = !penalty;
+  $("#event-edit-time").value = event.match_time || "";
+  $("#event-edit-notes").value = event.notes || "";
+  $("#event-edit-penalty").value = event.penalty_type || "2";
+  openModal("event-edit-modal");
+}
+
+async function submitEventEdit(event) {
+  event.preventDefault();
+  if (app.editEventMatchId !== app.snapshot?.online?.match?.id) return toast("El partido ha cambiado; vuelve a abrir el acta", true);
+  const button = event.submitter || $("#event-edit-form button[type=submit]");
+  if (button.disabled) return;
+  button.disabled = true;
+  try {
+    const penalty = !$("#event-edit-penalty-wrap").hidden;
+    render(await api(`/api/events/${encodeURIComponent($("#event-edit-id").value)}`, {method:"PATCH", body:JSON.stringify({
+      team:$("#event-edit-team").value, player_id:$("#event-edit-player").value,
+      assistant_id:penalty ? null : ($("#event-edit-assistant").value || null),
+      match_time:$("#event-edit-time").value.trim(), penalty_type:penalty ? $("#event-edit-penalty").value : null,
+      notes:$("#event-edit-notes").value.trim(),
+    })}));
+    closeModal("event-edit-modal"); toast("Evento actualizado.");
+  } catch (error) { toast(error.message, true); }
+  finally { button.disabled = false; }
 }
 
 async function refreshEvents() {
@@ -3905,6 +3974,21 @@ function switchView(viewName, button = null) {
 }
 
 function bindEvents() {
+  for (const selector of ["#replay-storage-directory", "#replay-storage-limit"]) $(selector).addEventListener("input", () => { app.replayStorageDirty = true; });
+  $("#event-edit-form").addEventListener("submit", submitEventEdit);
+  $("#event-edit-team").addEventListener("change", () => fillEventEditPlayers());
+  $("#replay-storage-save").addEventListener("click", async (event) => {
+    const button = event.currentTarget; button.disabled = true;
+    try {
+      const result = await api("/api/replays/storage", {method:"PATCH", body:JSON.stringify({
+        directory:$("#replay-storage-directory").value.trim(), max_cache_gb:Number($("#replay-storage-limit").value),
+      })});
+      app.replayStorageDirty = false;
+      renderReplays(result);
+      toast("Almacenamiento actualizado.");
+    } catch (error) { toast(error.message, true); }
+    finally { button.disabled = false; }
+  });
   bindOverlayFrameFitting();
   bindProductionResizers();
   window.addEventListener("resize", () => requestAnimationFrame(fitProductionActionGrid));
@@ -4255,6 +4339,8 @@ function bindEvents() {
     $("#finish-match-summary").textContent = `${home} ${$("#finish-home-score").value || 0} — ${$("#finish-away-score").value || 0} ${away}`;
   }));
   $("#events-list").addEventListener("click", (event) => {
+    const edit = event.target.closest("[data-edit-event]");
+    if (edit) return openEventEdit(edit.dataset.editEvent);
     const button = event.target.closest("[data-cancel-event]");
     if (button) cancelEvent(button.dataset.cancelEvent);
   });

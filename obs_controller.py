@@ -300,6 +300,8 @@ class OBSController:
                 "imageFormat": str(image_format or "png"),
                 "imageWidth": target_width,
             }
+            if str(image_format).lower() in {"jpg", "jpeg"}:
+                payload["imageCompressionQuality"] = 70
 
             try:
                 response = client.send("GetSourceScreenshot", payload, raw=True)
@@ -365,8 +367,10 @@ class OBSController:
                 preview.connect(self.host, self.port, self._password, timeout=1.0)
                 self._preview = preview
             preview = self._preview
-            scene_name = preview.current_program_scene() if refresh_scene or not self._program_scene_name else self._program_scene_name
             try:
+                if refresh_scene or not self._program_scene_name:
+                    self._program_scene_name = preview.current_program_scene()
+                scene_name = self._program_scene_name
                 return preview.screenshot(str(scene_name), width=width, image_format=image_format)
             except Exception:
                 preview.disconnect()

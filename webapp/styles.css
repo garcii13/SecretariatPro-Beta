@@ -2956,3 +2956,21 @@ html[data-app-theme="light"] #view-production button:focus-visible {outline:3px 
 .production-action-key:active, .production-player-key:active, #replay-guide button:active { transform:scale(.97); transition:transform 60ms ease-out; }
 
 .production-action-key[aria-busy="true"] { cursor:progress; box-shadow:inset 0 0 0 2px var(--accent,#6699cc); opacity:.8; }
+.storage-warning {padding:12px 20px; margin:12px 24px; border:1px solid #edb44c; border-radius:10px; background:#47381d; color:#fff0cc;}
+.event-actions {display:flex; align-items:center; gap:8px;}
+#event-edit-form [hidden] {display:none !important;}
+#event-edit-form {display:grid; gap:16px; margin-top:20px;}
+#event-edit-form .field {min-width:0; gap:8px;}
+#event-edit-form > button {margin-top:8px;}
+.replay-storage-settings {margin:16px 0 20px; padding:16px; border:1px solid var(--line); border-radius:12px;}
+.replay-storage-settings > summary {cursor:pointer; padding:4px 0;}
+.replay-storage-settings[open] > summary {margin-bottom:12px;}
+.replay-storage-grid {display:grid; grid-template-columns:minmax(0,1fr) 160px; gap:16px; margin:16px 0;}
+.replay-storage-grid .field {min-width:0; gap:8px;}
+.replay-storage-grid input {min-width:0; width:100%;}
+.replay-storage-settings > button {margin-bottom:8px;}
+.replay-storage-settings > .modal-note {margin:12px 0 0;}
+@media(max-width:640px) {.replay-storage-grid {grid-template-columns:minmax(0,1fr);} .event-actions {gap:8px;} }
+
+
+#view-live .event-row {grid-template-columns:58px 70px minmax(0,1fr) auto;}

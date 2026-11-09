@@ -171,6 +171,7 @@ function render(snapshot) {
 }
 
 function openWorkflow(kind, team) {
+  if (app.goalSubmitting || (app.flow.kind === kind && app.flow.team === team)) return;
   const players = kind === "profile" ? profilePlayers(team) : calledUp(team);
   if (!players.length) return toast(t("noRoster"), true);
   app.flow = { markerPromise: kind === "goal" ? captureNow("Gol", team) : null, requestId: requestId(), scoreBefore:Number(app.snapshot?.graphic_scores?.[team === "team1" ? "team1_score" : "team2_score"] || 0), eventTime:app.snapshot?.scores?.time || "", kind, team, step: kind === "goal" ? "scorer" : kind === "penalty" ? "penalty-type" : "profile", penaltyType:"", scorerId:"", offenderId:"" };
@@ -234,6 +235,8 @@ function renderWorkflow() {
 }
 
 async function submitGoal(assistantId = null) {
+  if (app.goalSubmitting) return;
+  app.goalSubmitting = true;
   const flow = app.flow;
   const scorer = playerById(flow.team, flow.scorerId);
   try {
@@ -242,6 +245,7 @@ async function submitGoal(assistantId = null) {
     if (result.goal_replay_flow && result.goal_replay_marker_id) openReplay(result.goal_replay_marker_id, true);
     toast(`${t("goalSaved")} · #${scorer?.number || "—"}`);
   } catch (error) { toast(error.message, true); }
+  finally { app.goalSubmitting = false; }
 }
 
 async function submitPenalty(servingId = "") {
@@ -253,6 +257,7 @@ async function submitPenalty(servingId = "") {
 }
 
 async function handleWorkflow(event) {
+  if (app.goalSubmitting) return;
   const button = event.target.closest("[data-action]");
   if (!button) return;
   const action = button.dataset.action;

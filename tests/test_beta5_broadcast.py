@@ -68,6 +68,13 @@ class SportPeriodTests(unittest.TestCase):
 
 
 class ReplayLibraryTests(unittest.TestCase):
+    def setUp(self):
+        # Media fixtures are a few bytes; normal replay behavior should not
+        # depend on free space on the developer's real system volume.
+        disk = patch("secretariat_core.services.replay_library.shutil.disk_usage", return_value=SimpleNamespace(free=32 * 1024 ** 3))
+        disk.start()
+        self.addCleanup(disk.stop)
+
     def test_saved_clip_metadata_and_fullhd_highlight_command(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

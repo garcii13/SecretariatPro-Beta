@@ -872,17 +872,47 @@
     const events = context.events || [];
     $("#match-events-list").innerHTML = events.length ? `<table class="data-table"><thead><tr><th>Tiempo</th><th>Equipo</th><th>Evento</th><th>Jugador</th><th></th></tr></thead><tbody>${events.map((event) => {
       const type = event.event_type === "goal" ? "Gol" : event.event_type === "assist" ? "Asistencia" : event.event_type === "penalty" ? `Expulsión ${event.penalty_type || "2"}` : event.event_type;
-      return `<tr><td>${escapeHtml(event.match_time || "—")}</td><td>${escapeHtml(event.team?.short_name || event.team?.name || "—")}</td><td>${escapeHtml(type)}</td><td>${escapeHtml(event.player?.display_name || [event.player?.first_name, event.player?.last_name].filter(Boolean).join(" ") || "—")}</td><td><div class="table-actions">${event.event_type !== "assist" ? `<button class="danger" data-delete-match-event="${escapeHtml(event.id)}">Eliminar</button>` : ""}</div></td></tr>`;
+      return `<tr><td>${escapeHtml(event.match_time || "—")}</td><td>${escapeHtml(event.team?.short_name || event.team?.name || "—")}</td><td>${escapeHtml(type)}</td><td>${escapeHtml(event.player?.display_name || [event.player?.first_name, event.player?.last_name].filter(Boolean).join(" ") || "—")}</td><td><div class="table-actions">${event.event_type !== "assist" ? `<button class="secondary" data-edit-match-event="${escapeHtml(event.id)}">Editar</button><button class="danger" data-delete-match-event="${escapeHtml(event.id)}">Eliminar</button>` : ""}</div></td></tr>`;
     }).join("")}</tbody></table>` : '<div class="empty-state">Todavía no hay eventos en el acta.</div>';
     $$('[data-delete-match-event]').forEach((button) => button.addEventListener("click", async () => {
       if (!confirm("¿Eliminar este evento del acta?")) return;
       try { state.matchEventContext = await api(`/api/matches/${state.selectedMatchEventId}/events/${button.dataset.deleteMatchEvent}`, { method: "DELETE" }); renderMatchEvents(); delete state.cache.matches; await loadMatches(true); }
       catch (error) { showToast(error.message, true); }
     }));
+    $$('[data-edit-match-event]').forEach(button => button.addEventListener("click", () => editMatchEvent(button.dataset.editMatchEvent)));
     refreshMatchEventPlayerControls();
   }
 
+  function resetMatchEventEditor() {
+    state.editingMatchEventId = "";
+    state.matchEventRequestId = crypto.randomUUID();
+    $("#match-event-type").disabled = false;
+    $("#match-event-submit").textContent = tr("Añadir al acta");
+    $("#match-event-edit-cancel").hidden = true;
+  }
+
+  function editMatchEvent(eventId) {
+    const events = state.matchEventContext?.events || [];
+    const event = events.find(row => row.id === eventId);
+    if (!event || state.matchEventSubmitting) return;
+    state.editingMatchEventId = eventId;
+    $("#match-event-type").value = event.event_type;
+    $("#match-event-type").disabled = true;
+    $("#match-event-team").value = event.team_id === state.matchEventContext.match.home_team_id ? "home" : "away";
+    refreshMatchEventPlayerControls();
+    $("#match-event-player").value = event.player_id || "";
+    $("#match-event-assistant").value = events.find(row => row.event_type === "assist" && row.related_event_id === eventId)?.player_id || "";
+    $("#match-event-time").value = event.match_time || "";
+    $("#match-event-penalty").value = event.penalty_type || "2";
+    $("#match-event-notes").value = event.notes || "";
+    $("#match-event-submit").textContent = tr("Guardar cambios");
+    $("#match-event-edit-cancel").hidden = false;
+    syncMatchEventType();
+    $("#match-event-form").scrollIntoView({block:"nearest"});
+  }
+
   async function openMatchEvents(matchId) {
+    resetMatchEventEditor();
     state.selectedMatchEventId = matchId;
     state.pendingMatchEventImport = null;
     try {
@@ -909,18 +939,25 @@
 
   async function submitMatchEvent(event) {
     event.preventDefault();
-    if (!state.selectedMatchEventId) return;
+    if (!state.selectedMatchEventId || state.matchEventSubmitting) return;
     const data = {
       event_type: $("#match-event-type").value, team: $("#match-event-team").value, match_time: $("#match-event-time").value.trim(),
       player_id: $("#match-event-player").value, assistant_id: $("#match-event-assistant").value || null,
       penalty_type: $("#match-event-penalty").value, notes: $("#match-event-notes").value.trim(),
+      request_id: state.matchEventRequestId || (state.matchEventRequestId = crypto.randomUUID()),
     };
+    if (data.event_type !== "goal") data.assistant_id = null;
+    state.matchEventSubmitting = true;
+    $("#match-event-submit").disabled = true;
     try {
-      const result = await api(`/api/matches/${state.selectedMatchEventId}/events`, { method: "POST", body: JSON.stringify({ data }) });
+      const editing = state.editingMatchEventId;
+      const result = await api(`/api/matches/${state.selectedMatchEventId}/events${editing ? '/' + encodeURIComponent(editing) : ''}`, { method: editing ? "PATCH" : "POST", body: JSON.stringify({ data }) });
+      resetMatchEventEditor();
       state.matchEventContext = result.context; renderMatchEvents(); delete state.cache.matches; await loadMatches(true);
       $("#match-event-time").value = ""; $("#match-event-notes").value = "";
-      showToast("Evento añadido al acta");
+      showToast(editing ? "Evento actualizado." : "Evento añadido al acta");
     } catch (error) { showToast(error.message, true); }
+    finally { state.matchEventSubmitting = false; $("#match-event-submit").disabled = false; }
   }
 
   async function downloadMatchEventTemplate() {
@@ -2069,6 +2106,7 @@ ${extra}`)) return;
     $("#match-events-close").addEventListener("click", closeMatchEvents);
     $("#match-events-backdrop").addEventListener("click", (event) => { if (event.target.id === "match-events-backdrop") closeMatchEvents(); });
     $("#match-event-form").addEventListener("submit", submitMatchEvent);
+    $("#match-event-edit-cancel").addEventListener("click", () => { resetMatchEventEditor(); $("#match-event-form").reset(); syncMatchEventType(); refreshMatchEventPlayerControls(); });
     $("#match-event-type").addEventListener("change", syncMatchEventType);
     $("#match-event-team").addEventListener("change", refreshMatchEventPlayerControls);
     $("#match-events-template").addEventListener("click", downloadMatchEventTemplate);

@@ -6,7 +6,7 @@ import time
 
 
 class ProgramPreview:
-    def __init__(self, fps: float = 8.0):
+    def __init__(self, fps: float = 25.0):
         self.interval = 1.0 / fps
         self._lock = threading.Lock()
         self._frame = None
@@ -25,7 +25,9 @@ class ProgramPreview:
             frame = obs.program_screenshot(width=960, image_format="jpg", refresh_scene=refresh)
             self._owner = obs
             self._frame = frame
-            self._captured_at = time.monotonic()
+            # Budget capture time inside the frame interval. Sleeping a full
+            # interval after a slow OBS request used to halve the effective FPS.
+            self._captured_at = now
             if refresh:
                 self._scene_at = self._captured_at
             return frame

@@ -1307,3 +1307,24 @@ html[data-app-theme="light"] .count { color: #31566a !important; background: tra
 #view-federations .federation-connection-card { min-width:0; }
 #view-federations .federation-connection-card h3,
 #view-federations .federation-connection-card p { overflow-wrap:anywhere; }
+#match-event-form [hidden], #match-event-edit-cancel[hidden] {display:none !important;}
+#match-event-form .modal-actions {gap:12px; margin-top:20px; flex-wrap:wrap;}
+
+/* Keep controls separated horizontally and vertically, including wrapped rows. */
+.form-grid {column-gap:16px; row-gap:18px;}
+.form-grid > label {min-width:0; gap:8px;}
+.heading-actions, .detail-actions, .table-actions, .modal-actions {gap:12px;}
+.detail-actions {flex-wrap:wrap;}
+.modal-actions {margin-top:20px;}
+.match-events-modal {width:min(840px,100%);}
+.match-events-toolbar {display:flex; flex-wrap:wrap; gap:12px; margin:20px 0 10px;}
+#match-events-template-status {display:block; line-height:1.5; margin-bottom:20px;}
+#match-event-form {margin-top:0; padding:20px;}
+#match-events-list {margin-top:24px;}
+html[data-app-theme="light"] .data-table td {color:var(--text);}
+.match-events-modal .modal-head > div {min-width:0;}
+.match-events-modal .icon-button {flex-shrink:0;}
+@media(max-width:700px) {
+  .match-events-toolbar > button {flex:1 1 100%; width:100%;}
+  #match-event-form {padding:16px;}
+}

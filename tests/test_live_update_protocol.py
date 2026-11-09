@@ -2,6 +2,7 @@
 import ast
 import asyncio
 import json
+import logging
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,7 +18,7 @@ def production_definitions(**context):
     tree = ast.parse(source.read_text(encoding="utf-8"))
     names = {"watch_state_files", "ConnectionManager", "_tablet_snapshot"}
     nodes = [node for node in tree.body if getattr(node, "name", None) in names]
-    namespace = {"asyncio": asyncio, "json": json, "Any": Any, "WebSocket": object, "is_loopback": is_loopback, **context}
+    namespace = {"asyncio": asyncio, "json": json, "logging": logging, "__name__": __name__, "Any": Any, "WebSocket": object, "is_loopback": is_loopback, **context}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)
     return namespace
 
@@ -42,7 +43,7 @@ class LiveUpdateProtocolTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("ocr_runtime", remote["payload"])
         self.assertIn("ocr_runtime", json.loads(desktop.send_text.call_args.args[0])["payload"])
 
-    async def check_file_change(self, structural):
+    async def check_file_change(self, structural, memory_only=False):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             paths = SimpleNamespace(data_file=root / "data.json", app_settings_file=root / "settings.json",
@@ -50,7 +51,8 @@ class LiveUpdateProtocolTests(unittest.IsolatedAsyncioTestCase):
                                     scores_dir=root)
             for path in (paths.data_file, root / "Time.txt"):
                 path.write_text("initial")
-            runtime = SimpleNamespace(paths=paths, score_store=SimpleNamespace(FILES={"time": "Time.txt"}),
+            runtime = SimpleNamespace(paths=paths, score_store=SimpleNamespace(FILES={"time": "Time.txt"}, revision=0),
+                                      state_store=SimpleNamespace(_store=SimpleNamespace(revision=0)),
                                       advance_powerplays=Mock(return_value=False), refresh_published_theme=Mock(return_value=False),
                                       live_snapshot=Mock(return_value={"scores": {"time": "01:23"}}))
             stop = asyncio.Event()
@@ -64,7 +66,10 @@ class LiveUpdateProtocolTests(unittest.IsolatedAsyncioTestCase):
             task = asyncio.create_task(namespace["watch_state_files"](stop))
             try:
                 await asyncio.sleep(0.03)
-                (paths.data_file if structural else root / "Time.txt").write_text("changed value")
+                if memory_only:
+                    runtime.score_store.revision += 1
+                else:
+                    (paths.data_file if structural else root / "Time.txt").write_text("changed value")
                 await asyncio.wait_for(task, timeout=2)
             finally:
                 stop.set()
@@ -81,6 +86,9 @@ class LiveUpdateProtocolTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_clock_change_uses_light_update(self):
         await self.check_file_change(False)
+
+    async def test_clock_keeps_broadcasting_when_disk_mtime_cannot_change(self):
+        await self.check_file_change(False, memory_only=True)
 
     async def test_match_change_keeps_full_update(self):
         await self.check_file_change(True)

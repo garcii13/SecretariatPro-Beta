@@ -18,7 +18,7 @@ _ROSTER_IMPORT_LOCK = RLock()
 from datetime import date, datetime, time as dt_time, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
+from uuid import uuid4, uuid5, NAMESPACE_URL
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
@@ -965,9 +965,10 @@ class ScoreboardSupabaseClient:
             if assistant_id == player_id:
                 raise ValueError("Goleador y asistente no pueden ser el mismo jugador")
             goal, assist = self.create_goal_with_assist(
-                match_id=str(match_id), team_id=team_id, scorer_id=player_id, assistant_id=assistant_id, match_time=match_time, goal_notes=notes
+                match_id=str(match_id), team_id=team_id, scorer_id=player_id, assistant_id=assistant_id, match_time=match_time, goal_notes=notes,
+                request_id=str(payload.get("request_id") or ""),
+                recalculate_score=True,
             )
-            self._manager_recalculate_match_score(match_id)
             return {"event": goal, "assist": assist}
         if event_type == "penalty":
             if not player_id:
@@ -994,17 +995,17 @@ class ScoreboardSupabaseClient:
     def manager_cancel_match_event(self, match_id: str, event_id: str) -> dict[str, Any]:
         self._require_competition_manager()
         self._manager_match_row(match_id)
-        events = self.list_events(str(match_id))
-        target = next((row for row in events if str(row.get("id") or "") == str(event_id)), None)
-        if not target:
-            raise ValueError("Evento no encontrado")
-        self.cancel_event(str(event_id))
-        if target.get("event_type") == "goal":
-            for row in events:
-                if row.get("event_type") == "assist" and str(row.get("related_event_id") or "") == str(event_id):
-                    self.cancel_event(str(row.get("id")))
-            self._manager_recalculate_match_score(match_id)
+        self._write_match_event(str(match_id), str(event_id), "cancel", {"recalculate_score": True})
         return {"ok": True}
+
+    def manager_edit_match_event(self, match_id: str, event_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        self._require_competition_manager()
+        match = self._manager_match_row(match_id)
+        side = str(payload.get("team") or "")
+        if side not in {"home", "away"}:
+            raise ValueError("Selecciona equipo local o visitante")
+        data = dict(payload, team_id=match[f"{side}_team_id"], recalculate_score=True)
+        return self.edit_match_event(match_id, event_id, data)
 
     def manager_list_members(self) -> list[dict[str, Any]]:
         workspace_id = self._active_workspace_id()
@@ -2134,10 +2135,13 @@ class ScoreboardSupabaseClient:
             )
             .eq("competition_id", competition_id)
         )
-        role = str((self.active_membership or {}).get("role") or "producer")
-        assignment_mode = str((self.active_workspace or {}).get("assignment_mode") or "assigned")
-        if role == "producer" and assignment_mode == "assigned":
-            response = response.eq("assigned_to", self.user_id)
+        # Live is an operator view, including when its user also owns Manager.
+        # Administrative and federation acts remain available in Manager.
+        response = response.eq("assigned_to", self.user_id)
+        workspace_id = str((self.active_workspace or {}).get("id") or "")
+        if not workspace_id:
+            raise RuntimeError("Selecciona un espacio antes de consultar partidos")
+        response = response.eq("workspace_id", workspace_id)
         response = response.eq("broadcast_enabled", True)
         response = (
             response.gte("match_date", start_utc)
@@ -2278,26 +2282,35 @@ class ScoreboardSupabaseClient:
         assistant_id: str | None,
         match_time: str = "",
         goal_notes: str = "",
+        request_id: str = "",
+        recalculate_score: bool = False,
     ) -> tuple[dict[str, Any], dict[str, Any] | None]:
-        goal = self.create_event(
-            match_id=match_id,
-            team_id=team_id,
-            player_id=scorer_id,
-            event_type="goal",
-            match_time=match_time,
-            notes=goal_notes,
-        )
-        assist = None
-        if assistant_id:
-            assist = self.create_event(
-                match_id=match_id,
-                team_id=team_id,
-                player_id=assistant_id,
-                event_type="assist",
-                match_time=match_time,
-                related_event_id=goal["id"],
-            )
-        return goal, assist
+        # The same physical submission keeps its event ID across lost HTTP
+        # responses, disk errors and application restarts. The database commits
+        # the goal and its assist together under the match row lock.
+        event_id = str(uuid5(NAMESPACE_URL, f"secretariatpro:{self.user_id}:{match_id}:{request_id}")) if request_id else str(uuid4())
+        result = self._write_match_event(match_id, event_id, "goal", {
+            "team_id": team_id, "player_id": scorer_id, "assistant_id": assistant_id,
+            "match_time": match_time, "notes": goal_notes,
+            "recalculate_score": recalculate_score,
+        })
+        goal = dict(result["event"])
+        goal["_newly_created"] = bool(result.get("created"))
+        return goal, result.get("assist")
+
+    def _write_match_event(self, match_id: str, event_id: str, action: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        result = self.client.rpc("sp_write_match_event", {
+            "p_match_id": str(match_id), "p_event_id": str(event_id), "p_action": action, "p_data": data or {},
+        }).execute().data
+        if not isinstance(result, dict) or not (result.get("event") or {}).get("id"):
+            raise RuntimeError("El servidor no confirmó el evento")
+        return result
+
+    def edit_match_event(self, match_id: str, event_id: str, data: dict[str, Any]) -> dict[str, Any]:
+        return self._write_match_event(match_id, event_id, "edit", data)
+
+    def cancel_match_event(self, match_id: str, event_id: str) -> dict[str, Any]:
+        return self._write_match_event(match_id, event_id, "cancel")
 
     def list_events(self, match_id: str) -> list[dict[str, Any]]:
         response = (

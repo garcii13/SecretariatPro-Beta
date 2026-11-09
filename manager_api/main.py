@@ -553,6 +553,15 @@ async def cancel_match_event(match_id: str, event_id: str) -> dict[str, Any]:
     return context
 
 
+@app.patch("/api/matches/{match_id}/events/{event_id}")
+async def edit_match_event(match_id: str, event_id: str, payload: MatchEventPayload) -> dict[str, Any]:
+    client = runtime.require_connected()
+    result = await run_write(client.manager_edit_match_event, match_id, event_id, payload.data)
+    context = await run_read(client.manager_match_event_context, match_id)
+    federation_exchange.manager_capture(client, context)
+    return {"result": result, "context": context}
+
+
 def _match_event_template_bytes(context: dict[str, Any]) -> bytes:
     try:
         from openpyxl import Workbook

@@ -72,6 +72,16 @@ body .scoreboard .sp-status-item:not(.sp-status-item--empty-net) {
 /* State is still owned by Live. The controller only keeps an exiting graphic
    visible until its short outro finishes; interruption cancels that outro. */
 body [data-sp-motion] {transition:none !important;}
+/* These IDs also have !important legacy transitions. The motion engine owns
+   the entire exit, including the final off state; never start a second drawer. */
+body #bottom-bar[data-sp-motion],
+body #player-profile-bar[data-sp-motion] {
+  transition:none !important;
+  animation:none !important;
+  bottom:70px !important;
+}
+body #bottom-bar[data-sp-motion="off"],
+body #player-profile-bar[data-sp-motion="off"] {display:none !important;}
 body #scoreboard-wrapper:is([data-sp-motion="on"],[data-sp-motion="exiting"]) {
   transform:translate(-50%,48px) !important;opacity:1 !important;
 }

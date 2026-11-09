@@ -56,6 +56,20 @@ class BroadcastFlow:
             self.task.cancel()
         self.task = None
 
+    async def correct_event(self, event_id: str) -> None:
+        state = self.runtime.read_state()
+        bottom = state.get("bottombar") or {}
+        card = state.get("pending_goal_celebration") or (bottom if bottom.get("status") == "show" else {})
+        if card.get("event_id") != event_id:
+            return
+        phase = (state.get("broadcast_flow") or {}).get("phase", "IDLE")
+        self.cancel()
+        await asyncio.to_thread(self.runtime.mutate_state, lambda value: value.pop("pending_goal_celebration", None))
+        if phase in {"REPLAY", "REPLAY_LOADING", "REPLAY_CONNECTION_LOST", "LIVE"}:
+            await self.playing(goal=False)
+        else:
+            await self._state("IDLE", scoreboard=True)
+
     async def begin(self, goal: dict | None = None) -> None:
         self.cancel()
         token = self.generation

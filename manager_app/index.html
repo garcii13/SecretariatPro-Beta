@@ -22,7 +22,7 @@
     })();
   </script>
   <!-- Compatibility: styles.css?v=phase42 -->
-  <link rel="stylesheet" href="/manager/styles.css?v=phase56-exchange-2">
+  <link rel="stylesheet" href="/manager/styles.css?v=phase56-exchange-2&release=beta12.2">
 </head>
 <body data-compat-build="phase38" data-manager-release="phase56">
   <div class="ambient ambient-one" aria-hidden="true"></div>
@@ -323,7 +323,7 @@
           <label id="match-event-penalty-wrap" hidden>Sanción<select id="match-event-penalty"><option value="2">2</option><option value="2+2">2+2</option><option value="2+10">2+10</option></select></label>
           <label class="full">Notas<input id="match-event-notes" placeholder="Opcional"></label>
         </div>
-        <div class="modal-actions"><button type="submit">Añadir al acta</button></div>
+        <div class="modal-actions"><button type="button" class="secondary" id="match-event-edit-cancel" hidden>Cancelar edición</button><button type="submit" id="match-event-submit">Añadir al acta</button></div>
       </form>
       <div id="match-events-import-preview" class="notice" hidden></div>
       <div class="modal-actions" id="match-events-import-actions" hidden><button type="button" class="secondary" id="match-events-import-cancel">Cancelar importación</button><button type="button" id="match-events-import-confirm">Confirmar eventos válidos</button></div>
@@ -347,6 +347,6 @@
   <div class="toast" id="toast" hidden></div>
   <!-- Compatibility: app.js?v=phase42 -->
   <script src="/manager/federation-i18n.js?v=phase56-exchange-2"></script>
-  <script src="/manager/app.js?v=phase56-exchange-2"></script>
+  <script src="/manager/app.js?v=phase56-exchange-2&release=beta12.2"></script>
 </body>
 </html>

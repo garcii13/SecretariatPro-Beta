@@ -1,7 +1,8 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from types import SimpleNamespace
 
 from secretariat_core.services.graphics_sequences import delete_sequence, find_sequence, save_sequence
 from secretariat_core.services.replay_library import ReplayLibrary
@@ -11,6 +12,11 @@ from secretariat_core.settings_store import normalize_settings
 
 
 class Beta6ReplaySequenceTests(unittest.TestCase):
+    def setUp(self):
+        disk = patch("secretariat_core.services.replay_library.shutil.disk_usage", return_value=SimpleNamespace(free=32 * 1024 ** 3))
+        disk.start()
+        self.addCleanup(disk.stop)
+
     def test_graphics_sequences_are_normalized_and_personal_settings_keep_them(self):
         settings = normalize_settings({})
         sequence = save_sequence(settings, {

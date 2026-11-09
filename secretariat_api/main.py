@@ -58,6 +58,7 @@ from .schemas import (
     GraphicsCueMoveRequest,
     GraphicsSequenceRequest,
     GoalPayload,
+    EventEditPayload,
     ReplayTemplateRequest,
     LoginRequest,
     PasswordResetRequest,
@@ -76,6 +77,7 @@ from .schemas import (
     TimeRequest,
     PeriodRequest,
     ReplayMarkRequest,
+    ReplayStorageRequest,
     ReplaySelectionRequest,
     HighlightsRequest,
     ReplayCompositionRequest,
@@ -206,27 +208,35 @@ async def watch_state_files(stop_event: asyncio.Event) -> None:
     watched.extend(score_paths)
     mtimes: dict[str, int] = {}
     while not stop_event.is_set():
-        changed = await run_in_threadpool(runtime.advance_powerplays)
-        scores_changed = False
-        for path in watched:
-            try:
-                mtime = path.stat().st_mtime_ns
-            except OSError:
-                mtime = -1
-            key = str(path)
-            if key in mtimes and mtimes[key] != mtime:
-                if path in score_paths:
-                    scores_changed = True
-                else:
-                    changed = True
-            mtimes[key] = mtime
-        if changed:
-            await broadcast_state()
-        elif scores_changed:
-            # Clock ticks must not query OBS, rebuild replay libraries or
-            # regenerate the entire desktop/tablet interface.
-            live = await run_in_threadpool(runtime.live_snapshot)
-            await manager.broadcast({"type": "live", "payload": live})
+        try:
+            revision = runtime.state_store._store.revision
+            changed = revision != mtimes.get("memory_revision", revision)
+            mtimes["memory_revision"] = revision
+            changed = await run_in_threadpool(runtime.advance_powerplays) or changed
+            score_revision = runtime.score_store.revision
+            scores_changed = score_revision != mtimes.get("score_revision", score_revision)
+            mtimes["score_revision"] = score_revision
+            for path in watched:
+                try:
+                    mtime = path.stat().st_mtime_ns
+                except OSError:
+                    mtime = -1
+                key = str(path)
+                if key in mtimes and mtimes[key] != mtime:
+                    if path in score_paths:
+                        scores_changed = True
+                    else:
+                        changed = True
+                mtimes[key] = mtime
+            if changed:
+                await broadcast_state()
+            elif scores_changed:
+                # Clock ticks must not query OBS, rebuild replay libraries or
+                # regenerate the entire desktop/tablet interface.
+                live = await run_in_threadpool(runtime.live_snapshot)
+                await manager.broadcast({"type": "live", "payload": live})
+        except Exception:
+            logging.getLogger(__name__).exception("La sincronización del directo se recuperará en el siguiente ciclo")
         try:
             await asyncio.wait_for(stop_event.wait(), timeout=0.35)
         except asyncio.TimeoutError:
@@ -1115,7 +1125,7 @@ async def projector_stream() -> StreamingResponse:
     )
 
 
-_program_preview = ProgramPreview(fps=8)
+_program_preview = ProgramPreview(fps=25)
 
 
 def _obs_program_frames():
@@ -1124,6 +1134,7 @@ def _obs_program_frames():
 
     failures = 0
     while runtime.obs is not None and runtime.obs.connected:
+        started = time.monotonic()
         try:
             frame = _program_preview.read(runtime.obs)
             failures = 0
@@ -1134,7 +1145,7 @@ def _obs_program_frames():
                 return
         # Monitoring only: output/recording FPS and OCR capture are unchanged.
         # Demand-driven requests stop when the last monitor disconnects.
-        time.sleep(_program_preview.interval)
+        time.sleep(max(0.001, (0.25 if failures else _program_preview.interval) - (time.monotonic() - started)))
 
 
 @app.get("/api/obs/program-stream")
@@ -1150,6 +1161,15 @@ async def obs_program_stream() -> StreamingResponse:
 
 @app.get("/api/replays")
 async def replay_library() -> dict[str, Any]:
+    return await run_in_threadpool(runtime.replay_snapshot)
+
+
+@app.patch("/api/replays/storage")
+async def replay_storage(payload: ReplayStorageRequest) -> dict[str, Any]:
+    try:
+        await run_in_threadpool(runtime.replays.configure_storage, payload.directory, payload.max_cache_gb)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(400, str(exc)) from exc
     return await run_in_threadpool(runtime.replay_snapshot)
 
 
@@ -1188,6 +1208,8 @@ async def _save_replay_marker(marker: dict[str, Any]) -> None:
         if runtime.obs is None:
             raise RuntimeError("El controlador OBS no está disponible")
         plugin = await asyncio.to_thread(runtime.replay_plugin.status)
+        await asyncio.to_thread(runtime.replays.prepare_capture,
+                                runtime.replay_plugin.status_path.parent / "replays" if plugin.get("available") else None)
         if plugin.get("available"):
             result = await asyncio.to_thread(runtime.replay_plugin.mark)
             await asyncio.to_thread(
@@ -1199,7 +1221,10 @@ async def _save_replay_marker(marker: dict[str, Any]) -> None:
             path = await asyncio.to_thread(runtime.obs.save_replay_buffer)
             await asyncio.to_thread(runtime.replays.complete_marker, marker["id"], path)
     except Exception as exc:
-        await asyncio.to_thread(runtime.replays.fail_marker, marker["id"], str(exc))
+        try:
+            await asyncio.to_thread(runtime.replays.fail_marker, marker["id"], str(exc))
+        except OSError:
+            logging.getLogger(__name__).exception("No se pudo guardar el estado de la repetición")
     try:
         await broadcast_state()
     except Exception:
@@ -1853,11 +1878,24 @@ async def refresh_events() -> dict[str, Any]:
 
 @app.delete("/api/events/{event_id}")
 async def cancel_event(event_id: str) -> dict[str, Any]:
-    try:
-        await run_in_threadpool(runtime.cancel_online_event, event_id)
-    except Exception as exc:
-        raise HTTPException(400, str(exc)) from exc
-    return await broadcast_state()
+    async with _goal_submit_lock:
+        try:
+            await run_in_threadpool(runtime.cancel_online_event, event_id)
+        except Exception as exc:
+            raise HTTPException(400, str(exc)) from exc
+        await broadcast_flow.correct_event(event_id)
+        return await broadcast_state()
+
+
+@app.patch("/api/events/{event_id}")
+async def edit_event(event_id: str, payload: EventEditPayload) -> dict[str, Any]:
+    async with _goal_submit_lock:
+        try:
+            await run_in_threadpool(runtime.edit_online_event, event_id, payload.model_dump())
+        except Exception as exc:
+            raise HTTPException(400, str(exc)) from exc
+        await broadcast_flow.correct_event(event_id)
+        return await broadcast_state()
 
 
 _goal_submit_lock = asyncio.Lock()
@@ -1866,9 +1904,9 @@ _goal_results: dict[str, dict] = {}
 @app.post("/api/events/goal")
 async def create_goal(payload: GoalPayload) -> dict[str, Any]:
     async with _goal_submit_lock:
-        key = f"{(runtime.active_match or {}).get('id')}:{payload.request_id}"
+        key = f"{getattr(runtime.supabase, 'user_id', '')}:{(runtime.active_workspace or {}).get('id')}:{(runtime.active_match or {}).get('id')}:{payload.request_id}"
         if payload.request_id and key in _goal_results:
-            return _goal_results[key]
+            return await broadcast_state()
         result = await _create_goal(payload)
         if payload.request_id:
             _goal_results[key] = result
@@ -1898,7 +1936,7 @@ async def _create_goal(payload: GoalPayload) -> dict[str, Any]:
     goal_marker: dict[str, Any] | None = None
     goal_replay_flow = False
     try:
-        await run_in_threadpool(
+        goal_event, _ = await run_in_threadpool(
             runtime.supabase.create_goal_with_assist,
             match_id=runtime.active_match["id"],
             team_id=team["id"],
@@ -1906,9 +1944,16 @@ async def _create_goal(payload: GoalPayload) -> dict[str, Any]:
             assistant_id=payload.assistant_id,
             match_time=match_time,
             goal_notes="powerplay_goal" if powerplay_goal else "",
+            request_id=payload.request_id,
         )
+        if goal_event.get("cancelled_at"):
+            raise RuntimeError("Este gol ya está anulado. Abre un registro nuevo para añadir otro gol.")
         score_key = "team1_score" if payload.team == "team1" else "team2_score"
-        internal = await run_in_threadpool(runtime.score_store.confirm_goal, score_key, payload.score_before)
+        event_id = str(goal_event["id"])
+        reconciliation = runtime.score_store.reconciliation()
+        was_confirmed = event_id in reconciliation.get("confirmed_events", []) or (
+            reconciliation.get("event_goals_initialized") and event_id in reconciliation.get("event_goals", {}))
+        internal = await run_in_threadpool(runtime.score_store.confirm_goal, score_key, payload.score_before, event_id)
         if runtime.score_mode() == "manual":
             await run_in_threadpool(runtime.score_store.write_readings, {score_key: internal})
         await run_in_threadpool(runtime.mutate_state, lambda state: state.update(graphic_scores=runtime.graphic_scores()))
@@ -1917,6 +1962,8 @@ async def _create_goal(payload: GoalPayload) -> dict[str, Any]:
             events = await run_in_threadpool(runtime.refresh_online_events)
         except Exception:
             events = list(getattr(runtime, "events", []) or [])
+        if was_confirmed:
+            return await broadcast_state()
         # Floorball ends the first opposing minor penalty after a power-play goal.
         # Handball suspensions always continue until their own clock expires.
         if powerplay_goal and runtime.sport_mode() != "handball":
@@ -1940,6 +1987,7 @@ async def _create_goal(payload: GoalPayload) -> dict[str, Any]:
             team_state=current_state.get(payload.team) or {},
         )
         lower_third["graphic_scores"] = runtime.graphic_scores()
+        lower_third["event_id"] = event_id
         replay_settings = (runtime.settings_store.load().get("obs") or {})
         if runtime.obs and runtime.obs.connected:
             try:
@@ -1951,12 +1999,6 @@ async def _create_goal(payload: GoalPayload) -> dict[str, Any]:
                         or " ".join(str(player_data.get(key) or "") for key in ("first_name", "last_name")).strip()
                         or "Gol"
                     )
-                    event_id = ""
-                    for event in events:
-                        event_player = event.get("player") or {}
-                        if event.get("event_type") == "goal" and str(event_player.get("id") or event.get("player_id") or "") == str(payload.scorer_id):
-                            event_id = str(event.get("id") or "")
-                            break
                     if payload.marker_id:
                         goal_marker = await run_in_threadpool(runtime.replays.update_marker, payload.marker_id, str(runtime.active_match["id"]), label=f"Gol · {player_name}", event_type="Gol", event_id=event_id, team=str(team.get("name") or ""), player=player_name, assistant=runtime._profile_display_name((assistant_row or {}).get("player") or assistant_row or {}) if assistant_row else "")
                     else:
