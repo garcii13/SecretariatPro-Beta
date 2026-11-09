@@ -5,6 +5,7 @@ from typing import Any
 import os
 import tempfile
 import threading
+import time
 from copy import deepcopy
 
 from .json_store import JSONStore, LiveJSONStore, storage_exhausted
@@ -70,6 +71,7 @@ class ScoreFileStore:
         self._reconciliation = LiveJSONStore(self.scores_dir / "reconciliation.json")
         self._pending_readings: dict[str, str] = {}
         self.revision = 0
+        self._pending_retry_at = 0.0
 
     @staticmethod
     def _atomic_write(path: Path, value: str) -> None:
@@ -103,6 +105,7 @@ class ScoreFileStore:
                         if not storage_exhausted(exc):
                             raise
                         self._pending_readings[key] = text
+                        self._pending_retry_at = time.monotonic() + 5
                     else:
                         self._pending_readings.pop(key, None)
                     if changed:
@@ -112,7 +115,18 @@ class ScoreFileStore:
         filename = self.FILES.get(key, key)
         with self._lock:
             if key in self._pending_readings:
-                return self._pending_readings[key]
+                value = self._pending_readings[key]
+                if time.monotonic() >= self._pending_retry_at:
+                    self._pending_retry_at = time.monotonic() + 5
+                    # Recover all pending score files, including manual values
+                    # that may not receive another write after space is freed.
+                    for pending_key, pending_value in list(self._pending_readings.items()):
+                        try:
+                            self._atomic_write(self.scores_dir / self.FILES[pending_key], pending_value)
+                        except OSError:
+                            continue
+                        self._pending_readings.pop(pending_key, None)
+                return value
             try:
                 return (self.scores_dir / filename).read_text(encoding="utf-8").strip()
             except OSError:

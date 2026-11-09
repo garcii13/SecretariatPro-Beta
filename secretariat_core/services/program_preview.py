@@ -15,8 +15,10 @@ class ProgramPreview:
         self._scene_at = float("-inf")
 
     def read(self, obs):
+        # Requests already waiting for this capture share its result even if
+        # OBS takes longer than one frame interval to answer.
+        now = time.monotonic()
         with self._lock:
-            now = time.monotonic()
             if self._owner is obs and self._frame is not None and now - self._captured_at < self.interval:
                 return self._frame
             refresh = self._owner is not obs or now - self._scene_at >= 0.5

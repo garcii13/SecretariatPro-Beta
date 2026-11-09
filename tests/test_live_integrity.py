@@ -50,6 +50,16 @@ class DiskRecoveryTests(unittest.TestCase):
                 with self.assertRaises(PermissionError): store.write({'score': 3})
             self.assertFalse(store.pending_persistence)
 
+    def test_manual_score_recovers_on_read_without_another_goal_or_ocr_write(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store=ScoreFileStore(folder)
+            with patch.object(store,'_atomic_write',side_effect=FULL):
+                store.write_readings({'team1_score':3,'time':'12:34'})
+            with patch('secretariat_core.ocr_store.time.monotonic',return_value=float('inf')):
+                self.assertEqual(store.read('team1_score'),'3')
+            self.assertFalse(store._pending_readings)
+            self.assertEqual((Path(folder)/'Time.txt').read_text(),'12:34')
+
     def test_live_http_and_overlay_keep_working_with_full_disk_and_replay_failure(self):
         with tempfile.TemporaryDirectory() as folder:
             runtime = ApplicationRuntime(folder)

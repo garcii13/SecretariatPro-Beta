@@ -6,7 +6,7 @@ Base: `7af1cf2` con federaciones e idiomas. Se conserva la matriz de
 
 ## Comprobaciones completadas
 
-- Python: 511 pruebas ejecutadas, cero fallos, dos pruebas Win32 omitidas en Mac.
+- Python: 513 pruebas ejecutadas, cero fallos, dos pruebas Win32 omitidas en Mac.
 - JavaScript: sintaxis de script.js, overlay_motion.js, webapp/app.js,
   manager_app/app.js y tablet/tablet.js; 33 pruebas de OCR preview, presentación,
   identidad de Manager, movimiento y federaciones/idiomas.

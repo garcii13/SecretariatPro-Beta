@@ -5,6 +5,8 @@ import json
 import os
 import tempfile
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -83,6 +85,28 @@ class ScorePerformanceTests(unittest.TestCase):
 
 
 class PreviewPerformanceTests(unittest.TestCase):
+    def test_clients_waiting_for_slow_obs_share_the_completed_capture(self):
+        started=threading.Event(); second_requested=threading.Event()
+        preview=ProgramPreview(25); obs=Mock(); calls=[]
+        def clock():
+            calls.append(True)
+            if len(calls)>1:
+                second_requested.set()
+                return 10.01
+            return 10.0
+        def capture(**kwargs):
+            started.set()
+            self.assertTrue(second_requested.wait(1),'second viewer waited before recording its request time')
+            return b'shared frame'
+        obs.program_screenshot.side_effect=capture
+        with patch('secretariat_core.services.program_preview.time.monotonic',side_effect=clock), ThreadPoolExecutor(max_workers=2) as pool:
+            first=pool.submit(preview.read,obs)
+            self.assertTrue(started.wait(1))
+            second=pool.submit(preview.read,obs)
+            self.assertEqual(first.result(timeout=2),b'shared frame')
+            self.assertEqual(second.result(timeout=2),b'shared frame')
+        self.assertEqual(obs.program_screenshot.call_count,1)
+
     def test_clients_share_requests_and_scene_refresh_is_time_based(self):
         obs = Mock()
         obs.program_screenshot.side_effect = [b"one", b"two", b"three"]
