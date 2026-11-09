@@ -41,3 +41,14 @@ hash/commit en `packaging/verify_acceptance.py`.
 
 La unidad local tenía menos de 1 GB libre durante la revisión: no se compilan
 instaladores grandes en ella ni se borran vídeos o archivos del usuario.
+
+## Dependencia de certificados HTTPS
+
+La primera compilación de Windows y Apple Silicon de `b2dcfb4` pasó regresiones,
+OCR empaquetado y arranque instalado. Intel se detuvo al auditar la copia
+preinstalada de `certifi==2026.7.22`. Se añadió el mínimo `certifi>=2026.10.23`
+para todas las plataformas, sin excepciones en el auditor. La causa está
+publicada por el mantenedor en
+[GHSA-6q48-6c7w-9gw2](https://github.com/certifi/python-certifi/security/advisories/GHSA-6q48-6c7w-9gw2).
+Se recompilan los tres destinos con la dependencia corregida antes de aceptar
+los artefactos finales.

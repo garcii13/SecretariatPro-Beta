@@ -80,6 +80,7 @@ imageio-ffmpeg>=0.6,<0.7
 psutil>=5.9,<8
 
 # Security floors shared by auth/network/native-shell dependencies.
+certifi>=2026.10.23
 multidict>=6.9.1,<7
 PyJWT>=2.15.0,<3
 urllib3>=2.8.0,<3
