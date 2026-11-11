@@ -22,13 +22,13 @@
     "broadcast_renderer/src/types.ts": "b22d1fe580bb1932742e36fea9923fd4140d5732f365644c394411c669f18043",
     "broadcast_renderer/tsconfig.json": "51f4932da5bd3e40ccfb3f21a6ec2f0146f44a070fd822445bf9f3a828169256",
     "broadcast_renderer/vite.config.ts": "c5ca1e49971d6569ca4f3e304dd4d4750f54838ae7074d40019be3eabf78f7f5",
-    "overlay-studio.html": "c05672224ef9e8c6545f233c069ede257d902e8887a525d3d12a26142a5d7359",
+    "overlay-studio.html": "b0628518e955efa6f2a274d2fdb7e8e1c73e1a36c949180940c86f2da49c3599",
     "overlay_cinematic.css": "90df916e6cc453287d0b865b9bdbd582759a6714acf316b955e4b582d78871f4",
-    "script.js": "f864e78d02ba44cbba8e5fcfc62b40081be9b13a1e362a40827638d536911b4b",
-    "styles.css": "e1d14ce63e14c32687446313bf25c09cf23d327b66cab905d705234bcecdb69b"
+    "script.js": "e9d8cc85bd862a8d2d46fc30b7d768d4e61d311c6e9041b8d5951520f01188d9",
+    "styles.css": "1e14c1ba9aba5b300c426151de601b5fabfb797cbcdac3caad8b8eae8524b7cc"
   },
   "assets": {
-    "studio.js": "6c07903246b3599e63598aba9d10a2496afd6149e99afe6f9d15b57a68387f11",
+    "studio.js": "7d8000b4d27c77a0367fdce5beb5e8950b4f66744fc37e5bcf75c2a49e5d44fc",
     "studio.css": "ee3ec5d4a479d1757d9fcd9b5117361efd7a199325f8a61df92441b8228efea3",
     "THIRD_PARTY_NOTICES.txt": "5a165fa64616abaac4d57606d952a73c329e4eced1d186c035828688cf72c31a"
   }

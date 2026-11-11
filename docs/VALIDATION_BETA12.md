@@ -30,17 +30,26 @@ Base: `7af1cf2` con federaciones e idiomas. Se conserva la matriz de
   pendientes conservados. Pruebas de biblioteca existentes preservadas y
   aislamiento explícito de espacio disponible en sus fixtures.
 
-## Pendiente antes de distribución
+## Seguimiento de la candidata compilada
 
-Compilación y pruebas nativas de instaladores en Windows, Mac ARM e Intel;
-aceptación instalada y sesión real OBS/cámara/Stream Deck, multicámara y
-exportación. Los 25 fps son un objetivo de programación: no hay medición de
-rendimiento con OBS real para esta compilación. No se ha sustituido la versión
-instalada del usuario. La publicación mantiene su control de evidencia por
+La compilación final de `1af1d69` pasó auditoría, regresiones, OCR empaquetado y
+arranque instalado en Windows, Mac ARM e Intel:
+[run 42633686603](https://github.com/garcii13/SecretariatPro-Beta/actions/runs/42633686603).
+En este Mac se probó OBS con la cámara integrada: preview fija de beta 12 a
+20,2 fps frente a 6,6 fps del bucle anterior; captura de dos fuentes, composición,
+vuelta a directo y exportación decodificada de seis segundos. La Sony configurada
+no estaba conectada. No se sustituyó la aplicación instalada del usuario.
+
+La aceptación operativa completa, incluido Stream Deck físico y hardware de cada
+plataforma, sigue pendiente. La publicación conserva el control de evidencia por
 hash/commit en `packaging/verify_acceptance.py`.
 
-La unidad local tenía menos de 1 GB libre durante la revisión: no se compilan
-instaladores grandes en ella ni se borran vídeos o archivos del usuario.
+Con autorización del usuario se liberaron 10,48 GiB de cachés regenerables de
+Spotify, npm y pip. No se borraron documentos, grabaciones ni modelos OCR.
+
+Los cambios locales posteriores de preview adaptativa y textos se documentan en
+[LOCAL_ADAPTIVE_PREVIEW_AND_TEXT.md](LOCAL_ADAPTIVE_PREVIEW_AND_TEXT.md); no están
+incluidos en los instaladores de ese run.
 
 ## Dependencia de certificados HTTPS
 
@@ -50,5 +59,4 @@ preinstalada de `certifi==2026.7.22`. Se añadió el mínimo `certifi>=2026.10.2
 para todas las plataformas, sin excepciones en el auditor. La causa está
 publicada por el mantenedor en
 [GHSA-6q48-6c7w-9gw2](https://github.com/certifi/python-certifi/security/advisories/GHSA-6q48-6c7w-9gw2).
-Se recompilan los tres destinos con la dependencia corregida antes de aceptar
-los artefactos finales.
+Los tres destinos finalizaron correctamente con la dependencia corregida.

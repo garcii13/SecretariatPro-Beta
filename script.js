@@ -54,6 +54,74 @@ const OverlayPresentation = {
   },
 };
 
+// Measure only after content, fonts or available space change; never on clock ticks.
+const OverlayTextLayout = {
+  fit(element, maxHeight = Infinity, minimum = 12) {
+    if (!element || element.clientWidth <= 0) return;
+    element.style.removeProperty('font-size');
+    element.style.setProperty('white-space', 'nowrap', 'important');
+    const maximum = parseFloat(getComputedStyle(element).fontSize) || 16;
+    const fits = () => element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= maxHeight + 1;
+    if (fits()) return;
+    const size = value => element.style.setProperty('font-size', `${value}px`, 'important');
+    let low = Math.min(minimum, maximum), high = maximum;
+    size(low);
+    // Exceptionally long names can use two lines within the existing row/card.
+    // Preserve every letter and the separate position column instead of ellipsis.
+    if (!fits()) {
+      element.style.setProperty('white-space', 'normal', 'important');
+      high = maximum;
+      low = Math.min(8, high);
+    }
+    for (let step = 0; step < 8; step++) {
+      const middle = (low + high) / 2;
+      size(middle);
+      if (fits()) low = middle; else high = middle;
+    }
+    size(Math.floor(low * 10) / 10);
+  },
+  lineupWidth(modal) {
+    const panel = modal?.querySelector('.lineups-panel');
+    const list = modal?.querySelector('.team-only-list');
+    if (!panel || !list || !list.clientWidth) return;
+    let widest = 0;
+    for (const row of list.querySelectorAll('.lineup-row')) {
+      const name = row.querySelector('.lineup-name');
+      const position = row.querySelector('.lineup-position');
+      const number = row.querySelector('.lineup-number');
+      if (!name || !position || !number) continue;
+      name.style.removeProperty('font-size');
+      name.style.setProperty('white-space', 'nowrap', 'important');
+      const style = getComputedStyle(row);
+      const spacing = (parseFloat(style.columnGap) || 0) * 2 +
+        (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0) + 2;
+      widest = Math.max(widest, name.scrollWidth + position.scrollWidth + number.clientWidth + spacing);
+    }
+    const style = getComputedStyle(panel);
+    const scale = parseFloat(style.scale) || 1;
+    panel.style.setProperty("--squad-safe-width", `${Math.floor(window.innerWidth * .92 / scale)}px`);
+    const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0) + 2;
+    const gap = parseFloat(getComputedStyle(list).columnGap) || 12;
+    panel.style.setProperty('--squad-panel-width', `${Math.ceil(Math.max(1120, widest * 2 + gap + padding + 4))}px`);
+  },
+  lineupNames(modal) {
+    if (!modal?.classList.contains('phase-squad')) return;
+    for (const row of modal.querySelectorAll('.lineup-row')) {
+      const style = getComputedStyle(row);
+      const height = row.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0);
+      this.fit(row.querySelector('.lineup-name'), height, 12);
+    }
+  },
+  venue(element) {
+    if (!element?.parentElement) return;
+    const box = element.parentElement, style = getComputedStyle(box);
+    const label = box.querySelector('.prematch-info-label');
+    const height = box.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0)
+      - (label?.offsetHeight || 0) - (parseFloat(style.rowGap) || 0);
+    this.fit(element, Math.max(24, height), 12);
+  },
+};
+
 // One bounded request cycle owns each frame, including initial load and legacy TXT fallback.
 // A timed-out fetch may still resolve (old browser/mock); its lease prevents DOM writes.
 class OverlayPoller {
@@ -349,6 +417,7 @@ function startSecretariatOverlay() {
       .intermission-events-title { color: ${panels.text} !important; }
     `;
     applyOverlayLanguage(settings.language || "es");
+    scheduleTextLayout(true);
   }
 
   let stateOwnsSettings = false;
@@ -480,6 +549,7 @@ function startSecretariatOverlay() {
     const toSquad = setTimeout(() => {
       modal.classList.remove("phase-starting");
       modal.classList.add("phase-squad");
+      scheduleTextLayout(true);
       motion?.revealDetails(modal, "lineups", ".lineup-row,.lineups-coach");
     }, LINEUP_STARTING_DURATION_MS);
     lineupSequenceTimers.set(modal, [toSquad]);
@@ -1014,24 +1084,61 @@ function startSecretariatOverlay() {
     // y altura calculada por el contenido real. Evita solapamientos.
     const rows = Math.max(1, Math.ceil((Number(playerCount) || 0) / 2));
     const viewportHeight = Math.max(600, window.innerHeight || 1080);
-    const rowHeight = viewportHeight < 760 ? 35 : 42;
     const rowGap = viewportHeight < 760 ? 5 : 7;
-    const listHeight = rows * rowHeight + Math.max(0, rows - 1) * rowGap;
     const coachHeight = hasCoach ? 72 : 0;
     const fixedHeight = viewportHeight < 760 ? 250 : 292;
-    const naturalHeight = fixedHeight + listHeight + coachHeight;
     const maxHeight = Math.floor(viewportHeight * 0.96);
+    // Reserve the coach/header space before sizing rows: a full roster at 720p
+    // must not collide with the coach when the panel reaches its height limit.
+    const rowBudget = Math.floor((maxHeight - fixedHeight - coachHeight - Math.max(0, rows - 1) * rowGap) / rows);
+    const rowHeight = Math.max(26, Math.min(viewportHeight < 760 ? 35 : 42, rowBudget));
+    const listHeight = rows * rowHeight + Math.max(0, rows - 1) * rowGap;
+    const naturalHeight = fixedHeight + listHeight + coachHeight;
     const target = Math.max(500, Math.min(maxHeight, naturalHeight));
 
     modal.classList.toggle("lineups-compact", viewportHeight < 720);
     modal.dataset.columns = "2";
     panel.style.setProperty("--squad-panel-height", `${Math.round(target)}px`);
-    panel.style.setProperty("--squad-panel-width", "1120px");
+
     list.style.setProperty("--lineup-columns", "2");
     list.style.setProperty("--lineup-row-height", `${rowHeight}px`);
     list.style.setProperty("--lineup-row-gap", `${rowGap}px`);
     list.style.setProperty("--squad-list-height", `${Math.round(listHeight)}px`);
   }
+
+  let textLayoutSignature = "", textLayoutPending = false;
+  function scheduleTextLayout(force = false) {
+    const signature = [prematchVenue?.textContent, lineupsTeam1List?.dataset.signature,
+      lineupsTeam2List?.dataset.signature, window.innerWidth, window.innerHeight,
+      lineupsTeam1Modal?.className, lineupsTeam2Modal?.className].join("|");
+    if (!force && signature === textLayoutSignature) return;
+    textLayoutSignature = signature;
+    if (textLayoutPending) return;
+    textLayoutPending = true;
+    requestAnimationFrame(() => {
+      textLayoutPending = false;
+      OverlayTextLayout.venue(prematchVenue);
+      for (const modal of [lineupsTeam1Modal, lineupsTeam2Modal]) {
+        OverlayTextLayout.lineupWidth(modal);
+        OverlayTextLayout.lineupNames(modal);
+      }
+    });
+  }
+  // Refit after the width animation and late font loading, without resizing
+  // the panel from its own ResizeObserver callback (which would oscillate).
+  if (typeof ResizeObserver !== "undefined") {
+    const textObserver = new ResizeObserver(() => {
+      OverlayTextLayout.venue(prematchVenue);
+      OverlayTextLayout.lineupNames(lineupsTeam1Modal);
+      OverlayTextLayout.lineupNames(lineupsTeam2Modal);
+    });
+    for (const element of [prematchVenue?.parentElement,
+      lineupsTeam1Modal?.querySelector(".lineups-panel"), lineupsTeam2Modal?.querySelector(".lineups-panel")]) {
+      if (element) textObserver.observe(element);
+    }
+  }
+  document.fonts?.ready.then(() => scheduleTextLayout(true));
+  document.fonts?.addEventListener("loadingdone", () => scheduleTextLayout(true));
 
   function renderLineupList(container, players) {
     if (!container) return;
@@ -1572,6 +1679,7 @@ function startSecretariatOverlay() {
     // Dynamic rendering can replace labels after a language switch. Reapply
     // the selected language at the end of each state update.
     applyOverlayLanguage(overlayLanguage);
+    scheduleTextLayout();
   }
 
   // Settings are independent from match state: language and graphic palette.
@@ -1636,6 +1744,7 @@ function startSecretariatOverlay() {
   setInterval(pollOverlay, 250);
 
   window.addEventListener("resize", () => {
+    scheduleTextLayout(true);
     if (intermissionModal?.classList.contains("show")) {
       requestAnimationFrame(syncIntermissionColumnHeights);
     }

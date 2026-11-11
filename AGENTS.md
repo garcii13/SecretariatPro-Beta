@@ -40,3 +40,8 @@ visual themes only style the graphics and must not override competition mode.
 Goal presentation belongs to BroadcastFlow: replay/confirmed live (or configured
 delay), goal intro, GOAL_REVEAL handoff, full configured scorer duration, bottom hidden, scoreboard
 restored. Cancellation must prevent stale graphics from returning.
+
+Release workflow: complete local functional validation of Live and Manager,
+including OBS/camera and the affected operator workflows, before starting new
+installer builds. Use local previews and regression checks to iterate first;
+build installers once the local candidate is ready for installed acceptance.

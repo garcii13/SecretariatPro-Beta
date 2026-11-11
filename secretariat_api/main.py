@@ -8,6 +8,7 @@ import logging
 from secretariat_core.release import RELEASE_VERSION
 
 import asyncio
+import anyio
 import json
 import os
 import io
@@ -1125,27 +1126,43 @@ async def projector_stream() -> StreamingResponse:
     )
 
 
-_program_preview = ProgramPreview(fps=25)
+_program_preview = ProgramPreview(fps=60)
 
 
-def _obs_program_frames():
+async def _obs_program_frames():
     """MJPEG directly from OBS Program; never falls back to desktop pixels."""
     import time
 
     failures = 0
-    while runtime.obs is not None and runtime.obs.connected:
-        started = time.monotonic()
-        try:
-            frame = _program_preview.read(runtime.obs)
-            failures = 0
-            yield b"--frame\r\nContent-Type: image/jpeg\r\nCache-Control: no-store\r\n\r\n" + frame + b"\r\n"
-        except Exception:
-            failures += 1
-            if failures >= 12:
-                return
-        # Monitoring only: output/recording FPS and OCR capture are unchanged.
-        # Demand-driven requests stop when the last monitor disconnects.
-        time.sleep(max(0.001, (0.25 if failures else _program_preview.interval) - (time.monotonic() - started)))
+    subscribed = False
+    try:
+        # Shield the acquisition too: cancellation cannot leak a viewer lease.
+        with anyio.CancelScope(shield=True):
+            await run_in_threadpool(_program_preview.subscribe)
+            subscribed = True
+        while runtime.obs is not None and runtime.obs.connected:
+            started = time.monotonic()
+            try:
+                frame = await run_in_threadpool(_program_preview.read, runtime.obs)
+                failures = 0
+                if frame is not None:
+                    yield b"--frame\r\nContent-Type: image/jpeg\r\nCache-Control: no-store\r\n\r\n" + frame + b"\r\n"
+                    # Do not pin a second JPEG while waiting or protecting output.
+                    del frame
+            except Exception:
+                failures += 1
+                if failures >= 12:
+                    return
+            await asyncio.sleep(max(.001, (.25 if failures else _program_preview.interval) - (time.monotonic() - started)))
+    finally:
+        if subscribed:
+            with anyio.CancelScope(shield=True):
+                await run_in_threadpool(_program_preview.unsubscribe)
+
+
+@app.get("/api/obs/preview-status")
+async def obs_preview_status() -> dict[str, Any]:
+    return _program_preview.status()
 
 
 @app.get("/api/obs/program-stream")

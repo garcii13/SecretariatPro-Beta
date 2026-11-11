@@ -4,6 +4,7 @@ import base64
 import ipaddress
 import re
 import threading
+import time
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -88,6 +89,8 @@ class OBSController:
         self._client = None
         self._preview = None
         self._preview_lock = threading.RLock()
+        self._preview_target_fps = 0.0
+        self._preview_video_at = float("-inf")
         self._password = ""
         self._lock = threading.RLock()
         self.connected = False
@@ -360,13 +363,7 @@ class OBSController:
         # Screenshots can take hundreds of milliseconds. They must never hold
         # the command socket/lock used by a goal mark or scene change.
         with self._preview_lock:
-            if not self.connected:
-                raise RuntimeError("OBS no está conectado")
-            if self._preview is None or not self._preview.connected:
-                preview = OBSController()
-                preview.connect(self.host, self.port, self._password, timeout=1.0)
-                self._preview = preview
-            preview = self._preview
+            preview = self._preview_connection()
             try:
                 if refresh_scene or not self._program_scene_name:
                     self._program_scene_name = preview.current_program_scene()
@@ -376,6 +373,42 @@ class OBSController:
                 preview.disconnect()
                 self._preview = None
                 raise
+
+    def _preview_connection(self):
+        """Caller owns _preview_lock; never acquire the command socket's lock."""
+        if not self.connected:
+            raise RuntimeError("OBS no está conectado")
+        if self._preview is None or not self._preview.connected:
+            preview = OBSController()
+            preview.connect(self.host, self.port, self._password, timeout=1.0)
+            self._preview = preview
+            self._preview_target_fps = 0.0
+        return self._preview
+
+    def preview_metrics(self) -> dict[str, float]:
+        """Read render/encoder pressure on the expendable monitoring socket."""
+        with self._preview_lock:
+            preview = self._preview_connection()
+            client = preview._require()
+            stats = client.get_stats()
+            if not self._preview_target_fps or time.monotonic() - self._preview_video_at >= 5:
+                video = client.get_video_settings()
+                self._preview_target_fps = float(video.fps_numerator) / max(1, float(video.fps_denominator))
+                self._preview_video_at = time.monotonic()
+            fields = {"cpu": "cpu_usage", "active_fps": "active_fps", "render_ms": "average_frame_render_time",
+                      "render_skipped": "render_skipped_frames", "render_total": "render_total_frames",
+                      "output_skipped": "output_skipped_frames", "output_total": "output_total_frames"}
+            result = {key: float(getattr(stats, field)) for key, field in fields.items()}
+            result["target_fps"] = self._preview_target_fps
+            return result
+
+    def release_program_preview(self) -> None:
+        """Drop only the monitoring connection when its last viewer leaves."""
+        with self._preview_lock:
+            if self._preview is not None:
+                self._preview.disconnect()
+                self._preview = None
+            self._preview_target_fps = 0.0
 
     def replay_status(self) -> dict[str, Any]:
         """Return replay-buffer state through the stable obs-websocket v5 API."""

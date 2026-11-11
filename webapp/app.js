@@ -3911,6 +3911,29 @@ function bindProductionResizers() {
   });
 }
 
+let programStatusTimer = null;
+let programStatusRequest = null;
+
+function setProgramStatusPolling(active) {
+  clearTimeout(programStatusTimer);
+  programStatusTimer = null;
+  programStatusRequest?.abort();
+  programStatusRequest = null;
+  if (!active) return;
+  const controller = new AbortController();
+  programStatusRequest = controller;
+  const refresh = async () => {
+    try {
+      const status = await api("/api/obs/preview-status", { cache: "no-store", signal: controller.signal });
+      if (controller.signal.aborted) return;
+      const label = status.paused ? "⏸ PREVIEW · AUTO" : `PREVIEW · AUTO · ≤${status.fps} FPS`;
+      $$('[data-preview-status]').forEach(element => { element.textContent = label; });
+    } catch (_) { /* Monitoring status must never interrupt production controls. */ }
+    if (!controller.signal.aborted) programStatusTimer = setTimeout(refresh, 1500);
+  };
+  refresh();
+}
+
 function configureProgramVideo(image) {
   if (!image || image.dataset.monitorBound === "1") return;
   image.dataset.monitorBound = "1";
@@ -3926,6 +3949,9 @@ function configureProgramVideo(image) {
 }
 
 function activateProgramMonitor(viewName) {
+  const visible = document.visibilityState === "visible";
+  if (!visible) viewName = "";
+  setProgramStatusPolling(viewName === "live" || viewName === "production");
   const monitors = [
     { view: "live", image: $("#program-video") },
     { view: "production", image: $("#production-program-video") },

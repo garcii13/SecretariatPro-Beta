@@ -5007,3 +5007,19 @@ body.international-teams .scoreboard :is(.team1-bar,.team2-bar) img[data-nationa
 #bottom-bar.goal-reveal .bottom-event-copy {visibility:visible !important;}
 #bottom-bar.goal-reveal > .bottom-goal-intro {animation:goal-handoff-fade var(--goal-phase-duration,.64s) ease both;animation-delay:var(--goal-phase-offset,0s);}
 @keyframes goal-handoff-fade {from {opacity:1;} to {opacity:0;}}
+
+/* Long venue and roster labels retain their content and safe screen margins. */
+#prematch-venue {
+  width: 100%; min-width: 0; text-overflow: clip; overflow-wrap: anywhere;
+}
+.lineups-panel.team-lineup-panel { max-width: min(92vw, var(--squad-safe-width, 92vw)) !important; }
+.lineups-modal.phase-squad .lineups-panel.team-lineup-panel {
+  width: min(var(--squad-panel-width, 1120px), var(--squad-safe-width, 92vw)) !important;
+}
+.lineups-modal .lineup-row,
+.lineups-modal.phase-squad .lineup-row {
+  grid-template-columns: 62px minmax(0, 1fr) max-content !important;
+  column-gap: 12px !important;
+}
+.lineups-modal .lineup-position { white-space: nowrap; }
+.lineups-modal .lineup-name { text-overflow: clip !important; overflow-wrap: anywhere; }
